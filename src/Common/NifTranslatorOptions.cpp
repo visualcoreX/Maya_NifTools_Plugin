@@ -8,6 +8,7 @@ NifTranslatorOptions::NifTranslatorOptions()
 	this->importBindPose = false;
 	this->importNormals = false;
 	this->importNoAmbient = false;
+	this->importScale = 1.0f;
 	this->exportWhiteAmbient = false;
 	this->importCombineSkeletons = false;
 	this->jointMatch = "";
@@ -26,6 +27,7 @@ void NifTranslatorOptions::Reset()
 	this->importBindPose = false;
 	this->importNormals = false;
 	this->importNoAmbient = false;
+	this->importScale = 1.0f;
 	this->exportWhiteAmbient = false;
 	this->importCombineSkeletons = false;
 	this->jointMatch = "";
@@ -37,271 +39,410 @@ void NifTranslatorOptions::Reset()
 	this->texturePathMode = PATH_MODE_AUTO;
 }
 
-NifTranslatorOptions::~NifTranslatorOptions() {
-
+NifTranslatorOptions::~NifTranslatorOptions()
+{
 }
 
-void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
+void NifTranslatorOptions::ParseOptionsString(const MString& optionsString)
 {
 	//Parse Options String
 	MStringArray options;
 	//out << "optionsString:" << endl;
 	//out << optionsString.asChar() << endl;
-	optionsString.split( ';', options );
-	for (unsigned int i = 0; i < options.length(); ++i) {
+	optionsString.split(';', options);
+	for (unsigned int i = 0; i < options.length(); ++i)
+	{
 		MStringArray tokens;
-		options[i].split( '=', tokens );
+		options[i].split('=', tokens);
 		//out << "tokens[0]:  " << tokens[0].asChar() << endl;
 		//out << "tokens[1]:  " << tokens[1].asChar() << endl;
-		if ( tokens[0] == "texturePath" ) {
+		if (tokens[0] == "texturePath")
+		{
 			this->texturePath = tokens[1].asChar();
 
 			//Replace back slash with forward slash
-			for ( unsigned i = 0; i < this->texturePath.size(); ++i ) {
-				if ( this->texturePath[i] == '\\' ) {
+			for (unsigned i = 0; i < this->texturePath.size(); ++i)
+			{
+				if (this->texturePath[i] == '\\')
+				{
 					this->texturePath[i] = '/';
 				}
 			}
 
 			//out << "Texture Path:  " << texture_path << endl;
-
 		}
-		if ( tokens[0] == "exportVersion" ) {
-			this->exportVersion = ParseVersionString( tokens[1].asChar() );
+		if (tokens[0] == "exportVersion")
+		{
+			this->exportVersion = ParseVersionString(tokens[1].asChar());
 
-			if ( exportVersion == VER_INVALID ) {
-				MGlobal::displayWarning( "Invalid export version specified.  Using default of 4.0.0.2." );
+			if (exportVersion == VER_INVALID)
+			{
+				MGlobal::displayWarning("Invalid export version specified.  Using default of 4.0.0.2.");
 				this->exportVersion = VER_4_0_0_2;
 			}
 			//out << "Export Version:  0x" << hex << export_version << dec << endl;
 		}
-		if ( tokens[0] == "importBindPose" ) {
-			if ( tokens[1] == "1" ) {
+		if (tokens[0] == "importBindPose")
+		{
+			if (tokens[1] == "1")
+			{
 				this->importBindPose = true;
-			} else {
+			}
+			else
+			{
 				this->importBindPose = false;
 			}
 			//out << "Import Bind Pose:  " << import_bind_pose << endl;
 		}
-		if(tokens[0] == "importNormalizedWeights") {
-			if(tokens[1] == "1") {
+		if (tokens[0] == "importNormalizedWeights")
+		{
+			if (tokens[1] == "1")
+			{
 				this->importNormalizedWeights = true;
-			} else {
+			}
+			else
+			{
 				this->importNormalizedWeights = false;
 			}
 			//out << "Import Normalized weights:  " << importNormalizedWeights << endl;
 		}
-		if(tokens[0] == "importCreateDummyAnimationObjects") {
-			if(tokens[1] == "1") {
+		if (tokens[0] == "importCreateDummyAnimationObjects")
+		{
+			if (tokens[1] == "1")
+			{
 				this->importCreateDummyAnimationObjects = true;
-			} else {
+			}
+			else
+			{
 				this->importCreateDummyAnimationObjects = false;
 			}
 		}
-		if ( tokens[0] == "importNormals" ) {
-			if ( tokens[1] == "1" ) {
+		if (tokens[0] == "importNormals")
+		{
+			if (tokens[1] == "1")
+			{
 				this->importNormals = true;
-			} else {
+			}
+			else
+			{
 				this->importNormals = false;
 			}
 			//out << "Import Normals:  " << import_normals << endl;
 		}
-		if( tokens[0] == "materialType") {
+		if (tokens[0] == "materialType")
+		{
 			this->exportMaterialType = tokens[1].asChar();
 			//out << "Material type: " << this->exportMaterialType << endl;
 		}
-		if( tokens[0] == "tangentSpace") {
+		if (tokens[0] == "tangentSpace")
+		{
 			this->exportTangentSpace = tokens[1].asChar();
 			//out << "Tangent space: " << this->exportTangentSpace << endl;
 		}
-		if ( tokens[0] == "importNoAmbient" ) {
-			if ( tokens[1] == "1" ) {
+		if (tokens[0] == "importNoAmbient")
+		{
+			if (tokens[1] == "1")
+			{
 				this->importNoAmbient = true;
-			} else {
+			}
+			else
+			{
 				this->importNoAmbient = false;
 			}
 			//out << "Import No Ambient:  " << import_no_ambient << endl;
 		}
-		if ( tokens[0] == "exportWhiteAmbient" ) {
-			if ( tokens[1] == "1" ) {
+		if (tokens[0] == "importScale")
+		{
+			this->importScale = static_cast<float>(atof(tokens[1].asChar()));
+			if ( this->importScale <= 0.0f ) {
+				this->importScale = 1.0f;
+			}
+		}
+		if (tokens[0] == "exportWhiteAmbient")
+		{
+			if (tokens[1] == "1")
+			{
 				this->exportWhiteAmbient = true;
-			} else {
+			}
+			else
+			{
 				this->exportWhiteAmbient = false;
 			}
 			//out << "Export White Ambient:  " << export_white_ambient << endl;
 		}
-		if ( tokens[0] == "exportTriStrips" ) {
-			if ( tokens[1] == "1" ) {
+		if (tokens[0] == "exportTriStrips")
+		{
+			if (tokens[1] == "1")
+			{
 				this->exportAsTriStrips = true;
-			} else {
+			}
+			else
+			{
 				this->exportAsTriStrips = false;
 			}
 			//out << "Export Triangle Strips:  " << export_tri_strips << endl;
 		}
-		if ( tokens[0] == "exportMorRename" ) {
-			if ( tokens[1] == "1" ) {
+		if (tokens[0] == "exportMorRename")
+		{
+			if (tokens[1] == "1")
+			{
 				this->exportMorrowindRename = true;
-			} else {
+			}
+			else
+			{
 				this->exportMorrowindRename = false;
 			}
 			//out << "Export Morrowind Rename:  " << export_mor_rename << endl;
 		}
-		if ( tokens[0] == "minimumVertexWeight") {
+		if (tokens[0] == "minimumVertexWeight")
+		{
 			this->exportMinimumVertexWeight = atof(tokens[1].asChar());
 		}
-		if ( tokens[0] == "importSkelComb" ) {
-			if ( tokens[1] == "1" ) {
+		if (tokens[0] == "importSkelComb")
+		{
+			if (tokens[1] == "1")
+			{
 				this->importCombineSkeletons = true;
-			} else {
+			}
+			else
+			{
 				this->importCombineSkeletons = false;
 			}
 			//out << "Combine with Existing Skeleton:  " << import_comb_skel << endl;
 		}
-		if ( tokens[0] == "exportPartBones" ) {
-			this->exportBonesPerSkinPartition = atoi( tokens[1].asChar() );
+		if (tokens[0] == "exportPartBones")
+		{
+			this->exportBonesPerSkinPartition = atoi(tokens[1].asChar());
 			//out << "Max Bones per Skin Partition:  " << export_part_bones << endl;
 		}
-		if ( tokens[0] == "exportUserVersion" ) {
-			this->exportUserVersion = atoi( tokens[1].asChar() );
+		if (tokens[0] == "exportUserVersion")
+		{
+			this->exportUserVersion = atoi(tokens[1].asChar());
 			//out << "User Version:  " << export_user_version << endl;
 		}
-		if( tokens[0] == "exportUserVersion2") {
-			this->exportUserVersion2 = atoi( tokens[1].asChar());
+		if (tokens[0] == "exportUserVersion2")
+		{
+			this->exportUserVersion2 = atoi(tokens[1].asChar());
 			//out << "User Version2:  " << export_user_version2 << endl;
 		}
-		if ( tokens[0] == "importJointMatch" ) {
+		if (tokens[0] == "importJointMatch")
+		{
 			this->jointMatch = tokens[1].asChar();
 			//out << "Import Joint Match:  " << joint_match << endl;
 		}
-		if ( tokens[0] == "useNameMangling" ) {
-			if ( tokens[1] == "1" ) {
+		if (tokens[0] == "useNameMangling")
+		{
+			if (tokens[1] == "1")
+			{
 				this->useNameMangling = true;
-			} else {
+			}
+			else
+			{
 				this->useNameMangling = false;
 			}
 			//out << "Use Name Mangling:  " << use_name_mangling << endl;
 		}
-		if ( tokens[0] == "exportPathMode" ) {
+		if (tokens[0] == "exportPathMode")
+		{
 			//out << " Export Texture Path Mode:  ";
-			if ( tokens[1] == "Name" ) {
+			if (tokens[1] == "Name")
+			{
 				this->texturePathMode = PATH_MODE_NAME;
 				//out << "Name" << endl;
-			} else if ( tokens[1] == "Full" ) {
+			}
+			else if (tokens[1] == "Full")
+			{
 				this->texturePathMode = PATH_MODE_FULL;
 				//out << "Full" << endl;
-			} else if ( tokens[1] == "Prefix" ) {
+			}
+			else if (tokens[1] == "Prefix")
+			{
 				this->texturePathMode = PATH_MODE_PREFIX;
 				//out << "Prefix" << endl;
-			} else {
+			}
+			else
+			{
 				//Auto is default
 				this->texturePathMode = PATH_MODE_AUTO;
 				//out << "Auto" << endl;
 			}
 		}
 
-		if ( tokens[0] == "exportPathPrefix" ) {
+		if (tokens[0] == "exportPathPrefix")
+		{
 			this->texturePathPrefix = tokens[1].asChar();
 			//out << "Export Texture Path Prefix:  " << tex_path_prefix << endl;
 		}
 
-		if(tokens[0] == "exportType") {
+		if (tokens[0] == "exportType")
+		{
 			this->exportType = tokens[1].asChar();
 		}
 
-		if(tokens[0] == "animationName") {
-			if(tokens.length() > 1) {
+		if (tokens[0] == "animationName")
+		{
+			if (tokens.length() > 1)
+			{
 				this->animationName = tokens[1].asChar();
 			}
 		}
 
-		if(tokens[0] == "animationTarget") {
-			if(tokens.length() > 1) {
+		if (tokens[0] == "animationTarget")
+		{
+			if (tokens.length() > 1)
+			{
 				this->animationTarget = tokens[1].asChar();
 			}
 		}
 
-		if(tokens[0] == "numberOfKeysToSample") {
-			if(tokens.length() > 1) {
+		if (tokens[0] == "numberOfKeysToSample")
+		{
+			if (tokens.length() > 1)
+			{
 				this->numberOfKeysToSample = atoi(tokens[1].asChar());
 			}
 		}
 
-		if(tokens[0] == "exportedShapes") {
-			if(tokens.length() > 1) {
-				MStringArray exportedShapesTokens; 
-				tokens[1].split(',',exportedShapesTokens);
+		if (tokens[0] == "exportedShapes")
+		{
+			if (tokens.length() > 1)
+			{
+				MStringArray exportedShapesTokens;
+				tokens[1].split(',', exportedShapesTokens);
 				this->exportedShapes.clear();
-				for(int k = 0;k < exportedShapesTokens.length();k++) {
+				for (int k = 0; k < exportedShapesTokens.length(); k++)
+				{
 					this->exportedShapes.push_back(exportedShapesTokens[k].asChar());
 				}
 			}
 		}
-		
-		if(tokens[0] == "exportedJoints") {
-			if(tokens.length() > 1) {
+
+		if (tokens[0] == "exportedJoints")
+		{
+			if (tokens.length() > 1)
+			{
 				MStringArray exportedJointsTokens;
-				tokens[1].split(',',exportedJointsTokens);
+				tokens[1].split(',', exportedJointsTokens);
 				this->exportedJoints.clear();
-				for(int k = 0;k < exportedJointsTokens.length();k++) {
+				for (int k = 0; k < exportedJointsTokens.length(); k++)
+				{
 					this->exportedJoints.push_back(exportedJointsTokens[k].asChar());
 				}
 			}
 		}
 
-		if(tokens[0] == "exportedMisc") {
-			if(tokens.length() > 1) {
-				MStringArray exportedMiscTokens; 
-				tokens[1].split(',',exportedMiscTokens);
+		if (tokens[0] == "exportedMisc")
+		{
+			if (tokens.length() > 1)
+			{
+				MStringArray exportedMiscTokens;
+				tokens[1].split(',', exportedMiscTokens);
 				this->exportedShapes.clear();
-				for(int k = 0;k < exportedMiscTokens.length();k++) {
+				for (int k = 0; k < exportedMiscTokens.length(); k++)
+				{
 					this->exportedMisc.push_back(exportedMiscTokens[k].asChar());
 				}
+			}
+		}
+
+		if (tokens[0] == "exportFlatenedSkeleton")
+		{
+			if (tokens[1] == "1")
+			{
+				this->exportFlatenedSkeleton = true;
+			}
+			else
+			{
+				this->exportFlatenedSkeleton = false;
+			}
+		}
+
+		if (tokens[0] == "exportBsFadeNodeRoot")
+		{
+			if (tokens[1] == "1")
+			{
+				this->exportBsFadeNodeRoot = true;
+			}
+			else
+			{
+				this->exportBsFadeNodeRoot = false;
+			}
+		}
+
+		if (tokens[0] == "importAllNodesAsJoints")
+		{
+			if (tokens[1] == "1")
+			{
+				this->importAllNodesAsJoints = true;
+			}
+			else
+			{
+				this->importAllNodesAsJoints = false;
+			}
+		}
+
+		if (tokens[0] == "cycleType")
+		{
+			if (tokens[1] == "CYCLE_LOOP")
+			{
+				this->cycleType = CYCLE_LOOP;
+			}
+			else if (tokens[1] == "CYCLE_CLAMP")
+			{
+				this->cycleType = CYCLE_CLAMP;
+			}
+			else if (tokens[1] == "CYCLE_REVERSE")
+			{
+				this->cycleType = CYCLE_REVERSE;
 			}
 		}
 	}
 }
 
-std::string NifTranslatorOptions::asString( bool verbose /*= false */ ) const {
+std::string NifTranslatorOptions::asString(bool verbose /*= false */) const
+{
 	stringstream out;
 
-	out<<NifTranslatorRefObject::asString(verbose);
+	out << NifTranslatorRefObject::asString(verbose);
 
-	out<<"Export user version:  "<<this->exportUserVersion<<endl;
-	out<<"Export version:   "<<this->exportVersion<<endl;
-	out<<"Import bind pose:   "<<this->importBindPose<<endl;
-	out<<"Import normals:   "<<this->importNormals<<endl;
-	out<<"Import no ambient:   "<<this->importNoAmbient<<endl;
-	out<<"Export white ambient:   "<<this->exportWhiteAmbient<<endl;
-	out<<"Import combined skeleton:   "<<this->importCombineSkeletons<<endl;
-	out<<"Joint match:   "<<this->jointMatch<<endl;
-	out<<"Use name mangling:   "<<this->useNameMangling<<endl;
-	out<<"Export tri strips:   "<<this->exportAsTriStrips<<endl;
-	out<<"Export partition bones:   "<<this->exportBonesPerSkinPartition<<endl;
-	out<<"Export tangent space:   "<<this->exportTangentSpace<<endl;
-	out<<"Export morrowind rename:   "<<this->exportMorrowindRename<<endl;
-	out<<"Texture path mode:   "<<this->texturePathMode<<endl;
-	out<<"Texture path:   "<<this->texturePath<<endl;
-	out<<"Texture prefix:   "<<this->texturePathPrefix<<endl;
+	out << "Export user version:  " << this->exportUserVersion << endl;
+	out << "Export version:   " << this->exportVersion << endl;
+	out << "Import bind pose:   " << this->importBindPose << endl;
+	out << "Import normals:   " << this->importNormals << endl;
+	out << "Import no ambient:   " << this->importNoAmbient << endl;
+	out << "Export white ambient:   " << this->exportWhiteAmbient << endl;
+	out << "Import combined skeleton:   " << this->importCombineSkeletons << endl;
+	out << "Joint match:   " << this->jointMatch << endl;
+	out << "Use name mangling:   " << this->useNameMangling << endl;
+	out << "Export tri strips:   " << this->exportAsTriStrips << endl;
+	out << "Export partition bones:   " << this->exportBonesPerSkinPartition << endl;
+	out << "Export tangent space:   " << this->exportTangentSpace << endl;
+	out << "Export morrowind rename:   " << this->exportMorrowindRename << endl;
+	out << "Texture path mode:   " << this->texturePathMode << endl;
+	out << "Texture path:   " << this->texturePath << endl;
+	out << "Texture prefix:   " << this->texturePathPrefix << endl;
 
-	if(verbose == true) {
-		out<<"Exported shapes:   "<<endl;
-		for(int i = 0;i < this->exportedShapes.size(); i++) {
-			out<<this->exportedShapes[i]<<endl;
+	if (verbose == true)
+	{
+		out << "Exported shapes:   " << endl;
+		for (int i = 0; i < this->exportedShapes.size(); i++)
+		{
+			out << this->exportedShapes[i] << endl;
 		}
 
-		out<<"Exported joints:   "<<endl;
-		for(int i = 0;i < this->exportedJoints.size(); i++) {
-			out<<this->exportedShapes[i]<<endl;
+		out << "Exported joints:   " << endl;
+		for (int i = 0; i < this->exportedJoints.size(); i++)
+		{
+			out << this->exportedShapes[i] << endl;
 		}
 	}
 
 	return out.str();
 }
 
-const Type& NifTranslatorOptions::GetType() const {
+const Type& NifTranslatorOptions::GetType() const
+{
 	return TYPE;
 }
 
 const Type NifTranslatorOptions::TYPE("NifTranslatorOptions", &NifTranslatorRefObject::TYPE);
-
-

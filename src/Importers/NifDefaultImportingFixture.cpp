@@ -1,10 +1,11 @@
 #include "include/Importers/NifDefaultImportingFixture.h"
 
-NifDefaultImportingFixture::NifDefaultImportingFixture() {
-
+NifDefaultImportingFixture::NifDefaultImportingFixture()
+{
 }
 
-NifDefaultImportingFixture::NifDefaultImportingFixture( NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions, NifTranslatorUtilsRef translatorUtils ) {
+NifDefaultImportingFixture::NifDefaultImportingFixture(NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions, NifTranslatorUtilsRef translatorUtils)
+{
 	this->translatorData = translatorData;
 	this->translatorOptions = translatorOptions;
 	this->translatorUtils = translatorUtils;
@@ -14,85 +15,104 @@ NifDefaultImportingFixture::NifDefaultImportingFixture( NifTranslatorDataRef tra
 	this->animationImporter = new NifAnimationImporter(translatorOptions, translatorData, translatorUtils);
 }
 
-MStatus NifDefaultImportingFixture::ReadNodes( const MFileObject& file )
+MStatus NifDefaultImportingFixture::ReadNodes(const MFileObject& file)
 {
-	try {
+	try
+	{
 		//out << "Reading NIF File..." << endl;
 		//Read NIF file
-		NiObjectRef root = ReadNifTree( file.fullName().asChar() );
+		NiObjectRef root = ReadNifTree(file.fullName().asChar());
 
 		//out << "Importing Nodes..." << endl;
 		//Import Nodes, starting at each child of the root
 		NiNodeRef root_node = DynamicCast<NiNode>(root);
-		if ( root_node != NULL ) {
+		if (root_node != NULL)
+		{
 			//Root is a NiNode and may have children
 
 			//Check if the user wants us to try to find the bind pose
-			if ( this->translatorOptions->importBindPose ) {
-				SendNifTreeToBindPos( root_node );
+			if (this->translatorOptions->importBindPose)
+			{
+				SendNifTreeToBindPos(root_node);
 			}
 
 			//Check if the user wants us to try to combine new skins with
 			//an existing skeleton
-			if ( this->translatorOptions->importCombineSkeletons ) {
+			if (this->translatorOptions->importCombineSkeletons)
+			{
 				//Enumerate existing nodes by name
 				this->translatorData->existingNodes.clear();
-				MItDag dagIt( MItDag::kDepthFirst);
+				MItDag dagIt(MItDag::kDepthFirst);
 
-				for ( ; !dagIt.isDone(); dagIt.next() ) {
-					MFnTransform transFn( dagIt.item() );
+				for (; !dagIt.isDone(); dagIt.next())
+				{
+					MFnTransform transFn(dagIt.item());
 					//out << "Adding " << transFn.name().asChar() << " to list of existing nodes" << endl;
 					MDagPath nodePath;
-					dagIt.getPath( nodePath );
-					this->translatorData->existingNodes[ transFn.name().asChar() ] = nodePath;
+					dagIt.getPath(nodePath);
+					this->translatorData->existingNodes[transFn.name().asChar()] = nodePath;
 				}
 
 				//Adjust NiNodes in the original file that match names
 				//in the maya scene to have the same transforms before
 				//importing the new mesh over the top of the old one
 				NiAVObjectRef rootAV = DynamicCast<NiAVObject>(root);
-				if ( rootAV != NULL ) {
-					this->translatorUtils->AdjustSkeleton( rootAV );
+				if (rootAV != NULL)
+				{
+					this->translatorUtils->AdjustSkeleton(rootAV);
 				}
 			}
 
 			//Check if the root node has a non-identity transform
-			if ( root_node->GetLocalTransform() == Matrix44::IDENTITY ) {
+			if (root_node->GetLocalTransform() == Matrix44::IDENTITY)
+			{
 				//Root has no transform, so treat it as the scene root
 				vector<NiAVObjectRef> root_children = root_node->GetChildren();
 
 				bool reserved = MProgressWindow::reserve();
 
-				if(reserved == true) {
+				if (reserved == true)
+				{
 					MProgressWindow::setProgressMin(0);
 					MProgressWindow::setProgressMax(root_children.size() - 1);
 					MProgressWindow::setTitle("Importing nodes");
 					MProgressWindow::startProgress();
 					MProgressWindow::setInterruptable(false);
 
-					for ( unsigned int i = 0; i < root_children.size(); ++i ) {
-						this->nodeImporter->ImportNodes( root_children[i], this->translatorData->importedNodes );
+					for (unsigned int i = 0; i < root_children.size(); ++i)
+					{
+						this->nodeImporter->ImportNodes(root_children[i], this->translatorData->importedNodes);
 						MProgressWindow::advanceProgress(1);
 					}
 
 					MProgressWindow::endProgress();
-				} else {
-					for ( unsigned int i = 0; i < root_children.size(); ++i ) {
-						this->nodeImporter->ImportNodes( root_children[i], this->translatorData->importedNodes );
+				}
+				else
+				{
+					for (unsigned int i = 0; i < root_children.size(); ++i)
+					{
+						this->nodeImporter->ImportNodes(root_children[i], this->translatorData->importedNodes);
 					}
 				}
-			} else {
-				//Root has a transform, so it's probably part of the scene
-				this->nodeImporter->ImportNodes( StaticCast<NiAVObject>(root_node), this->translatorData->importedNodes );
 			}
-		} else {
+			else
+			{
+				//Root has a transform, so it's probably part of the scene
+				this->nodeImporter->ImportNodes(StaticCast<NiAVObject>(root_node), this->translatorData->importedNodes);
+			}
+		}
+		else
+		{
 			NiAVObjectRef rootAVObj = DynamicCast<NiAVObject>(root);
-			if ( rootAVObj != NULL ) {
+			if (rootAVObj != NULL)
+			{
 				//Root is importable, but has no children
-				this->nodeImporter->ImportNodes( rootAVObj, this->translatorData->importedNodes );
-			} else {
+				this->nodeImporter->ImportNodes(rootAVObj, this->translatorData->importedNodes);
+			}
+			else
+			{
 				//Root cannot be imported
-				MGlobal::displayError( "The root of this NIF file is not derived from the NiAVObject class.  It cannot be imported." );
+				MGlobal::displayError("The root of this NIF file is not derived from the NiAVObject class.  It cannot be imported.");
 				return MStatus::kFailure;
 			}
 		}
@@ -101,9 +121,10 @@ MStatus NifDefaultImportingFixture::ReadNodes( const MFileObject& file )
 		//out << "Importing Materials..." << endl;
 
 		NiAVObjectRef rootAVObj = DynamicCast<NiAVObject>(root);
-		if ( rootAVObj != NULL ) {
+		if (rootAVObj != NULL)
+		{
 			//Root is importable
-			this->materialImporter->ImportMaterialsAndTextures( rootAVObj );
+			this->materialImporter->ImportMaterialsAndTextures(rootAVObj);
 		}
 
 
@@ -118,30 +139,35 @@ MStatus NifDefaultImportingFixture::ReadNodes( const MFileObject& file )
 
 		reserved = MProgressWindow::reserve();
 
-		if(reserved == true) {
+		if (reserved == true)
+		{
 			MProgressWindow::setProgressMin(0);
 			MProgressWindow::setProgressMax(this->translatorData->importedMeshes.size() - 1);
 			MProgressWindow::setTitle("Importing meshes");
 			MProgressWindow::startProgress();
 
-			for ( unsigned i = 0; i < this->translatorData->importedMeshes.size(); ++i ) {
+			for (unsigned i = 0; i < this->translatorData->importedMeshes.size(); ++i)
+			{
 				//out << "Importing mesh..." << endl;
 				//Import Mesh
-				MDagPath meshPath = this->meshImporter->ImportMesh( this->translatorData->importedMeshes[i].first, this->translatorData->importedMeshes[i].second);
+				MDagPath meshPath = this->meshImporter->ImportMesh(this->translatorData->importedMeshes[i].first, this->translatorData->importedMeshes[i].second);
 
 				MProgressWindow::advanceProgress(1);
 			}
 
 			MProgressWindow::endProgress();
-		} else {
-			for ( unsigned i = 0; i < this->translatorData->importedMeshes.size(); ++i ) {
+		}
+		else
+		{
+			for (unsigned i = 0; i < this->translatorData->importedMeshes.size(); ++i)
+			{
 				//out << "Importing mesh..." << endl;
 				//Import Mesh
-				MDagPath meshPath = this->meshImporter->ImportMesh( this->translatorData->importedMeshes[i].first, this->translatorData->importedMeshes[i].second);
+				MDagPath meshPath = this->meshImporter->ImportMesh(this->translatorData->importedMeshes[i].first, this->translatorData->importedMeshes[i].second);
 			}
 		}
 
-		
+
 		//out << "Done importing meshes." << endl;
 
 		//--Import Animation--//
@@ -163,41 +189,45 @@ MStatus NifDefaultImportingFixture::ReadNodes( const MFileObject& file )
 		//out << "Clearing temporary data" << endl;
 		this->translatorData->Reset();
 	}
-	catch( exception & e ) {
-		MGlobal::displayError( e.what() );
+	catch (exception& e)
+	{
+		MGlobal::displayError(e.what());
 		return MStatus::kFailure;
 	}
-	catch( ... ) {
-		MGlobal::displayError( "Error:  Unknown Exception." );
+	catch (...)
+	{
+		MGlobal::displayError("Error:  Unknown Exception.");
 		return MStatus::kFailure;
 	}
 }
 
-string NifDefaultImportingFixture::asString( bool verbose /*= false */ ) const {
+string NifDefaultImportingFixture::asString(bool verbose /*= false */) const
+{
 	stringstream out;
 
-	out<<NifImportingFixture::asString(verbose)<<endl;
-	out<<"NifDefaultImporterFixture"<<endl;
-	out<<"NifTranslatorData"<<endl;
-	out<<this->translatorData->asString(verbose)<<endl;
-	out<<"NifTranslatorOptions"<<endl;
-	out<<this->translatorOptions->asString(verbose)<<endl;
-	out<<"NifTranslatorUtils"<<endl;
-	out<<this->translatorUtils->asString(verbose)<<endl;
-	out<<"NifNodeImporter"<<endl;
-	out<<this->nodeImporter->asString(verbose)<<endl;
-	out<<"NifMeshImporter"<<endl;
-	out<<this->meshImporter->asString(verbose)<<endl;
-	out<<"NifMaterialImporter"<<endl;
-	out<<this->materialImporter->asString(verbose)<<endl;
-	out<<"NifAnimationImporter"<<endl;
-	out<<this->animationImporter->asString(verbose)<<endl;
+	out << NifImportingFixture::asString(verbose) << endl;
+	out << "NifDefaultImporterFixture" << endl;
+	out << "NifTranslatorData" << endl;
+	out << this->translatorData->asString(verbose) << endl;
+	out << "NifTranslatorOptions" << endl;
+	out << this->translatorOptions->asString(verbose) << endl;
+	out << "NifTranslatorUtils" << endl;
+	out << this->translatorUtils->asString(verbose) << endl;
+	out << "NifNodeImporter" << endl;
+	out << this->nodeImporter->asString(verbose) << endl;
+	out << "NifMeshImporter" << endl;
+	out << this->meshImporter->asString(verbose) << endl;
+	out << "NifMaterialImporter" << endl;
+	out << this->materialImporter->asString(verbose) << endl;
+	out << "NifAnimationImporter" << endl;
+	out << this->animationImporter->asString(verbose) << endl;
 
 	return out.str();
 }
 
-const Type& NifDefaultImportingFixture::GetType() const {
+const Type& NifDefaultImportingFixture::GetType() const
+{
 	return TYPE;
 }
 
-const Type NifDefaultImportingFixture::TYPE("NifDefaultImporterFixture",&NifImportingFixture::TYPE);
+const Type NifDefaultImportingFixture::TYPE("NifDefaultImporterFixture", &NifImportingFixture::TYPE);

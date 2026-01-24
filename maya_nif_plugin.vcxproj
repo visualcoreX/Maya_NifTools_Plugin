@@ -17,6 +17,22 @@
       <Configuration>Debug - 2015 x64</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug - 2016 x64|Win32">
+      <Configuration>Debug - 2016 x64</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug - 2016 x64|x64">
+      <Configuration>Debug - 2016 x64</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug - 2016|Win32">
+      <Configuration>Debug - 2016</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug - 2016|x64">
+      <Configuration>Debug - 2016</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug - 8.5|Win32">
       <Configuration>Debug - 8.5</Configuration>
       <Platform>Win32</Platform>
@@ -47,6 +63,22 @@
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release - 2012 x64|x64">
       <Configuration>Release - 2012 x64</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release - 2016|Win32">
+      <Configuration>Release - 2016</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release - 2016|x64">
+      <Configuration>Release - 2016</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release - 2025|Win32">
+      <Configuration>Release - 2025</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release - 2025|x64">
+      <Configuration>Release - 2025</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release - 6.5|Win32">
@@ -91,76 +123,130 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2009|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2016|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2025|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2009|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2016|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2025|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 8.0|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 8.0|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 8.5|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 8.5|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 7.0|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 7.0|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 6.5|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 6.5|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2016|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2015 x64|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2016 x64|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2016|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2015 x64|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2016 x64|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -173,11 +259,27 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2016|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2025|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2009|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2016|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2025|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
@@ -221,7 +323,15 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2016|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2015 x64|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2016 x64|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
@@ -237,7 +347,15 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2016|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2015 x64|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2016 x64|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
@@ -250,19 +368,27 @@
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|Win32'">..\Debug\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|Win32'">..\Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2016|Win32'">..\Debug\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2015 x64|Win32'">..\Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2016 x64|Win32'">..\Debug\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|Win32'">..\Debug\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|x64'">..\Debug\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">..\Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2016|x64'">..\Debug\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2015 x64|x64'">..\Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2016 x64|x64'">..\Debug\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|x64'">..\Debug\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|Win32'">..\Debug\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|Win32'">..\Debug\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2016|Win32'">..\Debug\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2015 x64|Win32'">..\Debug\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2016 x64|Win32'">..\Debug\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|Win32'">..\Debug\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|x64'">..\Debug\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">..\Debug\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2016|x64'">..\Debug\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2015 x64|x64'">..\Debug\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2016 x64|x64'">..\Debug\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|x64'">..\Debug\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release - 6.5|Win32'">..\Release\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release - 6.5|x64'">..\Release\</OutDir>
@@ -282,35 +408,61 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release - 8.0|x64'">$(Configuration)\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release - 2009|Win32'">$(Configuration)\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|Win32'">$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release - 2016|Win32'">$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release - 2025|Win32'">$(Configuration)\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release - 2009|x64'">$(Configuration)\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|x64'">$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release - 2016|x64'">$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release - 2025|x64'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release - 2009|Win32'">$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|Win32'">$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release - 2016|Win32'">$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release - 2025|Win32'">$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release - 2009|x64'">$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|x64'">$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release - 2016|x64'">$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release - 2025|x64'">$(Configuration)\</IntDir>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|Win32'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|Win32'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 2016|Win32'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 2015 x64|Win32'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 2016 x64|Win32'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|Win32'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|x64'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">D:\maya\maya_nif_plugin\niflib\include;D:\maya\maya_nif_plugin\include;D:\maya\Maya2012\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 2016|x64'">$(SolutionDir)\niflib\include;$(SolutionDir)\include;$(SolutionDir)\..\Maya2016\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 2015 x64|x64'">D:\maya\maya_nif_plugin\niflib\include;D:\maya\maya_nif_plugin\include;D:\maya\Maya2015\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 2016 x64|x64'">$(SolutionDir)\niflib\include;$(SolutionDir)\include;$(SolutionDir)\..\Maya2016\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|x64'">D:\maya\Maya2012\include\maya;D:\maya\maya_nif_plugin\niflib;D:\maya\maya_nif_plugin\niflib\include;$(IncludePath)</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|Win32'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|Win32'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 2016|Win32'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 2015 x64|Win32'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 2016 x64|Win32'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|Win32'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|x64'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\NifExporter\niflib\x64\Debug - Static;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">D:\maya\maya_nif_plugin\niflib\lib;D:\maya\Maya2012\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 2016|x64'">$(SolutionDir)\niflib\lib;$(SolutionDir)\..\Maya2016\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 2015 x64|x64'">D:\maya\maya_nif_plugin\niflib\lib;D:\maya\Maya2015\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 2016 x64|x64'">$(SolutionDir)\niflib\lib;$(SolutionDir)\..\Maya2016\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|x64'">D:\maya\maya_nif_plugin\niflib\lib;D:\maya\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release - 2009|x64'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|x64'">D:\maya\maya_nif_plugin\niflib\include;D:\maya\maya_nif_plugin\include;D:\maya\Maya2012\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release - 2016|x64'">$(SolutionDir)\niflib\include;$(SolutionDir)\include;$(SolutionDir)\..\Maya2016\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release - 2025|x64'">$(SolutionDir)\niflib\include;$(SolutionDir)\include;E:\Skyrim Animation\SKSE\Maya Scripts\Autodesk_Maya_2025_DEVKIT_Windows\devkitBase\include;E:\Skyrim Animation\SKSE\Maya Scripts\Autodesk_Maya_2025_DEVKIT_Windows\devkitBase\include\maya;$(IncludePath)</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release - 2009|x64'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|x64'">D:\maya\maya_nif_plugin\niflib\lib;D:\maya\Maya2012\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release - 2016|x64'">$(SolutionDir)\niflib\lib;$(SolutionDir)\..\Maya2016\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release - 2025|x64'">$(SolutionDir)\niflib\lib;E:\Skyrim Animation\SKSE\Maya Scripts\Autodesk_Maya_2025_DEVKIT_Windows\devkitBase\lib;$(LibraryPath)</LibraryPath>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">Run</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug - 2016|x64'">Run</CustomBuildBeforeTargets>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug - 2015 x64|x64'">Run</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug - 2016 x64|x64'">Run</CustomBuildBeforeTargets>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|x64'">Run</CustomBuildBeforeTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2025|x64'">
+    <IncludePath>$(SolutionDir)\niflib\include;$(SolutionDir)\include;C:\Program Files\Autodesk\Maya2025\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\niflib\lib;C:\Program Files\Autodesk\Maya2025\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|Win32'">
     <ClCompile>
@@ -358,7 +510,53 @@
       <ImportLibrary>Debug/NIF Import/Export.lib</ImportLibrary>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2016|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/Gm /ZI /I "." /D "WIN32" /D "_DEBUG" /c %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>C:\Program Files\Autodesk\Maya8.5\include;C:\NifTools\niflib;C:\NifTools\niflib\bin;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_AFXDLL;_MBCS;NT_PLUGIN;REQUIRE_IOSTREAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/subsystem:windows /dll /incremental:yes /debug /machine:I386 /export:initializePlugin /export:uninitializePlugin %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>niflib_dll_debug.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>bin\Maya8.5\nifTranslator.mll</OutputFile>
+      <AdditionalLibraryDirectories>C:\Program Files\Autodesk\Maya8.5\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>../Debug/maya_nif_plugin.pdb</ProgramDatabaseFile>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>Debug/NIF Import/Export.lib</ImportLibrary>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2015 x64|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/Gm /ZI /I "." /D "WIN32" /D "_DEBUG" /c %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>C:\Program Files\Autodesk\Maya8.5\include;C:\NifTools\niflib;C:\NifTools\niflib\bin;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_AFXDLL;_MBCS;NT_PLUGIN;REQUIRE_IOSTREAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/subsystem:windows /dll /incremental:yes /debug /machine:I386 /export:initializePlugin /export:uninitializePlugin %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>niflib_dll_debug.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>bin\Maya8.5\nifTranslator.mll</OutputFile>
+      <AdditionalLibraryDirectories>C:\Program Files\Autodesk\Maya8.5\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>../Debug/maya_nif_plugin.pdb</ProgramDatabaseFile>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>Debug/NIF Import/Export.lib</ImportLibrary>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2016 x64|Win32'">
     <ClCompile>
       <AdditionalOptions>/Gm /ZI /I "." /D "WIN32" /D "_DEBUG" /c %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
@@ -463,6 +661,42 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuCreate.mel" "$(USERPROFILE)\Documents\ma
 copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"</Command>
     </CustomBuildStep>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2016|x64'">
+    <ClCompile>
+      <AdditionalOptions>/Gm /Zi /I "."  /D "_DEBUG" /c %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\Maya2016\include;niflib;niflib\bin;niflib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_AFXDLL;_MBCS;NT_PLUGIN;REQUIRE_IOSTREAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/subsystem:windows /dll /incremental:yes /debug /export:initializePlugin /export:uninitializePlugin %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>niflib_dll_debug.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(SolutionDir)\..\Maya2016\bin\plug-ins\nifTranslator_debug.mll</OutputFile>
+      <AdditionalLibraryDirectories>$(SolutionDir)\..\Maya2016\lib;niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>D:\Autodesk\Maya2012\bin\plug-ins\maya_nif_plugin.pdb</ProgramDatabaseFile>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>Debug/NIF Import/Export.lib</ImportLibrary>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(ProjectDir)\nifTranslatorOpts.mel" "$(USERPROFILE)\Documents\maya\2016\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuCreate.mel" "$(USERPROFILE)\Documents\maya\2016\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2016\scripts"
+copy /Y "$(ProjectDir)\AEbsLightningShaderTemplate.mel" "$(USERPROFILE)\Documents\maya\2016\scripts"
+copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Documents\maya\2016\scripts"</Command>
+    </PostBuildEvent>
+    <CustomBuildStep>
+      <Command>copy /Y "$(ProjectDir)\nifTranslatorOpts.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuCreate.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"</Command>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2015 x64|x64'">
     <ClCompile>
       <AdditionalOptions>/Gm /Zi /I "."  /D "_DEBUG" /c %(AdditionalOptions)</AdditionalOptions>
@@ -496,6 +730,44 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
       <Command>copy /Y "$(ProjectDir)\nifTranslatorOpts.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
 copy /Y "$(ProjectDir)\nifTranslatorMenuCreate.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
 copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"</Command>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2016 x64|x64'">
+    <ClCompile>
+      <AdditionalOptions>/Gm /Zi /I "."  /D "_DEBUG" /c %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\Maya2016\include;niflib;niflib\bin;niflib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;_USRDLL;NT_PLUGIN;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0;_SECURE_SCL_THROWS=0;_SECURE_SCL_DEPRECATE=0;_CRT_SECURE_NO_DEPRECATE;TBB_USE_DEBUG=0;__TBB_LIB_NAME=tbb.lib;Bits64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
+      <WarningLevel>Level3</WarningLevel>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <ProgramDataBaseFileName>..\Maya2016\bin\plug-ins\$(ProjectName).pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/subsystem:windows /dll /incremental:yes /debug /export:initializePlugin /export:uninitializePlugin %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>niflib_dll_debug.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>..\Maya2016\bin\plug-ins\nifTranslator_debug.mll</OutputFile>
+      <AdditionalLibraryDirectories>$(SolutionDir)\..\Maya2016\lib;$(SolutionDir)\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>..\Maya2016\bin\plug-ins\maya_nif_plugin.pdb</ProgramDatabaseFile>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>Debug/NIF Import/Export.lib</ImportLibrary>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(ProjectDir)\nifTranslatorOpts.mel" "$(USERPROFILE)\Documents\maya\2016\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuCreate.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Documents\maya\2016\scripts"</Command>
+    </PostBuildEvent>
+    <CustomBuildStep>
+      <Command>copy /Y "$(ProjectDir)\nifTranslatorOpts.mel" "$(USERPROFILE)\Documents\maya\2016-x64\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuCreate.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2016-x64\scripts"</Command>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|x64'">
@@ -771,6 +1043,54 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <ImportLibrary>Release/Export.lib</ImportLibrary>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2016|Win32'">
+    <ClCompile>
+      <AdditionalOptions> /I "."  /c %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>MaxSpeed</Optimization>
+      <AdditionalIncludeDirectories>C:\Program Files\Autodesk\Maya2009\include;C:\NifTools\niflib;C:\NifTools\niflib\bin;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_AFXDLL;_MBCS;NT_PLUGIN;REQUIRE_IOSTREAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/subsystem:windows /incremental:no /machine:I386 /export:initializePlugin /export:uninitializePlugin %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>bin\Maya2009\nifTranslator.mll</OutputFile>
+      <AdditionalLibraryDirectories>C:\Program Files\Autodesk\Maya2009\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>Release/Export.lib</ImportLibrary>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2025|Win32'">
+    <ClCompile>
+      <AdditionalOptions> /I "."  /c %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>MaxSpeed</Optimization>
+      <AdditionalIncludeDirectories>C:\Program Files\Autodesk\Maya2009\include;C:\NifTools\niflib;C:\NifTools\niflib\bin;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_AFXDLL;_MBCS;NT_PLUGIN;REQUIRE_IOSTREAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/subsystem:windows /incremental:no /machine:I386 /export:initializePlugin /export:uninitializePlugin %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>bin\Maya2009\nifTranslator.mll</OutputFile>
+      <AdditionalLibraryDirectories>C:\Program Files\Autodesk\Maya2009\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>Release/Export.lib</ImportLibrary>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2009|x64'">
     <ClCompile>
       <AdditionalOptions> /I "."  /c %(AdditionalOptions)</AdditionalOptions>
@@ -825,9 +1145,80 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuCreate.mel" "$(USERPROFILE)\Documents\ma
 copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2016|x64'">
+    <ClCompile>
+      <AdditionalOptions> /I "."  /c %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>MaxSpeed</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)\niflib\include;niflib\;$(SolutionDir)\..\Maya2016\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_AFXDLL;_MBCS;NT_PLUGIN;REQUIRE_IOSTREAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/subsystem:windows /incremental:no /export:initializePlugin /export:uninitializePlugin </AdditionalOptions>
+      <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(SolutionDir)\..\Maya2016\bin\plug-ins\nifTranslator.mll</OutputFile>
+      <AdditionalLibraryDirectories>$(SolutionDir)\..\Maya2016\lib;$(SolutionDir)\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>Release/Export.lib</ImportLibrary>
+      <Version>
+      </Version>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(ProjectDir)\nifTranslatorOpts.mel" "$(USERPROFILE)\Documents\maya\2016\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuCreate.mel" "$(USERPROFILE)\Documents\maya\2016\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2016\scripts"
+copy /Y "$(ProjectDir)\AEbsLightningShaderTemplate.mel" "$(USERPROFILE)\Documents\maya\2016\scripts"
+copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Documents\maya\2016\scripts"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2025|x64'">
+    <ClCompile>
+      <AdditionalOptions> /I "."  /c %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>MaxSpeed</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)\niflib\include;niflib\;E:\Skyrim Animation\SKSE\Maya Scripts\Autodesk_Maya_2025_DEVKIT_Windows\devkitBase\include;E:\Skyrim Animation\SKSE\Maya Scripts\Autodesk_Maya_2025_DEVKIT_Windows\devkitBase\include\maya;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_AFXDLL;_MBCS;NT_PLUGIN;REQUIRE_IOSTREAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/subsystem:windows /incremental:no /export:initializePlugin /export:uninitializePlugin </AdditionalOptions>
+      <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(ProjectDir)$(Configuration)\nifTranslator.mll</OutputFile>
+      <AdditionalLibraryDirectories>E:\Skyrim Animation\SKSE\Maya Scripts\Autodesk_Maya_2025_DEVKIT_Windows\devkitBase\lib;$(SolutionDir)\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>Release/Export.lib</ImportLibrary>
+      <Version>
+      </Version>
+    </Link>
+    <PostBuildEvent>
+      <Command>if not exist "$(USERPROFILE)\Documents\maya\2025\plug-ins" mkdir "$(USERPROFILE)\Documents\maya\2025\plug-ins"
+copy /Y "$(ProjectDir)$(Configuration)\nifTranslator.mll" "$(USERPROFILE)\Documents\maya\2025\plug-ins"
+copy /Y "$(ProjectDir)\niflib\bin\niflib_x64.dll" "$(USERPROFILE)\Documents\maya\2025\plug-ins"
+copy /Y "$(ProjectDir)\nifTranslatorOpts.mel" "$(USERPROFILE)\Documents\maya\2025\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuCreate.mel" "$(USERPROFILE)\Documents\maya\2025\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2025\scripts"
+copy /Y "$(ProjectDir)\AEbsLightningShaderTemplate.mel" "$(USERPROFILE)\Documents\maya\2025\scripts"
+copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Documents\maya\2025\scripts"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="AEbsLightningShaderTemplate.mel" />
     <None Include="AEnifDismemberPartitionTemplate.mel" />
     <None Include="ClassDiagram1.cd" />
+    <None Include="cpp.hint" />
     <None Include="nifTranslatorMenuCreate.mel" />
     <None Include="nifTranslatorMenuRemove.mel" />
     <None Include="nifTranslatorOpts.mel" />
@@ -839,6 +1230,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
     <ClInclude Include="include\Common\NifTranslatorOptions.h" />
     <ClInclude Include="include\Common\NifTranslatorRefObject.h" />
     <ClInclude Include="include\Common\NifTranslatorUtils.h" />
+    <ClInclude Include="include\Custom Nodes\BSLightningShader.h" />
     <ClInclude Include="include\Custom Nodes\NifDismemberPartition.h" />
     <ClInclude Include="include\Exporters\NifAnimationExporter.h" />
     <ClInclude Include="include\Exporters\NifDefaultExportingFixture.h" />
@@ -873,6 +1265,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
     <ClCompile Include="src\Common\NifTranslatorOptions.cpp" />
     <ClCompile Include="src\Common\NifTranslatorRefObject.cpp" />
     <ClCompile Include="src\Common\NifTranslatorUtils.cpp" />
+    <ClCompile Include="src\Custom Nodes\BSLightningShader.cpp" />
     <ClCompile Include="src\Custom Nodes\NifDismemberPartition.cpp" />
     <ClCompile Include="src\Exporters\NifAnimationExporter.cpp" />
     <ClCompile Include="src\Exporters\NifDefaultExportingFixture.cpp" />
@@ -897,6 +1290,9 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
     <ClCompile Include="src\Importers\NifNodeImporter.cpp" />
     <ClCompile Include="src\Importers\NifSkyrimImportingFixture.cpp" />
     <ClCompile Include="src\Importers\NifTextureConnector.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Text.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

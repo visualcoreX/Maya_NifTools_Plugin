@@ -68,6 +68,7 @@
 #include <obj/NiSourceTexture.h>
 #include <obj/NiSpecularProperty.h>
 #include <obj/NiTexturingProperty.h>
+#include <obj/BSShape.h>
 #include <obj/NiTriBasedGeom.h>
 #include <obj/NiTriBasedGeomData.h>
 #include <obj/NiTriShape.h>

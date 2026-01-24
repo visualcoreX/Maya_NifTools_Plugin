@@ -11,6 +11,50 @@ NifKFExportingFixture::NifKFExportingFixture( NifTranslatorOptionsRef translator
 	this->animationExporter = new NifKFAnimationExporter(translatorOptions, translatorData, translatorUtils);
 }
 
+void CreateTextKeyExtraData(NiControllerSequenceRef controllerSequence)
+{
+	NiTextKeyExtraData* textKeyExtraData = new NiTextKeyExtraData();
+	vector<Key<string>> keys = vector<Key<string>>();
+	
+	MItDependencyNodes it(MFn::kBase);
+	while (!it.isDone())
+	{
+		MObject node = it.thisNode();
+		MFnDependencyNode fnNode(node);
+
+		if (fnNode.typeName() == "timeSliderBookmark")
+		{
+			MPlug namePlug = fnNode.findPlug("name", false);
+			MPlug startPlug = fnNode.findPlug("timeRangeStart", false);
+			MPlug stopPlug = fnNode.findPlug("timeRangeStop", false);
+
+			if (!namePlug.isNull() && !startPlug.isNull() && !stopPlug.isNull())
+			{
+				MString name;
+				namePlug.getValue(name);
+				
+				float startTime;
+				startPlug.getValue(startTime);
+				
+				Key<string> textKey = Key<string>();
+				textKey.data = name.asChar();
+				textKey.time = startTime;
+				
+				keys.push_back(textKey);
+			}
+		}
+		it.next();
+	}
+
+	std::sort(keys.begin(), keys.end(), [](const Key<string>& a, const Key<string>& b)
+	{
+		return a.time < b.time;
+	});
+	
+	textKeyExtraData->SetKeys(keys);
+	controllerSequence->SetTextKey(textKeyExtraData);
+}
+
 MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 	MItDag iterator(MItDag::kDepthFirst);
 
@@ -31,8 +75,8 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 			node.name() == "front" ||
 			node.name() == "side"
 			) {
-				continue;
-		}
+			continue;
+			}
 
 		if(!iterator.currentItem().hasFn(MFn::Type::kTransform)) {
 			continue;
@@ -41,18 +85,59 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 		if(!(this->translatorOptions->exportType == "allanimation") && 
 			(!this->translatorUtils->isExportedJoint(node.name()) && !this->translatorUtils->isExportedJoint(node.name()) && !this->translatorUtils->isExportedMisc(node.name()))) {
 			continue;
-		}
+			}
 
 		this->translatorData->animatedObjects.push_back(iterator.currentItem());
 	}
-
+	
 	NiControllerSequenceRef controller_sequence = DynamicCast<NiControllerSequence>(NiControllerSequence::Create());
 	controller_sequence->SetStartTime(this->animationExporter->GetAnimationStartTime());
 	controller_sequence->SetStopTime(this->animationExporter->GetAnimationEndTime());
 	controller_sequence->SetName(this->translatorOptions->animationName);
 	controller_sequence->SetTargetName(this->translatorOptions->animationTarget);
 	controller_sequence->SetFrequency(1.0);
+	controller_sequence->SetCycleType(translatorOptions->cycleType);
 
+	CreateTextKeyExtraData(controller_sequence);
+	
+	// Bake simulation for duplicate.
+	
+	/*
+	int startFrame;
+	int endFrame;
+	
+	MGlobal::executeCommand("playbackOptions -q -ast;", startFrame, true);
+	MGlobal::executeCommand("playbackOptions -q -aet;", endFrame, true);
+	
+	MString timeRange = "\"";
+	timeRange += to_string(startFrame).c_str();
+	timeRange += ":";
+	timeRange += to_string(endFrame).c_str();
+	timeRange += "\"";
+	
+	MString jointsForBake;
+	for (size_t i = 0; i < translatorData->animatedObjects.size(); i++)
+	{
+		MFnDagNode animatedObjectNode(translatorData->animatedObjects[i]);
+
+		MDagPath path;
+		animatedObjectNode.getPath(path);
+		
+		jointsForBake += "\"";
+		jointsForBake += animatedObjectNode.fullPathName().asChar();
+		jointsForBake += "\"";
+		
+		if (i != translatorData->animatedObjects.size() - 1) {
+			jointsForBake += ", ";
+		}
+	}
+
+	MString bakeResultsCommand = "bakeResults -simulation true -t " + timeRange + " {" + jointsForBake + "}";
+	MGlobal::executeCommand(MString(bakeResultsCommand), true);
+	*/
+
+	// Write tree.
+	
 	vector<MObject> objectsWithExportIndexes;
 	vector<MObject> objectsWithoutExportIndexes;
 
@@ -70,7 +155,7 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 			objectsWithExportIndexes.push_back(node.object());
 		}
 	}
-
+	
 	this->translatorData->animatedObjects.clear();
 
 	for(int i = 0;i < (int)(objectsWithExportIndexes.size()) - 1; i++) {
@@ -110,8 +195,19 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 	nif_info.exportInfo1 = "NifTools Maya NIF Plug-in " + string(PLUGIN_VERSION);
 	nif_info.userVersion2 = this->translatorOptions->exportUserVersion2;
 
-	Niflib::WriteNifTree(file.fullName().asChar(), controller_sequence, nif_info);
+	auto fileName = file.resolvedFullName();
+	if (translatorOptions->exportType == "animation")
+	{
+		auto dotIndex = fileName.rindex('.');
+		auto fileNameWithoutExtension = fileName.substring(0, dotIndex);
+		fileName = fileNameWithoutExtension + "kf";
+	}
+	
+	Niflib::WriteNifTree(fileName.asChar(), controller_sequence, nif_info);
 
+	// Delete duplicate.
+	// MGlobal::executeCommand("delete \"" + clonedRootName + "\";", true);
+	
 	return MStatus::kSuccess;
 }
 

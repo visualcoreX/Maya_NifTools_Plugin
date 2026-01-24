@@ -1,5 +1,7 @@
 #include "include/Importers/NifKFImportingFixture.h"
 
+#include "Custom Nodes/BSLightningShader.h"
+#include "Custom Nodes/BSLightningShader.h"
 
 NifKFImportingFixture::NifKFImportingFixture() {
 
@@ -130,8 +132,58 @@ MStatus NifKFImportingFixture::ReadNodes( const MFileObject& file ) {
 		return MStatus(MStatus::kFailure);
 	}
 
-	vector<ControllerLink> controllerLinks = controllerSequence->GetControllerData();
+	MDGModifier dgModifier;
+	MGlobal::executeCommand("loadPlugin \"timeSliderBookmark.mll\"");
+	
+	MItDependencyNodes nodeIterator(MFn::kBase);
+	while (!nodeIterator.isDone())
+	{
+		MObject node = nodeIterator.thisNode();
+		MFnDependencyNode fnNode(node);
+		nodeIterator.next();
+		
+		if (fnNode.typeName() == "timeSliderBookmark")
+		{
+			dgModifier.deleteNode(node);
+		}
+	}
 
+	dgModifier.doIt();
+
+	MTime oneFrame(1.0f, MTime::uiUnit());
+	auto oneFrameSeconds = oneFrame.as(MTime::kSeconds);
+	
+	auto textKeyExtraData = controllerSequence->GetTextKeyExtraData();
+	auto keys = textKeyExtraData->GetKeys();
+	for (const auto& key : keys)
+	{
+		double keyTime = key.time;
+		MString keyName = key.data.c_str();
+		
+		MStatus createNodeStatus;
+		auto bookmark = dgModifier.createNode("timeSliderBookmark");
+		if (bookmark.isNull())
+			MGlobal::displayError("Could not create timeSliderBookmark node: " + createNodeStatus.errorString());
+		
+		MFnDependencyNode bookmarkNode(bookmark);
+
+		auto namePlug = bookmarkNode.findPlug("name");
+		auto startTimePlug = bookmarkNode.findPlug("timeRangeStart");
+		auto stopTimePlug = bookmarkNode.findPlug("timeRangeStop");
+		auto colorPlug = bookmarkNode.findPlug("color");
+		
+		namePlug.setValue(keyName);
+		startTimePlug.setValue(keyTime);
+		stopTimePlug.setValue(keyTime + oneFrameSeconds);
+		
+		colorPlug.child(0).setValue(0.15f);
+		colorPlug.child(1).setValue(0.75f);
+		colorPlug.child(2).setValue(0.45f);
+	}
+
+	dgModifier.doIt();
+	
+	vector<ControllerLink> controllerLinks = controllerSequence->GetControllerData();
 
 	vector<MObject> created_objects;
 	int export_order = 0;
@@ -299,8 +351,8 @@ MStatus NifKFImportingFixture::ReadNodes( const MFileObject& file ) {
 
 		mel_command = "setAttr " + node_name + "\.animationPriority " + controllerLinks[i].priority;
 		MGlobal::executeCommand(mel_command);
-}
-
+	}
+	
 	return MStatus(MStatus::kSuccess);
 }
 

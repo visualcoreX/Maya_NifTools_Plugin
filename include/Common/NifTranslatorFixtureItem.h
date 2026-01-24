@@ -88,7 +88,8 @@ class NifTranslatorFixtureItem;
 
 typedef Ref<NifTranslatorFixtureItem> NifTranslatorFixtureItemRef;
 
-class NifTranslatorFixtureItem : public NifTranslatorRefObject{
+class NifTranslatorFixtureItem : public NifTranslatorRefObject
+{
 public:
 	NifTranslatorOptionsRef translatorOptions;
 	NifTranslatorDataRef translatorData;
@@ -101,7 +102,7 @@ public:
 
 	virtual int countOperations(NiAVObjectRef target);
 
-	virtual string asString( bool verbose = false ) const;
+	virtual string asString(bool verbose = false) const;
 
 	virtual const Type& GetType() const;
 

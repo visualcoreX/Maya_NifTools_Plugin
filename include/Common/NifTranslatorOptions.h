@@ -100,6 +100,7 @@ public:
 	bool importNormals; //Determines whether normals are imported
 	bool importNoAmbient; //Determines whether ambient color is imported
 	bool importNormalizedWeights; //Determines whether weights are normalized, it truncates all the weights on a vertex to 1.0
+	float importScale; //Unit conversion multiplier applied during import
 	bool exportWhiteAmbient; //Determines whether ambient color is automatically set to white if a texture is present
 	bool importCombineSkeletons; //Determines whether the importer tries to combine new skins with skeletons that exist in the scene
 	string jointMatch; //String to match in the name of nodes as another way to cause them to import as IK joints
@@ -110,6 +111,12 @@ public:
 	float exportMinimumVertexWeight; //Determines the minimum bone weight for a vertices that will be exported for each individual vertex
 
 	bool importCreateDummyAnimationObjects; //Determines if dummy objects should be created for animation in case no matching target objects are found
+
+	bool importAllNodesAsJoints; //Determines if should import all the nodes in the file as joints in maya
+
+	bool exportFlatenedSkeleton; //Determines if the skeleton hierarchy should be flattened
+
+	bool exportBsFadeNodeRoot; //Determines if the root will be a bs fade node
 	
 	TexPathMode texturePathMode;  //Determines the way textures paths are exported
 	string texturePathPrefix; //Optional prefix to add to texture paths.
@@ -121,6 +128,8 @@ public:
 
 	string animationTarget; // the name of the target of the kf file or controller sequence
 	string animationName; //the name of the animation stored in the kf file or the controlelr sequence
+
+	CycleType cycleType;
 
 
 	//can't work with virtual functions like this, it's not safe to call reset from the base con

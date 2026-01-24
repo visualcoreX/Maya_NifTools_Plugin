@@ -52,6 +52,13 @@ MStatus initializePlugin( MObject obj ) {
 		return status;
 	}
 
+
+	status = plugin.registerNode("bsLightningShader", BSLightningShader::id, BSLightningShader::creator, BSLightningShader::initialize, MPxNode::kDependNode);
+	if (!status) {
+		status.perror("registerBSLightningShader");
+		return status;
+	}
+
 	//Execute the command to create the NifTools Menu
 	MGlobal::executeCommand("nifTranslatorMenuCreate");
 
@@ -101,7 +108,7 @@ MStatus NifTranslator::reader	 (const MFileObject& file, const MString& optionsS
 	NifImportingFixtureRef importer;
 
 	ImportType import_type = ImportType::Default;
-	Header file_header = ReadHeader(file.name().asChar());
+	Header file_header = ReadHeader(file.fullName().asChar());
 
 	vector<string> block_types = file_header.getBlockTypes();
 	vector<unsigned short> block_types_index = file_header.getBlockTypeIndex();
@@ -151,6 +158,18 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 		export_type = translator_options->exportType;
 	}
 
+	currentExportType = export_type;
+
+	auto resolvedName = file.resolvedName();
+	auto resolvedFileName = file.resolvedFullName();
+	auto rawName = file.rawName();
+	auto rawFullName = file.rawFullName();
+
+	MGlobal::displayInfo(resolvedName);
+	MGlobal::displayInfo(resolvedFileName);
+	MGlobal::displayInfo(rawName);
+	MGlobal::displayInfo(rawFullName);
+	
 	if(export_type == "geometry") {
 		if(translator_options->exportMaterialType == "standardmaterial") {
 			exporting_fixture = new NifDefaultExportingFixture(translator_data, translator_options, translator_utils);
@@ -163,7 +182,7 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 	if(export_type == "animation") {
 		exporting_fixture = new NifKFExportingFixture(translator_options, translator_data, translator_utils);
 	}
-
+	
 	if(exporting_fixture != NULL) {
 		return exporting_fixture->WriteNodes(file);
 	}

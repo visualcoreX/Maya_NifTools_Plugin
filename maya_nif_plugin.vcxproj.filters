@@ -52,6 +52,10 @@
       <Filter>Miscellaneous Files</Filter>
     </None>
     <None Include="ClassDiagram1.cd" />
+    <None Include="AEbsLightningShaderTemplate.mel">
+      <Filter>Miscellaneous Files</Filter>
+    </None>
+    <None Include="cpp.hint" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Exporters\NifAnimationExporter.h">
@@ -146,6 +150,9 @@
     </ClInclude>
     <ClInclude Include="include\Exporters\NifSkyrimExportingFixture.h">
       <Filter>Header Files\Exporters</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Custom Nodes\BSLightningShader.h">
+      <Filter>Header Files\Custom Nodes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -242,5 +249,13 @@
     <ClCompile Include="src\Exporters\NifSkyrimExportingFixture.cpp">
       <Filter>Source Files\Exporters</Filter>
     </ClCompile>
+    <ClCompile Include="src\Custom Nodes\BSLightningShader.cpp">
+      <Filter>Source Files\Custom Nodes</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Text.txt">
+      <Filter>Miscellaneous Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

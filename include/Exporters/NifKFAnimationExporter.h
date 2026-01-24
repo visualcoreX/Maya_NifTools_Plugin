@@ -96,6 +96,7 @@
 #include <obj/NiBoolData.h>
 #include <obj/NiGeomMorpherController.h>
 #include <obj/NiVisController.h>
+#include "obj/NiTextKeyExtraData.h"
 #include <Ref.h>
 
 #include "include/Common/NifTranslatorFixtureItem.h"
@@ -114,7 +115,7 @@ public:
 	NifKFAnimationExporter();
 
 	NifKFAnimationExporter(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
-
+	
 	virtual void ExportAnimation(NiControllerSequenceRef controller_sequence, MObject object);
 
 	virtual float GetAnimationStartTime();

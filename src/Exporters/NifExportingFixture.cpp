@@ -21,7 +21,8 @@ string NifExportingFixture::asString( bool verbose /*= false */ ) const {
 	return out.str();
 }
 
-const Type& NifExportingFixture::getType() const {
+const Type& NifExportingFixture::getType() const
+{
 	return TYPE;
 }
 

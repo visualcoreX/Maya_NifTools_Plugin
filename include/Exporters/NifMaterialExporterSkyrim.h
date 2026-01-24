@@ -90,6 +90,7 @@
 #include "include/Common/NifTranslatorUtils.h"
 #include "include/Common/NifTranslatorFixtureItem.h"
 #include "include/Exporters/NifMaterialExporter.h"
+#include <Custom Nodes/BSLightningShader.h>
 
 class NifMaterialExporterSkyrim;
 

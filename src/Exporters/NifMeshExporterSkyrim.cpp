@@ -350,6 +350,7 @@ void NifMeshExporterSkyrim::ExportMesh( MObject dagNode ) {
 			//Create list of NiNodeRefs of influences
 			vector<NiNodeRef> niBones( myBones.length() );
 			for ( unsigned int bone_index = 0; bone_index < niBones.size(); ++bone_index ) {
+				const char* boneName = myBones[bone_index].fullPathName().asChar();
 				if ( this->translatorData->nodes.find( myBones[bone_index].fullPathName().asChar() ) == this->translatorData->nodes.end() ) {
 					//There is a problem; one of the joints was not exported.  Abort.
 					throw runtime_error("One of the joints necessary to export a bound skin was not exported.");

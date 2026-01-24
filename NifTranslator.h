@@ -141,6 +141,7 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include "include/Exporters/NifKFExportingFixture.h"
 #include "include/Importers/NifSkyrimImportingFixture.h"
 #include "include/Custom Nodes/NifDismemberPartition.h"
+#include "include/Custom Nodes/BSLightningShader.h"
 #include "include/Exporters/NifSkyrimExportingFixture.h"
 
 using namespace Niflib;
@@ -186,7 +187,7 @@ public:
 	MStatus doIt (const MArgList& rkArgs) { return MS::kSuccess; }
 
 	//Returns a string containing the default extension of the translator, excluding the period at the beginning
-	MString  defaultExtension () const { return MString("nif"); }
+	MString defaultExtension () const { return MString("nif"); }
 
 	//Returns a string which sets the filter in the open file dialog box
 	MString filter () const { return MString("*.nif;*.kf"); }
@@ -239,6 +240,7 @@ private:
 	void EnumerateSkinClusters();
 	//A map to hold associations between NIF property lists and Shaders
 	map< string, vector<NiPropertyRef> > shaders;
+	string currentExportType;
 	void ExportShaders();
 	void GetColor( MFnDependencyNode& fn, MString name, MColor & color, MObject & texture );
 	void ParseOptionString( const MString & optionString );

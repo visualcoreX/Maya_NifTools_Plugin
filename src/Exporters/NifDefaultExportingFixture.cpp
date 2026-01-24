@@ -18,7 +18,13 @@ MStatus NifDefaultExportingFixture::WriteNodes( const MFileObject& file ) {
 	try {
 	//out << "Creating root node...";
 	//Create new root node
-	this->translatorData->exportedSceneRoot = new NiNode;
+		if (this->translatorOptions->exportBsFadeNodeRoot == true) {
+			this->translatorData->exportedSceneRoot = new BSFadeNode;
+		}
+		else {
+			this->translatorData->exportedSceneRoot = new NiNode;
+		}
+
 	this->translatorData->exportedSceneRoot->SetName( "Scene Root" );
 	//out << sceneRoot << endl;
 

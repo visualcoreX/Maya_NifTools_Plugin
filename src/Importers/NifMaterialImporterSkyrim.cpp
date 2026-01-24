@@ -16,12 +16,13 @@ void NifMaterialImporterSkyrim::ImportMaterialsAndTextures( NiAVObjectRef & root
 }
 
 void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root ) {
-	if(root->GetType().IsDerivedType(NiGeometry::TYPE)) {
+	if (root->GetType().IsDerivedType(NiGeometry::TYPE)) {
 		NiGeometryRef geometry = DynamicCast<NiGeometry>(root);
+
 		NiAlphaPropertyRef alpha_property = NULL;
 		BSLightingShaderPropertyRef shader_property = NULL;
 
-		array<2, Ref<NiProperty>> properties = geometry->GetBSProperties(); 
+		Niflib::array<2, Ref<NiProperty>> properties = geometry->GetBSProperties(); 
 
 		for(int i = 0; i < 2; i++) {
 			NiPropertyRef current_property = properties[i]; 
@@ -33,7 +34,7 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 				alpha_property = DynamicCast<NiAlphaProperty>(current_property);
 			}
 		}
-
+		
 		int valid_properties = 0;
 
 		if(alpha_property != NULL) {
@@ -82,7 +83,7 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 				MColor reflective_color(shader_property->GetSpecularColor().r, shader_property->GetSpecularColor().g, shader_property->GetSpecularColor().b);
 				MColor incadescence_color(shader_property->GetEmissiveColor().r, shader_property->GetEmissiveColor().g, shader_property->GetEmissiveColor().b);
 				float glow_intensity = shader_property->GetEmissiveMultiple() / 1000;
-				float reflective_strength = shader_property->GetSpecularStrength() / 1000;
+				float reflective_strength = shader_property->GetSpecularStrength();
 				float cosine_power = shader_property->GetGlossiness();
 				float transparency = 1.0f - shader_property->GetAlpha();
 
@@ -261,6 +262,69 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 
 					}
 				}
+
+				MDGModifier dg_modifier;
+				MFnDependencyNode bs_lightning_node;
+				bs_lightning_node.create("bsLightningShader");
+
+				MPlug input_message_shader = bs_lightning_node.findPlug("targetShader");
+				MPlug new_shader_out = new_shader.findPlug("message");
+				dg_modifier.connect(new_shader_out, input_message_shader);
+				dg_modifier.doIt();
+
+				MStringArray shader_flags1_strings = BSLightningShader::shaderFlags1ToStringArray(shader_property->GetShaderFlags1());
+				MStringArray shader_flags2_strings = BSLightningShader::shaderFlags2ToStringArray(shader_property->GetShaderFlags2());
+
+				mel_command = "setAttr ";
+				mel_command += (bs_lightning_node.name() + ".shaderFlags1");
+				mel_command += " -type \"stringArray\" ";
+				mel_command += shader_flags1_strings.length();
+				for (int z = 0; z < shader_flags1_strings.length(); z++) {
+					mel_command += (" \"" + shader_flags1_strings[z] + "\"");
+				}
+				MGlobal::executeCommand(mel_command);
+
+				mel_command = "setAttr ";
+				mel_command += (bs_lightning_node.name() + ".shaderFlags2");
+				mel_command += " -type \"stringArray\" ";
+				mel_command += shader_flags2_strings.length();
+				for (int z = 0; z < shader_flags2_strings.length(); z++) {
+					mel_command += (" \"" + shader_flags2_strings[z] + "\"");
+				}
+				MGlobal::executeCommand(mel_command);
+
+				MPlug texture_slot_plug;
+
+				for (int y = 2; y <= 8; y++) {
+					mel_command = "textureSlot";
+					mel_command += y;
+
+					texture_slot_plug = bs_lightning_node.findPlug(mel_command);
+
+					texture_slot_plug.setString(texture_set->GetTexture(y).c_str());
+				}
+
+				MPlug shader_type_plug = bs_lightning_node.findPlug("shaderType");
+				shader_type_plug.setString(BSLightningShader::skyrimShaderTypeToString(shader_property->GetSkyrimShaderType()));
+
+				MPlug others_plug = bs_lightning_node.findPlug("lightingEffect1");
+				others_plug.setFloat(shader_property->GetLightingEffect1());
+
+				others_plug = bs_lightning_node.findPlug("lightingEffect2");
+				others_plug.setFloat(shader_property->GetLightingEffect2());
+
+				others_plug = bs_lightning_node.findPlug("environmentMapScale");
+				others_plug.setFloat(shader_property->GetEnvironmentMapScale());
+
+				others_plug = bs_lightning_node.findPlug("skinTintColor");
+				others_plug.child(0).setValue(shader_property->GetSkinTintColor().r);
+				others_plug.child(1).setValue(shader_property->GetSkinTintColor().g);
+				others_plug.child(2).setValue(shader_property->GetSkinTintColor().b);
+
+				others_plug = bs_lightning_node.findPlug("hairTintColor");
+				others_plug.child(0).setValue(shader_property->GetHairTintColor().r);
+				others_plug.child(1).setValue(shader_property->GetHairTintColor().g);
+				others_plug.child(2).setValue(shader_property->GetHairTintColor().b);
 			}
 
 			vector<NiPropertyRef> property_group;

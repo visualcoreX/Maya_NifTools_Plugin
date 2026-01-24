@@ -47,6 +47,7 @@
 #include <maya/MAnimUtil.h>
 #include <maya/MItMeshPolygon.h>
 #include <maya/MItMeshVertex.h>
+#include <maya/MCommandResult.h>
 
 #include <string> 
 #include <vector>
@@ -98,7 +99,7 @@ public:
 
 	virtual void ExportDAGNodes();
 
-	virtual void ExportAV( NiAVObjectRef avObj, MObject dagNode );
+	virtual void ExportAV(NiAVObjectRef avObj, MObject dagNode, bool worldTransform = false);
 
 	virtual string asString( bool verbose = false ) const;
 

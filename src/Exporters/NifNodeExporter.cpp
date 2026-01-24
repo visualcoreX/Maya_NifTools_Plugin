@@ -152,7 +152,7 @@ void NifNodeExporter::ExportDAGNodes()
 						//out << "Creating a NiNode..." << endl;
 						//NiNode
 						NiNodeRef niNode = new NiNode;
-						ExportAV( StaticCast<NiAVObject>(niNode), it.item() );
+						ExportAV(StaticCast<NiAVObject>(niNode), it.item(), this->translatorOptions->exportFlatenedSkeleton);
 
 						//out << "Associating NiNode with node DagPath..." << endl;
 						//Associate NIF object with node DagPath
@@ -162,6 +162,14 @@ void NifNodeExporter::ExportDAGNodes()
 						//Parent should have already been created since we used a
 						//depth first iterator in ExportDAGNodes
 						NiNodeRef parNode = this->translatorUtils->GetDAGParent( it.item() );
+
+						if (this->translatorOptions->exportFlatenedSkeleton == false) {
+							parNode = this->translatorUtils->GetDAGParent(it.item());
+						}
+						else {
+							parNode = this->translatorData->exportedSceneRoot;
+						}
+
 						parNode->AddChild( StaticCast<NiAVObject>(niNode) );
 					}
 				}
@@ -201,7 +209,7 @@ void NifNodeExporter::ExportDAGNodes()
 	//out << "}" << endl;
 }
 
-void NifNodeExporter::ExportAV( NiAVObjectRef avObj, MObject dagNode )
+void NifNodeExporter::ExportAV( NiAVObjectRef avObj, MObject dagNode, bool worldTransform)
 {
 	// attach a function set for a dag node to the object.
 	MFnDagNode nodeFn(dagNode);
@@ -213,17 +221,54 @@ void NifNodeExporter::ExportAV( NiAVObjectRef avObj, MObject dagNode )
 	avObj->SetName( name );
 	//out << name << endl;
 
-	MMatrix my_trans = nodeFn.transformationMatrix();
-	MTransformationMatrix myTrans(my_trans);
+	MMatrix my_trans;
 
-	//Warn user about any scaling problems
-	double myScale[3];
-	myTrans.getScale( myScale, MSpace::kPreTransform );
-	if ( abs(myScale[0] - 1.0) > 0.0001 || abs(myScale[1] - 1.0) > 0.0001 || abs(myScale[2] - 1.0) > 0.0001 ) {
-		MGlobal::displayWarning("Some games such as the Elder Scrolls do not react well when scale is not 1.0.  Consider freezing scale transforms on all nodes before export.");
+	if (worldTransform == false) {
+		MTransformationMatrix scaleTrans(my_trans);
+
+		my_trans = nodeFn.transformationMatrix();
+
+		//Warn user about any scaling problems
+		double myScale[3];
+		scaleTrans.getScale(myScale, MSpace::kPreTransform);
+		if (abs(myScale[0] - 1.0) > 0.0001 || abs(myScale[1] - 1.0) > 0.0001 || abs(myScale[2] - 1.0) > 0.0001) {
+			MGlobal::displayWarning("Some games such as the Elder Scrolls do not react well when scale is not 1.0.  Consider freezing scale transforms on all nodes before export.");
+		}
+		if (abs(myScale[0] - myScale[1]) > 0.0001 || abs(myScale[0] - myScale[2]) > 0.001 || abs(myScale[1] - myScale[2]) > 0.001) {
+			MGlobal::displayWarning("The NIF format does not support separate scales for X, Y, and Z.  An average will be used.  Consider freezing scale transforms on all nodes before export.");
+		}
 	}
-	if ( abs(myScale[0] - myScale[1]) > 0.0001 || abs(myScale[0] - myScale[2]) > 0.001 || abs(myScale[1] - myScale[2]) > 0.001 ) {
-		MGlobal::displayWarning("The NIF format does not support separate scales for X, Y, and Z.  An average will be used.  Consider freezing scale transforms on all nodes before export.");
+	else {
+		MCommandResult result;
+		MString command = "getAttr " + nodeFn.name() + ".worldMatrix";
+		const char* as_char = command.asChar();
+		MGlobal::executeCommand(command, result, true);
+		MCommandResult::Type result_type = result.resultType();
+		MDoubleArray worldMatrixArray;
+		double worldMatrixSingleArray[16];
+		double worldMatrix[4][4];
+		result.getResult(worldMatrixArray);
+		unsigned length = worldMatrixArray.length();
+
+		worldMatrixArray.get(worldMatrixSingleArray);
+		worldMatrix[0][0] = worldMatrixSingleArray[0];
+		worldMatrix[0][1] = worldMatrixSingleArray[1];
+		worldMatrix[0][2] = worldMatrixSingleArray[2];
+		worldMatrix[0][3] = worldMatrixSingleArray[3];
+		worldMatrix[1][0] = worldMatrixSingleArray[4];
+		worldMatrix[1][1] = worldMatrixSingleArray[5];
+		worldMatrix[1][2] = worldMatrixSingleArray[6];
+		worldMatrix[1][3] = worldMatrixSingleArray[7];
+		worldMatrix[2][0] = worldMatrixSingleArray[8];
+		worldMatrix[2][1] = worldMatrixSingleArray[9];
+		worldMatrix[2][2] = worldMatrixSingleArray[10];
+		worldMatrix[2][3] = worldMatrixSingleArray[11];
+		worldMatrix[3][0] = worldMatrixSingleArray[12];
+		worldMatrix[3][1] = worldMatrixSingleArray[13];
+		worldMatrix[3][2] = worldMatrixSingleArray[14];
+		worldMatrix[3][3] = worldMatrixSingleArray[15];
+
+		my_trans = worldMatrix;
 	}
 
 	//Set default collision propagation type of "Use triangles"

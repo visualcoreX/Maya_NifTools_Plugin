@@ -1,6 +1,5 @@
 #include "include/Exporters/NifKFAnimationExporter.h"
 
-
 NifKFAnimationExporter::NifKFAnimationExporter() {
 
 }
@@ -8,7 +7,6 @@ NifKFAnimationExporter::NifKFAnimationExporter() {
 NifKFAnimationExporter::NifKFAnimationExporter( NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils ) 
 	: NifTranslatorFixtureItem(translatorOptions, translatorData, translatorUtils) {
 }
-
 
 void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller_sequence, MObject object ) {
 	string interpolator_type = "NiTransformInterpolator";
@@ -21,7 +19,7 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 	}
 
 	NiInterpolatorRef interpolator;
-
+	
 	MPlugArray animated_plugs;
 	MAnimUtil::findAnimatedPlugs(object, animated_plugs);
 

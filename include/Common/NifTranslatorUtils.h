@@ -107,7 +107,7 @@ public:
 
 	MObject GetExistingJoint( const string & name );
 
-	void ConnectShader( MObject matOb, vector<NifTextureConnectorRef> texture_connectors, MDagPath meshPath, MSelectionList sel_list );
+	void ConnectShader(MObject matOb, vector<NifTextureConnectorRef> texture_connectors, MDagPath meshPath, MSelectionList sel_list);
 
 	void AdjustSkeleton( NiAVObjectRef & root );
 

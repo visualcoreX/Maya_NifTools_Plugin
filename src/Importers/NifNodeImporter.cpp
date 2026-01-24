@@ -12,6 +12,7 @@ NifNodeImporter::NifNodeImporter(NifTranslatorOptionsRef translatorOptions,NifTr
 void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent )
 {
 	MObject obj;
+	const float scale = this->translatorOptions->importScale;
 
 	//out << "Importing " << niAVObj << endl;
 
@@ -34,6 +35,9 @@ void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MD
 		}
 	} else if ( niAVObj->IsDerivedType(NiTriBasedGeom::TYPE ) ) {
 		//This is a shape, so test it.
+		nodesToTest.push_back(niAVObj);
+	} else if ( niAVObj->IsDerivedType(BSShape::TYPE ) ) {
+		//This is a BSTriShape/BSShape, so test it.
 		nodesToTest.push_back(niAVObj);
 	}
 
@@ -59,12 +63,28 @@ void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MD
 
 	NiNodeRef niNode = DynamicCast<NiNode>(niAVObj);
 
+	MStringArray joint_matches;
+
+	MString joint_match_mstring(this->translatorOptions->jointMatch.c_str());
+	joint_match_mstring.split(';', joint_matches);
+
 	//Determine whether this node is an IK joint
 	bool is_joint = false;
 	if ( niNode != NULL) {
+		for (int c = 0; c <  joint_matches.length(); c++)
+		{
+			if (this->translatorOptions->jointMatch != "" && strName.find(joint_matches[c].asChar()) != string::npos) {
+				is_joint = true;
+			}
+		}
+
 		if ( this->translatorOptions->jointMatch != "" && strName.find(this->translatorOptions->jointMatch) != string::npos ) {
 			is_joint = true;
 		} else if ( niNode->IsSkinInfluence() == true ) {
+			is_joint = true;
+		}
+
+		if (this->translatorOptions->importAllNodesAsJoints == true) {
 			is_joint = true;
 		}
 	}
@@ -108,6 +128,9 @@ void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MD
 		float trans_arr[4][4];
 		transform.AsFloatArr( trans_arr );
 
+		trans_arr[3][0] *= scale;
+		trans_arr[3][1] *= scale;
+		trans_arr[3][2] *= scale;
 		transFn.set( MTransformationMatrix(MMatrix(trans_arr)) );
 		transFn.setRotationOrder( MTransformationMatrix::kXYZ, false );
 
@@ -131,7 +154,8 @@ void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MD
 		MFnTransform tranFn;
 		tranFn.create( obj );
 		tranFn.setName("BoundingBox");
-		Matrix44 bbTrans( bb.translation, bb.rotation, 1.0f);
+		Vector3 scaledTranslation = bb.translation * scale;
+		Matrix44 bbTrans( scaledTranslation, bb.rotation, 1.0f);
 		//out << "bbTrans:" << endl << bbTrans << endl;
 		//out << "Translation:  " << bb.translation << endl;
 		//out << "Rotation:  " << bb.rotation << endl;
@@ -149,14 +173,14 @@ void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MD
 		//Create an implicit box parented to the node we just created
 		MFnDagNode dagFn;
 		dagFn.create( "implicitBox", tranFn.object() );
-		dagFn.findPlug("sizeX").setValue( bb.radius.x );
-		dagFn.findPlug("sizeY").setValue( bb.radius.y );
-		dagFn.findPlug("sizeZ").setValue( bb.radius.z );
+		dagFn.findPlug("sizeX").setValue( bb.radius.x * scale );
+		dagFn.findPlug("sizeY").setValue( bb.radius.y * scale );
+		dagFn.findPlug("sizeZ").setValue( bb.radius.z * scale );
 
 	}
 
 	//Check to see if this is a mesh
-	if ( niAVObj->IsDerivedType( NiTriBasedGeom::TYPE ) ) {
+	if ( niAVObj->IsDerivedType( NiTriBasedGeom::TYPE ) || niAVObj->IsDerivedType( BSShape::TYPE ) ) {
 		//This is a mesh, so add it to the mesh list
 		this->translatorData->importedMeshes.push_back( pair<NiAVObjectRef,MObject>(niAVObj,obj) );
 	}

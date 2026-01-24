@@ -1,0 +1,12 @@
+.idea/
+Release/
+Release - 2025/
+x64/
+*.sdf
+*.suo
+*.vspx
+*.psess
+*.user
+cpp.hint
+Text.txt
+

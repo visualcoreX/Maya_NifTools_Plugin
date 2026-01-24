@@ -30,6 +30,7 @@ global string $gNifExportedObjects[];
 global int $gNifExportedObjectsValues[];
 global string $gNifExportedObjectsTypes[];
 global string $gNifExportType;
+global string $gNifCycleType;
 
 global proc int nifTranslatorOpts ( string $parent,
 				    string $action,
@@ -48,6 +49,7 @@ global proc int nifTranslatorOpts ( string $parent,
 	string $defaultUserVersion2 = "0";
 	string $defaultBonesPerPart = "0";
 	string $defaultImportNormalizedWeights = "false";
+	string $defaultImportScale = "1.0";
 	string $defaultExportMinimumVertexWeight = "0.001";
 	string $defaultJointMatch = "Bip";
 	string $defaultPathPrefix = "textures/";
@@ -126,10 +128,23 @@ global proc int nifTranslatorOpts ( string $parent,
 					      -value 0
 						  -annotation "Uses the default ambient color instead of what is in the NIF file; usually white."
 						  impNoAmbientCk;
+				rowLayout -numberOfColumns 2
+					  -columnWidth2 120 80
+					  -columnAttach2 "both" "both";
+					  text -label "Import scale:" -align "left";
+					  textField -editable true
+					  			-text $defaultImportScale
+								-annotation "Multiplier applied to positions during import for unit conversion."
+								importScaleTx;
+				setParent importColumnLayout;
 				checkBox -label "Combine New Skins with Existing Skeleton" 
 					      -value 1
 						  -annotation "Tries to bind newly imported skin files to an already imported skeleton.  Only works for identical skeletons."
 						  impSkelCombCk;
+				checkBox -label "Import all nodes as joints" 
+					      -value 0
+						  -annotation "This imports all the nodes in a file as joints. Used to import files with skeleton only."
+						  impAllNodesAsJointsCk;
 				rowLayout -numberOfColumns 3
 					  -columnWidth3 90 50 120
 					  -columnAttach3 "both" "both" "both";
@@ -226,7 +241,7 @@ global proc int nifTranslatorOpts ( string $parent,
 						for($j = 0;$j < size($gNifExportedObjects); $j++) {
 							if ($gNifExportedObjects[$j] == $selectedShapes[$i]) {
 								$gNifExportedObjectsValues[$j] = 1;
-								SelectParentJoints($gNifExportedObjects[$j]);
+								//SelectParentJoints($gNifExportedObjects[$j]);
 								break;
 							}
 						}
@@ -275,6 +290,13 @@ global proc int nifTranslatorOpts ( string $parent,
 								expUserVersion2Tx;
 			setParent exportColumnLayout;
 
+			global string $gNifCycleType;
+			optionMenu -label "Cycle Type" -changeCommand "nifCycleTypeChange(\"#1\")" cycleTypeMenu;
+				menuItem -label "CYCLE_CLAMP";
+				menuItem -label "CYCLE_LOOP";
+				menuItem -label "CYCLE_REVERSE";
+			setParent exportColumnLayout;
+
 			text -label "Nif material type:" -align "left";
 			radioCollection;
 				radioButton -label "Standard NiMaterial with standard NiTexture properties" -select nifTranslatorStandardMaterialRd;
@@ -289,6 +311,14 @@ global proc int nifTranslatorOpts ( string $parent,
 				radioButton -label "Generate fallout/skyrim specific tangent space data" nifTranslatorFalloutSkyrimTangentSpaceDataRd;
 			setParent exportColumnLayout;
 			
+			checkBox -label "Export Flatened Skeleton" 
+						-value 0
+						-annotation "This options flatens the entire hierarchy of the skeleton."
+						expFlatenedSkeletonCk;
+			checkBox -label "Export Scene Root as BSFadeNode" 
+						-value 0
+						-annotation "This options changes the root of the nif file to be a bs fade node."
+						expBsFadeNodeRootCk;
 			checkBox -label "Export White Ambient if Texture is Present" 
 					      -value 1
 						  -annotation "Allows you to keep your ambient colors looking nice in Maya and convert them to white on export."
@@ -369,6 +399,7 @@ global proc int nifTranslatorOpts ( string $parent,
 						  -annotation "Text optionally added to the begining of all texture paths in the exported NIF file"
 				          expPathPrefixTx;
 			setParent exportColumnLayout;
+
 		setParent $parent;
 							
 		// Now set to current settings.
@@ -403,6 +434,19 @@ global proc int nifTranslatorOpts ( string $parent,
 						$gNifExportType = "animation";
 						radioButton -edit -select exportAnimationRd;
 					} 
+				}
+				if ($optionBreakDown[0] == "cycleType") {
+					global string $gNifCycleType;
+					if ($optionBreakDown[1] == "")
+					{
+						$gNifCycleType = "CYCLE_CLAMP";
+						optionMenu -e -value CYCLE_CLAMP cycleTypeMenu;
+					}
+					else
+					{
+						$gNifCycleType = $optionBreakDown[1];
+						optionMenu -e -value $optionBreakDown[1] cycleTypeMenu;
+					}
 				}
 				if ($optionBreakDown[0] == "animationName") {
 					textField -edit -text $optionBreakDown[1] animationNameTx;
@@ -466,6 +510,9 @@ global proc int nifTranslatorOpts ( string $parent,
 						checkBox -edit -value false impNoAmbientCk;
 					}
 				}
+				if ($optionBreakDown[0] == "importScale") {
+					textField -edit -text $optionBreakDown[1] importScaleTx;
+				}
 				if ($optionBreakDown[0] == "exportWhiteAmbient") {
 					if ($optionBreakDown[1] == "1" ) {
 						checkBox -edit -value true expWhiteAmbientCk;
@@ -523,6 +570,27 @@ global proc int nifTranslatorOpts ( string $parent,
 						checkBox -edit -value true useNameManglingCk;
 					} else {
 						checkBox -edit -value false useNameManglingCk;
+					}
+				}
+				if ($optionBreakDown[0] == "exportFlatenedSkeleton") {
+					if ($optionBreakDown[1] == "1") {
+						checkBox -edit -value true expFlatenedSkeletonCk;
+					} else {
+						checkBox -edit -value false expFlatenedSkeletonCk;
+					}
+				}
+				if ($optionBreakDown[0] == "exportBsFadeNodeRoot") {
+					if ($optionBreakDown[1] == "1") {
+						checkBox -edit -value true expBsFadeNodeRootCk;
+					} else {
+						checkBox -edit -value false expBsFadeNodeRootCk;
+					}
+				}
+				if ($optionBreakDown[0] == "importAllNodesAsJoints") {
+					if ($optionBreakDown[1] == "1") {
+						checkBox -edit -value true impAllNodesAsJointsCk;
+					} else {
+						checkBox -edit -value false impAllNodesAsJointsCk;
 					}
 				}
 			}
@@ -622,6 +690,14 @@ global proc int nifTranslatorOpts ( string $parent,
 		global string $gNifExportType;
 		$currentOptions = $currentOptions + "exportType=" + $gNifExportType + ";";
 
+		global string $gNifCycleType;
+		if ($gNifCycleType == "")
+		{
+			$gNifCycleType = "CYCLE_CLAMP";
+			optionMenu -e -value CYCLE_CLAMP cycleTypeMenu;
+		}
+		$currentOptions = $currentOptions + "cycleType=" + $gNifCycleType + ";";
+
 		string $animationName = "";
 		$animationName = `textField -query -text animationNameTx`;
 		if($animationName == "") {
@@ -680,6 +756,13 @@ global proc int nifTranslatorOpts ( string $parent,
 		
 		$ckVal = `checkBox -query -value impNoAmbientCk`;
 		$currentOptions = $currentOptions + "importNoAmbient=" + $ckVal + ";";
+
+		string $importScale = `textField -query -text importScaleTx`;
+		if($importScale == "") {
+			$currentOptions = $currentOptions + "importScale=" + $defaultImportScale + ";";
+		} else {
+			$currentOptions = $currentOptions + "importScale=" + $importScale + ";";
+		}
 		
 		$ckVal = `checkBox -query -value expWhiteAmbientCk`;
 		$currentOptions = $currentOptions + "exportWhiteAmbient=" + $ckVal + ";";
@@ -689,9 +772,18 @@ global proc int nifTranslatorOpts ( string $parent,
 		
 		$ckVal = `checkBox -query -value expMorRenameCk`;
 		$currentOptions = $currentOptions + "exportMorRename=" + $ckVal + ";";
+
+		$ckVal = `checkBox -query -value expFlatenedSkeletonCk`;
+		$currentOptions = $currentOptions + "exportFlatenedSkeleton=" + $ckVal + ";";
+
+		$ckVal = `checkBox -query -value expBsFadeNodeRootCk`;
+		$currentOptions = $currentOptions + "exportBsFadeNodeRoot=" + $ckVal + ";";
 		
 		$ckVal = `checkBox -query -value impSkelCombCk`;
 		$currentOptions = $currentOptions + "importSkelComb=" + $ckVal + ";";
+
+		$ckVal = `checkBox -query -value impAllNodesAsJointsCk`;
+		$currentOptions = $currentOptions + "importAllNodesAsJoints=" + $ckVal + ";";
 		
 		string $partBones = `textField -query -text expPartBonesTx`;
 		$currentOptions = $currentOptions + "exportPartBones=" + $partBones + ";";
@@ -778,6 +870,7 @@ global proc ChangeSelectionExportOverviewTreeView(string $treeItem, int $state) 
 				eval("select -add " + $gNifExportedObjects[$i]);
 			}
 			
+			/*
 			if($gNifExportedObjectsTypes[$i] == "joint") {
 				if($unselected == 1) {
 					UnselectChildJoints($gNifExportedObjects[$i]);
@@ -788,6 +881,7 @@ global proc ChangeSelectionExportOverviewTreeView(string $treeItem, int $state) 
 			} else if($gNifExportedObjectsTypes[$i] == "shape") {
 				AdjustSelectedJoints();
 			}
+			*/
 			break;
 		}
 	}
@@ -812,7 +906,7 @@ global proc AdjustSelectedJoints() {
 							$gNifExportedObjectsValues[$k] = 1;
 							treeView -edit -buttonTextIcon $gNifExportedObjects[$k] 1 "E" overviewTreeView;
 							eval("select -add " + $gNifExportedObjects[$k]);
-							SelectParentJoints($gNifExportedObjects[$k]);
+							//SelectParentJoints($gNifExportedObjects[$k]);
 							$invalid++;
 						}
 					}
@@ -1035,6 +1129,11 @@ global proc nifTranslatorSetToExportAnimation() {
 	global string $gNifExportType;
 
 	$gNifExportType = "animation";
+}
+
+global proc nifCycleTypeChange(string $value) {
+	global string $gNifCycleType;
+	$gNifCycleType = $value;
 }
 
 global proc int hasValidNifName(string $name) {

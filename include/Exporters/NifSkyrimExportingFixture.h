@@ -1,5 +1,5 @@
-#ifndef _NIFMATERIALIMPORTERSKYRIM_H
-#define _NIFMATERIALIMPORTERSKYRIM_H
+#ifndef _NIFSKYRIMEXPORTINGFIXTURE_H
+#define _NIFSKYRIMEXPORTINGFIXTURE_H
 
 #include <maya/MDagPath.h>
 #include <maya/MDagPathArray.h>
@@ -47,7 +47,6 @@
 #include <maya/MAnimUtil.h>
 #include <maya/MItMeshPolygon.h>
 #include <maya/MItMeshVertex.h>
-#include <maya/MProgressWindow.h>
 
 #include <string> 
 #include <vector>
@@ -79,54 +78,35 @@
 #include <obj/NiKeyframeData.h>
 #include <obj/NiTextureProperty.h>
 #include <obj/NiImage.h>
-#include <obj/NiAVObject.h>
-#include <obj/NiTriBasedGeom.h>
-#include <obj/BSLightingShaderProperty.h>
-#include <obj/BSShaderTextureSet.h>
+#include <Ref.h>
 
-#include "include/Common/NifTranslatorRefObject.h"
-#include "include/Common/NifTranslatorOptions.h"
-#include "include/Common/NifTranslatorData.h"
-#include "include/Common/NifTranslatorUtils.h"
-#include "include/Common/NifTranslatorFixtureItem.h"
-#include "include/Importers/NifMaterialImporter.h"
-#include "include/Custom Nodes/BSLightningShader.h"
+#include "NifDefaultExportingFixture.h"
+#include "NifMeshExporterSkyrim.h"
+#include "NifNodeExporter.h"
+#include "NifMaterialExporterSkyrim.h"
+#include "NifAnimationExporter.h"
 
-class NifMaterialImporterSkyrim;
+using namespace Niflib;
+using namespace std;
 
-typedef Ref<NifMaterialImporterSkyrim> NifMaterialImporterSkyrimRef;
+class NifSkyrimExportingFixtureFixture;
 
-class NifMaterialImporterSkyrim : public NifMaterialImporter {
-private:
+typedef Ref<NifSkyrimExportingFixtureFixture> NifNifSkyrimExportingFixtureRef;
 
-	//these 2 vectors are actually interconnected meaning that
-	//an MOject in the imported materials corresponds to a set of properties in the property_groups
-	//at the exact same index. A maya material is created for a set of properties
-	vector<vector<NiPropertyRef>> property_groups;
-
-	vector<MObject> imported_materials;
+class NifSkyrimExportingFixture : public NifDefaultExportingFixture {
 
 public:
 
-	NifMaterialImporterSkyrim();
+	NifSkyrimExportingFixture();
 
-	NifMaterialImporterSkyrim(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
+	NifSkyrimExportingFixture(NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions, NifTranslatorUtilsRef translatorUtils);
 
-	virtual void ImportMaterialsAndTextures( NiAVObjectRef & root );
+	virtual string asString(bool verbose = false) const;
 
-	void GatherMaterialsAndTextures( NiAVObjectRef & root);
-
-	MString skyrimShaderFlags1ToString( unsigned int shader_flags);
-
-	MString skyrimShaderFlags2ToString( unsigned int shader_flags);
-
-	MString skyrimShaderTypeToString(unsigned int shader_type);
-
-	virtual string asString( bool verbose = false ) const;
-
-	virtual const Type& GetType() const;
+	virtual const Type& getType() const;
 
 	const static Type TYPE;
+
 };
 
 #endif

@@ -84,6 +84,7 @@
 #include <obj/NiBSplineFloatInterpolator.h>
 #include <obj/NiBSplinePoint3Interpolator.h>
 #include <obj/NiBoolInterpolator.h>
+#include "obj/NiTextKeyExtraData.h"
 
 #include "include/Common/NifTranslatorData.h"
 #include "include/Common/NifTranslatorOptions.h"

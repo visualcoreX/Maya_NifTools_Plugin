@@ -40,9 +40,8 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 
 	//out << "Try out ComplexShape::Merge on" << root << endl;
 	ComplexShape cs;
-
 	cs.Merge( root );
-
+	
 	vector<WeightedVertex> nif_verts = cs.GetVertices();
 	unsigned NumVertices = unsigned(nif_verts.size());
 	//out << "Num Vertices:  " << NumVertices << endl;
@@ -50,7 +49,8 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 	MPointArray maya_verts(NumVertices);
 
 	for (unsigned i = 0; i < NumVertices; ++i) {
-		maya_verts[i] = MPoint(nif_verts[i].position.x, nif_verts[i].position.y, nif_verts[i].position.z, 0.0f);
+		const float scale = this->translatorOptions->importScale;
+		maya_verts[i] = MPoint(nif_verts[i].position.x * scale, nif_verts[i].position.y * scale, nif_verts[i].position.z * scale, 0.0f);
 	}
 
 	//out << "Getting polygons..." << endl;
@@ -434,7 +434,7 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 				}
 			}
 
-			this->translatorUtils->ConnectShader( material_object, texture_connectors, meshPath, sel_lists[i] );
+			this->translatorUtils->ConnectShader(material_object, texture_connectors, meshPath, sel_lists[i]);
 		}
 	}
 
