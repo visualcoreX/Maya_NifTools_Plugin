@@ -1252,6 +1252,7 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClInclude Include="include\Importers\NifMaterialImporterSkyrim.h" />
     <ClInclude Include="include\Importers\NifMeshImporter.h" />
     <ClInclude Include="include\Importers\NifMeshImporterSkyrim.h" />
+    <ClInclude Include="include\Importers\NiflyMeshImporter.h" />
     <ClInclude Include="include\Importers\NifNodeImporter.h" />
     <ClInclude Include="include\Importers\NifSkyrimImportingFixture.h" />
     <ClInclude Include="include\Importers\NifTextureConnector.h" />
@@ -1287,6 +1288,7 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClCompile Include="src\Importers\NifMaterialImporterSkyrim.cpp" />
     <ClCompile Include="src\Importers\NifMeshImporter.cpp" />
     <ClCompile Include="src\Importers\NifMeshImporterSkyrim.cpp" />
+    <ClCompile Include="src\Importers\NiflyMeshImporter.cpp" />
     <ClCompile Include="src\Importers\NifNodeImporter.cpp" />
     <ClCompile Include="src\Importers\NifSkyrimImportingFixture.cpp" />
     <ClCompile Include="src\Importers\NifTextureConnector.cpp" />

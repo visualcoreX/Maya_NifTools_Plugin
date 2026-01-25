@@ -91,6 +91,9 @@
     <ClInclude Include="include\Importers\NifMeshImporter.h">
       <Filter>Header Files\Importers</Filter>
     </ClInclude>
+    <ClInclude Include="include\Importers\NiflyMeshImporter.h">
+      <Filter>Header Files\Importers</Filter>
+    </ClInclude>
     <ClInclude Include="include\Importers\NifNodeImporter.h">
       <Filter>Header Files\Importers</Filter>
     </ClInclude>
@@ -187,6 +190,9 @@
       <Filter>Source Files\Importers</Filter>
     </ClCompile>
     <ClCompile Include="src\Importers\NifMeshImporter.cpp">
+      <Filter>Source Files\Importers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Importers\NiflyMeshImporter.cpp">
       <Filter>Source Files\Importers</Filter>
     </ClCompile>
     <ClCompile Include="src\Importers\NifNodeImporter.cpp">

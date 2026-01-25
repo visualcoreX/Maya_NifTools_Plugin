@@ -1,4 +1,7 @@
 #include "NifTranslator.h"
+#include <fstream>
+
+#include "Importers/NiflyMeshImporter.h"
 
 //#define _DEBUG
 ofstream out;
@@ -136,7 +139,61 @@ MStatus NifTranslator::reader	 (const MFileObject& file, const MString& optionsS
 		importer = new NifDefaultImportingFixture(translator_data, translator_options, translator_utils);
 	}
 
-	return importer->ReadNodes(file);
+	const char* logPath = "C:\\Users\\rober\\Documents\\maya\\2025\\scripts\\nifTranslator_debug.log";
+	{
+		std::ofstream log(logPath, std::ios::out | std::ios::app);
+		if (log.is_open()) {
+			log << "[NifTranslator::reader] file=" << file.fullName().asChar()
+				<< " importType=" << static_cast<int>(import_type)
+				<< " options=" << optionsString.asChar() << std::endl;
+		}
+	}
+
+	if (import_type == ImportType::SkyrimFallout) {
+		MStatus niflyStatus = NiflyMeshImporter::ImportFile(file, translator_options, translator_utils);
+		if (niflyStatus == MS::kSuccess) {
+			MGlobal::displayWarning("Imported with NiflyDLL (primary).");
+			return MStatus::kSuccess;
+		}
+	}
+
+	try {
+		MStatus readStatus = importer->ReadNodes(file);
+		if (readStatus != MS::kSuccess && import_type == ImportType::SkyrimFallout) {
+			MStatus niflyStatus = NiflyMeshImporter::ImportFile(file, translator_options, translator_utils);
+			if (niflyStatus == MS::kSuccess) {
+				MGlobal::displayWarning("Imported with NiflyDLL fallback (status failure).");
+				return MStatus::kSuccess;
+			}
+		}
+		return readStatus;
+	} catch (const std::exception& e) {
+		std::ofstream log(logPath, std::ios::out | std::ios::app);
+		if (log.is_open()) {
+			log << "[NifTranslator::reader] exception: " << e.what() << std::endl;
+		}
+		MGlobal::displayError(MString("NIF import failed: ") + e.what());
+
+		MStatus niflyStatus = NiflyMeshImporter::ImportFile(file, translator_options, translator_utils);
+		if (niflyStatus == MS::kSuccess) {
+			MGlobal::displayWarning("Imported with NiflyDLL fallback (exception).");
+			return MStatus::kSuccess;
+		}
+
+		return MStatus::kFailure;
+	} catch (...) {
+		std::ofstream log(logPath, std::ios::out | std::ios::app);
+		if (log.is_open()) {
+			log << "[NifTranslator::reader] unknown exception." << std::endl;
+		}
+		MGlobal::displayError("NIF import failed: unknown exception.");
+		MStatus niflyStatus = NiflyMeshImporter::ImportFile(file, translator_options, translator_utils);
+		if (niflyStatus == MS::kSuccess) {
+			MGlobal::displayWarning("Imported with NiflyDLL fallback (unknown exception).");
+			return MStatus::kSuccess;
+		}
+		return MStatus::kFailure;
+	}
 }
 
 //--NifTranslator::writer--//

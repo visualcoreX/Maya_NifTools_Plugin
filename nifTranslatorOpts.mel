@@ -50,6 +50,14 @@ global proc int nifTranslatorOpts ( string $parent,
 	string $defaultBonesPerPart = "0";
 	string $defaultImportNormalizedWeights = "false";
 	string $defaultImportScale = "1.0";
+	string $importScaleLabels[] = {
+		"Maya cm (1.0)",
+		"Meters to cm (100.0)",
+		"Inches to cm (2.54)",
+		"Feet to cm (30.48)",
+		"Millimeters to cm (0.1)"
+	};
+	string $importScaleValues[] = { "1.0", "100.0", "2.54", "30.48", "0.1" };
 	string $defaultExportMinimumVertexWeight = "0.001";
 	string $defaultJointMatch = "Bip";
 	string $defaultPathPrefix = "textures/";
@@ -66,7 +74,7 @@ global proc int nifTranslatorOpts ( string $parent,
 	
 	if ($action == "post") {
 		setParent $parent;
-		frameLayout -label "Common" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true;
+		frameLayout -label "Common" -marginWidth 20 -marginHeight 5 -collapsable true;
 			columnLayout commonColumnLayout;
 				checkBox -label "Use Name Mangling to Preserve Original Names" 
 						  -value 1
@@ -106,7 +114,7 @@ global proc int nifTranslatorOpts ( string $parent,
 						   -command "DeletePath()";
 				setParent commonColumnLayout;
 				setParent $parent;
-		frameLayout -label "Import" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true;
+		frameLayout -label "Import" -marginWidth 20 -marginHeight 5 -collapsable true;
 			columnLayout importColumnLayout;
 				checkBox -label "Attempt to Find Original Bind Pose" 
 					      -value 1
@@ -129,13 +137,14 @@ global proc int nifTranslatorOpts ( string $parent,
 						  -annotation "Uses the default ambient color instead of what is in the NIF file; usually white."
 						  impNoAmbientCk;
 				rowLayout -numberOfColumns 2
-					  -columnWidth2 120 80
+					  -columnWidth2 120 200
 					  -columnAttach2 "both" "both";
 					  text -label "Import scale:" -align "left";
-					  textField -editable true
-					  			-text $defaultImportScale
-								-annotation "Multiplier applied to positions during import for unit conversion."
-								importScaleTx;
+					  optionMenu -annotation "Multiplier applied to positions during import for unit conversion."
+					             importScaleMenu;
+					  for ($i = 0; $i < size($importScaleLabels); $i++) {
+						menuItem -label $importScaleLabels[$i];
+					  }
 				setParent importColumnLayout;
 				checkBox -label "Combine New Skins with Existing Skeleton" 
 					      -value 1
@@ -157,8 +166,8 @@ global proc int nifTranslatorOpts ( string $parent,
 				setParent importColumnLayout;
 		setParent $parent;
 		
-		frameLayout -label "Export" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true exportFrameLayout;
-			frameLayout -label "Outliner" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true overviewFrameLayout;
+		frameLayout -label "Export" -marginWidth 20 -marginHeight 5 -collapsable true exportFrameLayout;
+			frameLayout -label "Outliner" -marginWidth 20 -marginHeight 5 -collapsable true overviewFrameLayout;
 				global string $gNifExportedObjects[];
 				global int $gNifExportedObjectsValues[];
 				global string $gNifExportedObjectsTypes[];
@@ -511,7 +520,20 @@ global proc int nifTranslatorOpts ( string $parent,
 					}
 				}
 				if ($optionBreakDown[0] == "importScale") {
-					textField -edit -text $optionBreakDown[1] importScaleTx;
+					int $scaleIndex = -1;
+					for ($i = 0; $i < size($importScaleValues); $i++) {
+						if ($importScaleValues[$i] == $optionBreakDown[1]) {
+							$scaleIndex = $i;
+							break;
+						}
+					}
+					if ($scaleIndex == -1) {
+						$importScaleLabels[size($importScaleLabels)] = ("Custom (" + $optionBreakDown[1] + ")");
+						$importScaleValues[size($importScaleValues)] = $optionBreakDown[1];
+						menuItem -label $importScaleLabels[size($importScaleLabels)-1];
+						$scaleIndex = size($importScaleValues) - 1;
+					}
+					optionMenu -edit -select ($scaleIndex + 1) importScaleMenu;
 				}
 				if ($optionBreakDown[0] == "exportWhiteAmbient") {
 					if ($optionBreakDown[1] == "1" ) {
@@ -757,11 +779,11 @@ global proc int nifTranslatorOpts ( string $parent,
 		$ckVal = `checkBox -query -value impNoAmbientCk`;
 		$currentOptions = $currentOptions + "importNoAmbient=" + $ckVal + ";";
 
-		string $importScale = `textField -query -text importScaleTx`;
-		if($importScale == "") {
+		int $scaleSelection = `optionMenu -query -select importScaleMenu`;
+		if ($scaleSelection < 1 || $scaleSelection > size($importScaleValues)) {
 			$currentOptions = $currentOptions + "importScale=" + $defaultImportScale + ";";
 		} else {
-			$currentOptions = $currentOptions + "importScale=" + $importScale + ";";
+			$currentOptions = $currentOptions + "importScale=" + $importScaleValues[$scaleSelection - 1] + ";";
 		}
 		
 		$ckVal = `checkBox -query -value expWhiteAmbientCk`;
