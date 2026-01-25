@@ -91,9 +91,6 @@
     <ClInclude Include="include\Importers\NifMeshImporter.h">
       <Filter>Header Files\Importers</Filter>
     </ClInclude>
-    <ClInclude Include="include\Importers\NiflyMeshImporter.h">
-      <Filter>Header Files\Importers</Filter>
-    </ClInclude>
     <ClInclude Include="include\Importers\NifNodeImporter.h">
       <Filter>Header Files\Importers</Filter>
     </ClInclude>
@@ -104,6 +101,9 @@
       <Filter>Header Files\Common</Filter>
     </ClInclude>
     <ClInclude Include="include\Common\NifTranslatorFixtureItem.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Common\NiflyExportBridge.h">
       <Filter>Header Files\Common</Filter>
     </ClInclude>
     <ClInclude Include="include\Common\NifTranslatorOptions.h">
@@ -151,6 +151,9 @@
     <ClInclude Include="include\Exporters\NifMeshExporterSkyrim.h">
       <Filter>Header Files\Exporters</Filter>
     </ClInclude>
+    <ClInclude Include="include\Exporters\NiflyExportingFixture.h">
+      <Filter>Header Files\Exporters</Filter>
+    </ClInclude>
     <ClInclude Include="include\Exporters\NifSkyrimExportingFixture.h">
       <Filter>Header Files\Exporters</Filter>
     </ClInclude>
@@ -192,9 +195,6 @@
     <ClCompile Include="src\Importers\NifMeshImporter.cpp">
       <Filter>Source Files\Importers</Filter>
     </ClCompile>
-    <ClCompile Include="src\Importers\NiflyMeshImporter.cpp">
-      <Filter>Source Files\Importers</Filter>
-    </ClCompile>
     <ClCompile Include="src\Importers\NifNodeImporter.cpp">
       <Filter>Source Files\Importers</Filter>
     </ClCompile>
@@ -205,6 +205,9 @@
       <Filter>Source Files\Common</Filter>
     </ClCompile>
     <ClCompile Include="src\Common\NifTranslatorFixtureItem.cpp">
+      <Filter>Source Files\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Common\NiflyExportBridge.cpp">
       <Filter>Source Files\Common</Filter>
     </ClCompile>
     <ClCompile Include="src\Common\NifTranslatorOptions.cpp">
@@ -250,6 +253,9 @@
       <Filter>Source Files\Exporters</Filter>
     </ClCompile>
     <ClCompile Include="src\Exporters\NifMaterialExporterSkyrim.cpp">
+      <Filter>Source Files\Exporters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exporters\NiflyExportingFixture.cpp">
       <Filter>Source Files\Exporters</Filter>
     </ClCompile>
     <ClCompile Include="src\Exporters\NifSkyrimExportingFixture.cpp">

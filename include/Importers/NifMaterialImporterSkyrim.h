@@ -74,6 +74,7 @@
 #include <obj/NiTriShape.h>
 #include <obj/NiTriShapeData.h>
 #include <obj/NiTriStripsData.h>
+#include <obj/BSTriShape.h>
 #include <obj/NiTimeController.h>
 #include <obj/NiKeyframeController.h>
 #include <obj/NiKeyframeData.h>

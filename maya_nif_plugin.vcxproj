@@ -461,8 +461,8 @@
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|x64'">Run</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2025|x64'">
-    <IncludePath>$(SolutionDir)\niflib\include;$(SolutionDir)\include;C:\Program Files\Autodesk\Maya2025\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\niflib\lib;C:\Program Files\Autodesk\Maya2025\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)\extern\nifly\include;$(SolutionDir)\extern\nifly\external;$(SolutionDir)\niflib\include;$(SolutionDir)\include;C:\Program Files\Autodesk\Maya2025\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\extern\nifly\x64\Release - 2025;$(SolutionDir)\niflib\lib;C:\Program Files\Autodesk\Maya2025\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|Win32'">
     <ClCompile>
@@ -821,7 +821,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\Maya6.5\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>C:\Program Files\Alias\Maya6.5\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -844,7 +844,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\Maya6.5\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>C:\Program Files\Alias\Maya6.5\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -868,7 +868,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\Maya7.0\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>C:\Program Files\Alias\Maya7.0\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -892,7 +892,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\Maya7.0\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>C:\Program Files\Alias\Maya7.0\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -916,7 +916,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\Maya8.5\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>C:\Program Files\Autodesk\Maya8.5\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -940,7 +940,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\Maya8.5\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>C:\Program Files\Autodesk\Maya8.5\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -964,7 +964,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\Maya8.0\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>C:\Program Files\Alias\Maya8.0\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -988,7 +988,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\Maya8.0\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>C:\Program Files\Alias\Maya8.0\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -1012,7 +1012,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\Maya2009\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>C:\Program Files\Autodesk\Maya2009\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -1036,7 +1036,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\Maya2009\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>C:\Program Files\Autodesk\Maya2009\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -1060,7 +1060,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\Maya2009\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>C:\Program Files\Autodesk\Maya2009\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -1084,7 +1084,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\Maya2009\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>C:\Program Files\Autodesk\Maya2009\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -1108,7 +1108,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\Maya2009\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>C:\Program Files\Autodesk\Maya2009\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -1132,7 +1132,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>..\Maya2012\bin\plug-ins\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>..\Maya2012\lib;niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -1162,7 +1162,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(SolutionDir)\..\Maya2016\bin\plug-ins\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>$(SolutionDir)\..\Maya2016\lib;$(SolutionDir)\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -1180,22 +1180,23 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2025|x64'">
     <ClCompile>
-      <AdditionalOptions> /I "."  /c %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions> /I "."  /c /bigobj %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)\niflib\include;niflib\;E:\Skyrim Animation\SKSE\Maya Scripts\Autodesk_Maya_2025_DEVKIT_Windows\devkitBase\include;E:\Skyrim Animation\SKSE\Maya Scripts\Autodesk_Maya_2025_DEVKIT_Windows\devkitBase\include\maya;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_AFXDLL;_MBCS;NT_PLUGIN;REQUIRE_IOSTREAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\extern\nifly\include;$(SolutionDir)\extern\nifly\external;$(SolutionDir)\niflib\include;niflib\;E:\Skyrim Animation\SKSE\Maya Scripts\Autodesk_Maya_2025_DEVKIT_Windows\devkitBase\include;E:\Skyrim Animation\SKSE\Maya Scripts\Autodesk_Maya_2025_DEVKIT_Windows\devkitBase\include\maya;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;NOMINMAX;WIN32;NDEBUG;_WINDOWS;_AFXDLL;_MBCS;NT_PLUGIN;REQUIRE_IOSTREAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalOptions>/subsystem:windows /incremental:no /export:initializePlugin /export:uninitializePlugin </AdditionalOptions>
-      <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>nifly.lib;niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(ProjectDir)$(Configuration)\nifTranslator.mll</OutputFile>
-      <AdditionalLibraryDirectories>E:\Skyrim Animation\SKSE\Maya Scripts\Autodesk_Maya_2025_DEVKIT_Windows\devkitBase\lib;$(SolutionDir)\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
+      <AdditionalLibraryDirectories>$(SolutionDir)\extern\nifly\x64\Release - 2025;E:\Skyrim Animation\SKSE\Maya Scripts\Autodesk_Maya_2025_DEVKIT_Windows\devkitBase\lib;$(SolutionDir)\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -1227,6 +1228,7 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClInclude Include="include\Common\NifTranslatorData.h" />
     <ClInclude Include="include\Common\NifTranslatorDataWrapper.h" />
     <ClInclude Include="include\Common\NifTranslatorFixtureItem.h" />
+    <ClInclude Include="include\Common\NiflyExportBridge.h" />
     <ClInclude Include="include\Common\NifTranslatorOptions.h" />
     <ClInclude Include="include\Common\NifTranslatorRefObject.h" />
     <ClInclude Include="include\Common\NifTranslatorUtils.h" />
@@ -1242,6 +1244,7 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClInclude Include="include\Exporters\NifMeshExporter.h" />
     <ClInclude Include="include\Exporters\NifMeshExporterSkyrim.h" />
     <ClInclude Include="include\Exporters\NifNodeExporter.h" />
+    <ClInclude Include="include\Exporters\NiflyExportingFixture.h" />
     <ClInclude Include="include\Exporters\NifSkyrimExportingFixture.h" />
     <ClInclude Include="include\Importers\NifAnimationImporter.h" />
     <ClInclude Include="include\Importers\NifDefaultImportingFixture.h" />
@@ -1252,10 +1255,10 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClInclude Include="include\Importers\NifMaterialImporterSkyrim.h" />
     <ClInclude Include="include\Importers\NifMeshImporter.h" />
     <ClInclude Include="include\Importers\NifMeshImporterSkyrim.h" />
-    <ClInclude Include="include\Importers\NiflyMeshImporter.h" />
     <ClInclude Include="include\Importers\NifNodeImporter.h" />
     <ClInclude Include="include\Importers\NifSkyrimImportingFixture.h" />
     <ClInclude Include="include\Importers\NifTextureConnector.h" />
+    <ClInclude Include="include\Importers\NiflyImporter.h" />
     <ClInclude Include="NifTranslator.h" />
   </ItemGroup>
   <ItemGroup>
@@ -1263,6 +1266,7 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClCompile Include="src\Common\NifTranslatorData.cpp" />
     <ClCompile Include="src\Common\NifTranslatorDataWrapper.cpp" />
     <ClCompile Include="src\Common\NifTranslatorFixtureItem.cpp" />
+    <ClCompile Include="src\Common\NiflyExportBridge.cpp" />
     <ClCompile Include="src\Common\NifTranslatorOptions.cpp" />
     <ClCompile Include="src\Common\NifTranslatorRefObject.cpp" />
     <ClCompile Include="src\Common\NifTranslatorUtils.cpp" />
@@ -1278,6 +1282,7 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClCompile Include="src\Exporters\NifMeshExporter.cpp" />
     <ClCompile Include="src\Exporters\NifMeshExporterSkyrim.cpp" />
     <ClCompile Include="src\Exporters\NifNodeExporter.cpp" />
+    <ClCompile Include="src\Exporters\NiflyExportingFixture.cpp" />
     <ClCompile Include="src\Exporters\NifSkyrimExportingFixture.cpp" />
     <ClCompile Include="src\Importers\NifAnimationImporter.cpp" />
     <ClCompile Include="src\Importers\NifDefaultImportingFixture.cpp" />
@@ -1288,10 +1293,10 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClCompile Include="src\Importers\NifMaterialImporterSkyrim.cpp" />
     <ClCompile Include="src\Importers\NifMeshImporter.cpp" />
     <ClCompile Include="src\Importers\NifMeshImporterSkyrim.cpp" />
-    <ClCompile Include="src\Importers\NiflyMeshImporter.cpp" />
     <ClCompile Include="src\Importers\NifNodeImporter.cpp" />
     <ClCompile Include="src\Importers\NifSkyrimImportingFixture.cpp" />
     <ClCompile Include="src\Importers\NifTextureConnector.cpp" />
+    <ClCompile Include="src\Importers\NiflyImporter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Text.txt" />

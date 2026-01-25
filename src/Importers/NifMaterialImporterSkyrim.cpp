@@ -16,13 +16,19 @@ void NifMaterialImporterSkyrim::ImportMaterialsAndTextures( NiAVObjectRef & root
 }
 
 void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root ) {
-	if (root->GetType().IsDerivedType(NiGeometry::TYPE)) {
-		NiGeometryRef geometry = DynamicCast<NiGeometry>(root);
-
+	if (root->GetType().IsDerivedType(NiGeometry::TYPE) ||
+		root->GetType().IsDerivedType(BSTriShape::TYPE)) {
 		NiAlphaPropertyRef alpha_property = NULL;
 		BSLightingShaderPropertyRef shader_property = NULL;
+		Niflib::array<2, Ref<NiProperty>> properties;
 
-		Niflib::array<2, Ref<NiProperty>> properties = geometry->GetBSProperties(); 
+		if (root->GetType().IsDerivedType(NiGeometry::TYPE)) {
+			NiGeometryRef geometry = DynamicCast<NiGeometry>(root);
+			properties = geometry->GetBSProperties();
+		} else {
+			BSTriShapeRef bs_shape = DynamicCast<BSTriShape>(root);
+			properties = bs_shape->GetBSProperties();
+		}
 
 		for(int i = 0; i < 2; i++) {
 			NiPropertyRef current_property = properties[i]; 

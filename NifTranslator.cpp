@@ -1,7 +1,11 @@
 #include "NifTranslator.h"
+#include "include/Importers/NiflyImporter.h"
+#include "include/Common/NiflyExportBridge.h"
+#include "include/Exporters/NiflyExportingFixture.h"
 #include <fstream>
-
-#include "Importers/NiflyMeshImporter.h"
+#include <ctime>
+#include <iomanip>
+#include <filesystem>
 
 //#define _DEBUG
 ofstream out;
@@ -108,78 +112,112 @@ MStatus NifTranslator::reader	 (const MFileObject& file, const MString& optionsS
 	NifTranslatorDataRef translator_data(new NifTranslatorData());
 	NifTranslatorOptionsRef translator_options(new NifTranslatorOptions());
 	NifTranslatorUtilsRef translator_utils(new NifTranslatorUtils(translator_data,translator_options));
-	NifImportingFixtureRef importer;
-
-	ImportType import_type = ImportType::Default;
-	Header file_header = ReadHeader(file.fullName().asChar());
-
-	vector<string> block_types = file_header.getBlockTypes();
-	vector<unsigned short> block_types_index = file_header.getBlockTypeIndex();
 
 	translator_options->ParseOptionsString(optionsString);
 
-	if(block_types[block_types_index[0]] == NiControllerSequence::TYPE.GetTypeName()) {
-		import_type = ImportType::AnimationKF;
-	} else if(block_types[block_types_index[0]] == BSFadeNode::TYPE.GetTypeName() ||
-		 file_header.getUserVersion() == 12 || (file_header.getUserVersion() == 11 && file_header.getUserVersion2() == 57) ) {
-		import_type = ImportType::SkyrimFallout;
-	} else {
-		for(int i = 0; i < block_types.size(); i++) {
-			if(block_types[i] == BSDismemberSkinInstance::TYPE.GetTypeName() || block_types[i] == BSShaderTextureSet::TYPE.GetTypeName()) {
-				import_type = ImportType::SkyrimFallout;
-			}
-		}
-	}
-
-	if(import_type == ImportType::AnimationKF) {
-		importer = new NifKFImportingFixture(translator_options, translator_data, translator_utils);
-	} else if (import_type == ImportType::SkyrimFallout) {
-		importer = new NifSkyrimImportingFixture(translator_options, translator_data, translator_utils);
-	} else if (import_type == ImportType::Default) {
-		importer = new NifDefaultImportingFixture(translator_data, translator_options, translator_utils);
-	}
-
 	const char* logPath = "C:\\Users\\rober\\Documents\\maya\\2025\\scripts\\nifTranslator_debug.log";
+	std::string filename = file.fullName().asChar();
+	
+	// Log the import attempt
 	{
 		std::ofstream log(logPath, std::ios::out | std::ios::app);
 		if (log.is_open()) {
-			log << "[NifTranslator::reader] file=" << file.fullName().asChar()
-				<< " importType=" << static_cast<int>(import_type)
-				<< " options=" << optionsString.asChar() << std::endl;
+			std::time_t now = std::time(nullptr);
+			log << "[NifTranslator::reader] time=" << std::put_time(std::localtime(&now), "%F %T") << std::endl;
+			log << "[NifTranslator::reader] file=" << filename << std::endl;
 		}
 	}
 
-	if (import_type == ImportType::SkyrimFallout) {
-		MStatus niflyStatus = NiflyMeshImporter::ImportFile(file, translator_options, translator_utils);
-		if (niflyStatus == MS::kSuccess) {
-			MGlobal::displayWarning("Imported with NiflyDLL (primary).");
-			return MStatus::kSuccess;
-		}
-	}
-
-	try {
-		MStatus readStatus = importer->ReadNodes(file);
-		if (readStatus != MS::kSuccess && import_type == ImportType::SkyrimFallout) {
-			MStatus niflyStatus = NiflyMeshImporter::ImportFile(file, translator_options, translator_utils);
-			if (niflyStatus == MS::kSuccess) {
-				MGlobal::displayWarning("Imported with NiflyDLL fallback (status failure).");
-				return MStatus::kSuccess;
+	// First, try to use nifly-based importer for modern NIF files (Skyrim SE, FO4, etc.)
+	// This handles BSTriShape and other modern formats correctly
+	if (NiflyImporter::ShouldUseNifly(filename)) {
+		{
+			std::ofstream log(logPath, std::ios::out | std::ios::app);
+			if (log.is_open()) {
+				log << "[NifTranslator::reader] Using NiflyImporter for modern NIF" << std::endl;
 			}
 		}
-		return readStatus;
+		
+		// Create import options from translator options
+		NiflyImportOptions niflyOptions;
+		niflyOptions.importScale = translator_options->importScale;
+		niflyOptions.texturePath = translator_options->texturePath;
+		niflyOptions.importFileDir = file.rawPath().asChar();
+		niflyOptions.useNameMangling = translator_options->useNameMangling;
+		
+		NiflyImporter niflyImporter;
+		niflyImporter.SetOptions(niflyOptions);
+		MStatus status = niflyImporter.Import(file);
+		
+		if (status == MStatus::kSuccess) {
+			return status;
+		}
+		
+		// Log the error but don't fall back - nifly should handle these files
+		std::string error = niflyImporter.GetLastError();
+		{
+			std::ofstream log(logPath, std::ios::out | std::ios::app);
+			if (log.is_open()) {
+				log << "[NifTranslator::reader] NiflyImporter failed: " << error << std::endl;
+			}
+		}
+		MGlobal::displayError(MString("NIF import failed: ") + error.c_str());
+		return MStatus::kFailure;
+	}
+
+	// Fall back to niflib for older NIF formats
+	{
+		std::ofstream log(logPath, std::ios::out | std::ios::app);
+		if (log.is_open()) {
+			log << "[NifTranslator::reader] Using niflib for legacy NIF" << std::endl;
+		}
+	}
+
+	NifImportingFixtureRef importer;
+	ImportType import_type = ImportType::Default;
+	
+	try {
+		Header file_header = ReadHeader(filename.c_str());
+
+		vector<string> block_types = file_header.getBlockTypes();
+		vector<unsigned short> block_types_index = file_header.getBlockTypeIndex();
+
+		if(block_types[block_types_index[0]] == NiControllerSequence::TYPE.GetTypeName()) {
+			import_type = ImportType::AnimationKF;
+		} else if(block_types[block_types_index[0]] == BSFadeNode::TYPE.GetTypeName() ||
+			 file_header.getUserVersion() == 12 || (file_header.getUserVersion() == 11 && file_header.getUserVersion2() == 57) ) {
+			import_type = ImportType::SkyrimFallout;
+		} else {
+			for(size_t i = 0; i < block_types.size(); i++) {
+				if(block_types[i] == BSDismemberSkinInstance::TYPE.GetTypeName() || block_types[i] == BSShaderTextureSet::TYPE.GetTypeName()) {
+					import_type = ImportType::SkyrimFallout;
+				}
+			}
+		}
+
+		{
+			std::ofstream log(logPath, std::ios::out | std::ios::app);
+			if (log.is_open()) {
+				log << "[NifTranslator::reader] importType=" << static_cast<int>(import_type) << std::endl;
+			}
+		}
+
+		if(import_type == ImportType::AnimationKF) {
+			importer = new NifKFImportingFixture(translator_options, translator_data, translator_utils);
+		} else if (import_type == ImportType::SkyrimFallout) {
+			importer = new NifSkyrimImportingFixture(translator_options, translator_data, translator_utils);
+		} else if (import_type == ImportType::Default) {
+			importer = new NifDefaultImportingFixture(translator_data, translator_options, translator_utils);
+		}
+
+		return importer->ReadNodes(file);
+		
 	} catch (const std::exception& e) {
 		std::ofstream log(logPath, std::ios::out | std::ios::app);
 		if (log.is_open()) {
 			log << "[NifTranslator::reader] exception: " << e.what() << std::endl;
 		}
 		MGlobal::displayError(MString("NIF import failed: ") + e.what());
-
-		MStatus niflyStatus = NiflyMeshImporter::ImportFile(file, translator_options, translator_utils);
-		if (niflyStatus == MS::kSuccess) {
-			MGlobal::displayWarning("Imported with NiflyDLL fallback (exception).");
-			return MStatus::kSuccess;
-		}
-
 		return MStatus::kFailure;
 	} catch (...) {
 		std::ofstream log(logPath, std::ios::out | std::ios::app);
@@ -187,11 +225,6 @@ MStatus NifTranslator::reader	 (const MFileObject& file, const MString& optionsS
 			log << "[NifTranslator::reader] unknown exception." << std::endl;
 		}
 		MGlobal::displayError("NIF import failed: unknown exception.");
-		MStatus niflyStatus = NiflyMeshImporter::ImportFile(file, translator_options, translator_utils);
-		if (niflyStatus == MS::kSuccess) {
-			MGlobal::displayWarning("Imported with NiflyDLL fallback (unknown exception).");
-			return MStatus::kSuccess;
-		}
 		return MStatus::kFailure;
 	}
 }
@@ -232,7 +265,12 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 			exporting_fixture = new NifDefaultExportingFixture(translator_data, translator_options, translator_utils);
 		}
 		if(translator_options->exportMaterialType == "skyrimmaterial") {
-			exporting_fixture = new NifSkyrimExportingFixture(translator_data, translator_options, translator_utils);
+			// Use native nifly export path for Skyrim/Fallout
+			NiflyExportOptions niflyOptions;
+			niflyOptions.exportedShapes = translator_options->exportedShapes;
+			niflyOptions.exportUserVersion2 = translator_options->exportUserVersion2;
+			NiflyExportingFixture niflyExporter(niflyOptions);
+			return niflyExporter.WriteNodes(file);
 		}
 	}
 
@@ -241,7 +279,22 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 	}
 	
 	if(exporting_fixture != NULL) {
-		return exporting_fixture->WriteNodes(file);
+		MStatus status = exporting_fixture->WriteNodes(file);
+		if (status != MStatus::kSuccess) {
+			return status;
+		}
+
+		// For Skyrim/Fallout exports, resave using nifly to keep backend consistent
+		if (export_type == "geometry" && translator_options->exportMaterialType == "skyrimmaterial") {
+			std::string resaveError;
+			if (!ResaveWithNifly(file, resaveError)) {
+				MGlobal::displayWarning(MString(resaveError.c_str()));
+			} else {
+				MGlobal::displayInfo("Nifly resave completed.");
+			}
+		}
+
+		return status;
 	}
 	
 	return MStatus::kFailure;
