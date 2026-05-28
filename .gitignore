@@ -9,4 +9,5 @@ x64/
 *.user
 cpp.hint
 Text.txt
-
+*.mll
+*.dll

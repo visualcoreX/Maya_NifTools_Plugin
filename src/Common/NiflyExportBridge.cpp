@@ -32,3 +32,4 @@ bool ResaveWithNifly(const MFileObject& file, std::string& outError) {
 	}
 }
 
+

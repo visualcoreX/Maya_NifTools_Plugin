@@ -821,7 +821,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\Maya6.5\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>C:\Program Files\Alias\Maya6.5\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(TEMP)\nifTranslator_$(Configuration)_$(Platform).pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -844,7 +844,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\Maya6.5\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>C:\Program Files\Alias\Maya6.5\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(TEMP)\nifTranslator_$(Configuration)_$(Platform).pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -1196,7 +1196,7 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
       <AdditionalDependencies>nifly.lib;niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(ProjectDir)$(Configuration)\nifTranslator.mll</OutputFile>
       <AdditionalLibraryDirectories>$(SolutionDir)\extern\nifly\x64\Release - 2025;E:\Skyrim Animation\SKSE\Maya Scripts\Autodesk_Maya_2025_DEVKIT_Windows\devkitBase\lib;$(SolutionDir)\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>$(OutDir)nifTranslator.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(TEMP)\nifTranslator_$(Configuration)_$(Platform).pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -1205,14 +1205,7 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
       </Version>
     </Link>
     <PostBuildEvent>
-      <Command>if not exist "$(USERPROFILE)\Documents\maya\2025\plug-ins" mkdir "$(USERPROFILE)\Documents\maya\2025\plug-ins"
-copy /Y "$(ProjectDir)$(Configuration)\nifTranslator.mll" "$(USERPROFILE)\Documents\maya\2025\plug-ins"
-copy /Y "$(ProjectDir)\niflib\bin\niflib_x64.dll" "$(USERPROFILE)\Documents\maya\2025\plug-ins"
-copy /Y "$(ProjectDir)\nifTranslatorOpts.mel" "$(USERPROFILE)\Documents\maya\2025\scripts"
-copy /Y "$(ProjectDir)\nifTranslatorMenuCreate.mel" "$(USERPROFILE)\Documents\maya\2025\scripts"
-copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2025\scripts"
-copy /Y "$(ProjectDir)\AEbsLightningShaderTemplate.mel" "$(USERPROFILE)\Documents\maya\2025\scripts"
-copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Documents\maya\2025\scripts"</Command>
+      <Command>powershell -NoProfile -ExecutionPolicy Bypass -Command "&amp; { $ErrorActionPreference='Continue'; $plug = Join-Path $env:USERPROFILE 'Documents\\maya\\2025\\plug-ins'; $scripts = Join-Path $env:USERPROFILE 'Documents\\maya\\2025\\scripts'; New-Item -ItemType Directory -Force -Path $plug,$scripts | Out-Null; Copy-Item -Force \"$(ProjectDir)$(Configuration)\\nifTranslator.mll\" $plug; Copy-Item -Force \"$(ProjectDir)\\niflib\\bin\\niflib_x64.dll\" $plug; Copy-Item -Force \"$(ProjectDir)\\nifTranslatorOpts.mel\" $scripts; Copy-Item -Force \"$(ProjectDir)\\nifTranslatorMenuCreate.mel\" $scripts; Copy-Item -Force \"$(ProjectDir)\\nifTranslatorMenuRemove.mel\" $scripts; Copy-Item -Force \"$(ProjectDir)\\AEbsLightningShaderTemplate.mel\" $scripts; Copy-Item -Force \"$(ProjectDir)\\AEnifDismemberPartitionTemplate.mel\" $scripts; try { Copy-Item -Force \"$(ProjectDir)\\niflib\\bin\\niflib_x64.dll\" 'C:\\Program Files\\Autodesk\\Maya2025\\bin' } catch { } }"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

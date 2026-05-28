@@ -7,3 +7,4 @@
 // Returns true on success, false and fills outError on failure.
 bool ResaveWithNifly(const MFileObject& file, std::string& outError);
 
+

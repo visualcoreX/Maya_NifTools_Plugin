@@ -144,6 +144,7 @@ MStatus NifTranslator::reader	 (const MFileObject& file, const MString& optionsS
 		niflyOptions.texturePath = translator_options->texturePath;
 		niflyOptions.importFileDir = file.rawPath().asChar();
 		niflyOptions.useNameMangling = translator_options->useNameMangling;
+		niflyOptions.importNormalizedWeights = translator_options->importNormalizedWeights;
 		
 		NiflyImporter niflyImporter;
 		niflyImporter.SetOptions(niflyOptions);

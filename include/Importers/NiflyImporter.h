@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <unordered_map>
 
 // Forward declarations for nifly types
 namespace nifly {
@@ -66,6 +67,7 @@ struct NiflyImportOptions {
 	std::string texturePath;
 	std::string importFileDir;
 	bool useNameMangling = false;
+	bool importNormalizedWeights = true;
 };
 
 // Main importer class using nifly
@@ -95,8 +97,15 @@ private:
 	// Import helpers
 	MStatus ImportShapes();
 	MStatus ImportShape(nifly::NiShape* shape, const MObject& parentTransform);
-	MStatus CreateMayaMesh(const NiflyShapeData& shapeData, const NiflyTransform& transform, const MObject& parentTransform);
+	MStatus CreateMayaMesh(const NiflyShapeData& shapeData, const NiflyTransform& transform, const MObject& parentTransform, nifly::NiShape* shape);
 	MStatus CreateMayaMaterial(const NiflyShapeData& shapeData, MObject& outMaterial);
+	MStatus ApplySkinning(nifly::NiShape* shape, const MObject& meshObj);
+	void ApplyDismemberPartitions(nifly::NiShape* shape, const MObject& meshObj);
+	MObject GetOrCreateJoint(const std::string& boneName);
+	void BuildJointHierarchy();
+	void LoadReferenceSkeleton();
+	const nifly::NifFile* GetBoneSource() const;
+	bool ShouldUseReferenceSkeleton(const std::vector<std::string>& boneNames) const;
 	
 	// Data extraction from nifly shapes
 	bool ExtractShapeData(nifly::NiShape* shape, NiflyShapeData& outData);
@@ -111,4 +120,9 @@ private:
 	// Logging
 	void LogMessage(const std::string& message);
 	void LogError(const std::string& message);
+
+	MObject rootTransform;
+	std::unordered_map<std::string, MObject> jointMap;
+	std::unique_ptr<nifly::NifFile> referenceSkeleton;
+	bool useReferenceSkeleton = false;
 };

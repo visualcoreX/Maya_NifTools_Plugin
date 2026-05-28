@@ -16,6 +16,9 @@
 #include <maya/MFnPhongShader.h>
 #include <maya/MFnDependencyNode.h>
 #include <maya/MFnSet.h>
+#include <maya/MFnIkJoint.h>
+#include <maya/MFnSkinCluster.h>
+#include <maya/MFnSingleIndexedComponent.h>
 #include <maya/MDGModifier.h>
 #include <maya/MFloatPointArray.h>
 #include <maya/MFloatArray.h>
@@ -23,6 +26,8 @@
 #include <maya/MPointArray.h>
 #include <maya/MGlobal.h>
 #include <maya/MItDependencyNodes.h>
+#include <maya/MItGeometry.h>
+#include <maya/MItMeshPolygon.h>
 #include <maya/MSelectionList.h>
 #include <maya/MPlug.h>
 #include <maya/MPlugArray.h>
@@ -34,6 +39,10 @@
 #include <filesystem>
 #include <cctype>
 #include <algorithm>
+#include <functional>
+#include <unordered_set>
+
+#include "include/Custom Nodes/NifDismemberPartition.h"
 
 namespace {
 	void AppendLog(const std::string& message) {
@@ -44,6 +53,25 @@ namespace {
 		}
 		// Also output to Maya script editor
 		MGlobal::displayInfo(MString(message.c_str()));
+	}
+
+	MTransformationMatrix MakeMayaTransform(const nifly::MatTransform& xform, float importScale) {
+		double mat[4][4] = {
+			{ xform.rotation[0][0], xform.rotation[0][1], xform.rotation[0][2], 0.0 },
+			{ xform.rotation[1][0], xform.rotation[1][1], xform.rotation[1][2], 0.0 },
+			{ xform.rotation[2][0], xform.rotation[2][1], xform.rotation[2][2], 0.0 },
+			{ 0.0, 0.0, 0.0, 1.0 }
+		};
+		MTransformationMatrix tm;
+		tm = MMatrix(mat);
+		tm.setTranslation(MVector(
+			xform.translation.x * importScale,
+			xform.translation.y * importScale,
+			xform.translation.z * importScale
+		), MSpace::kTransform);
+		double scaleArr[3] = { xform.scale, xform.scale, xform.scale };
+		tm.setScale(scaleArr, MSpace::kTransform);
+		return tm;
 	}
 }
 
@@ -144,6 +172,37 @@ MStatus NiflyImporter::ImportShapes() {
 			rootXform.translation.z * scale
 		), MSpace::kTransform);
 	}
+	rootTransform = parentTransform;
+
+	// Decide whether to use a reference skeleton for bones not in the NIF
+	std::unordered_set<std::string> boneSet;
+	for (auto* shape : shapes) {
+		if (!shape) {
+			continue;
+		}
+		std::vector<std::string> boneNames;
+		nifFile->GetShapeBoneList(shape, boneNames);
+		for (const auto& name : boneNames) {
+			if (!name.empty()) {
+				boneSet.insert(name);
+			}
+		}
+	}
+
+	std::vector<std::string> boneNames(boneSet.begin(), boneSet.end());
+	useReferenceSkeleton = !boneNames.empty();
+	if (useReferenceSkeleton) {
+		LoadReferenceSkeleton();
+		useReferenceSkeleton = (referenceSkeleton && referenceSkeleton->IsValid());
+		if (useReferenceSkeleton) {
+			LogMessage("[NiflyImporter] Using reference skeleton for joint hierarchy");
+		} else {
+			LogMessage("[NiflyImporter] Reference skeleton not found; using NIF nodes");
+		}
+	}
+
+	// Build full joint hierarchy before applying skinning
+	BuildJointHierarchy();
 	
 	for (nifly::NiShape* shape : shapes) {
 		MStatus status = ImportShape(shape, parentTransform);
@@ -170,7 +229,7 @@ MStatus NiflyImporter::ImportShape(nifly::NiShape* shape, const MObject& parentT
 	NiflyTransform transform;
 	ExtractTransform(shape, transform);
 	
-	return CreateMayaMesh(shapeData, transform, parentTransform);
+	return CreateMayaMesh(shapeData, transform, parentTransform, shape);
 }
 
 bool NiflyImporter::ExtractShapeData(nifly::NiShape* shape, NiflyShapeData& outData) {
@@ -306,7 +365,7 @@ bool NiflyImporter::ExtractTransform(nifly::NiShape* shape, NiflyTransform& outT
 	return true;
 }
 
-MStatus NiflyImporter::CreateMayaMesh(const NiflyShapeData& shapeData, const NiflyTransform& transform, const MObject& parentTransform) {
+MStatus NiflyImporter::CreateMayaMesh(const NiflyShapeData& shapeData, const NiflyTransform& transform, const MObject& parentTransform, nifly::NiShape* shape) {
 	MStatus status;
 	
 	size_t numVerts = shapeData.vertices.size() / 3;
@@ -378,14 +437,47 @@ MStatus NiflyImporter::CreateMayaMesh(const NiflyShapeData& shapeData, const Nif
 	if (!transformObj.isNull()) {
 		MFnDagNode transformDagFn(transformObj);
 		transformDagFn.setName(mayaName);
-		
-		// Apply shape transform
+
+		// Apply shape transform (skinned meshes use global-to-skin derived transform)
 		MFnTransform transformFnObj(transformObj);
-		transformFnObj.setTranslation(MVector(
-			transform.translation[0] * scale,
-			transform.translation[1] * scale,
-			transform.translation[2] * scale
-		), MSpace::kTransform);
+		bool hasSkin = false;
+		if (shape != nullptr) {
+			std::vector<std::string> boneNames;
+			hasSkin = (nifFile->GetShapeBoneList(shape, boneNames) > 0 && !boneNames.empty());
+		}
+
+		if (hasSkin && shape != nullptr) {
+			nifly::MatTransform shapeXf = shape->GetTransformToParent();
+			nifly::MatTransform calcXf;
+			bool hasCalc = nifFile->CalcShapeTransformGlobalToSkin(shape, calcXf);
+			if (!hasCalc) {
+				calcXf.Clear();
+			}
+
+			nifly::MatTransform globalToSkin;
+			bool hasGlobal = nifFile->GetShapeTransformGlobalToSkin(shape, globalToSkin);
+
+			nifly::MatTransform objXf;
+			if (hasGlobal) {
+				objXf = shapeXf.ComposeTransforms(globalToSkin).ComposeTransforms(calcXf).InverseTransform();
+			} else if (hasCalc) {
+				objXf = calcXf.InverseTransform();
+			} else {
+				objXf = shapeXf;
+			}
+
+			transformFnObj.set(MakeMayaTransform(objXf, scale));
+		} else {
+			nifly::MatTransform meshXf;
+			meshXf.translation = nifly::Vector3(transform.translation[0], transform.translation[1], transform.translation[2]);
+			meshXf.rotation = nifly::Matrix3(
+				transform.rotation[0], transform.rotation[1], transform.rotation[2],
+				transform.rotation[3], transform.rotation[4], transform.rotation[5],
+				transform.rotation[6], transform.rotation[7], transform.rotation[8]
+			);
+			meshXf.scale = transform.scale;
+			transformFnObj.set(MakeMayaTransform(meshXf, scale));
+		}
 	}
 	
 	// Assign UVs
@@ -433,6 +525,12 @@ MStatus NiflyImporter::CreateMayaMesh(const NiflyShapeData& shapeData, const Nif
 			dgMod.connect(outColor, surfaceShader);
 			dgMod.doIt();
 		}
+	}
+
+	// Apply skinning and partitions if present
+	if (shape != nullptr) {
+		ApplySkinning(shape, meshObj);
+		ApplyDismemberPartitions(shape, meshObj);
 	}
 	
 	LogMessage("[NiflyImporter] Created mesh: " + std::string(mayaName.asChar()) + 
@@ -524,6 +622,436 @@ MStatus NiflyImporter::CreateMayaMaterial(const NiflyShapeData& shapeData, MObje
 	return MStatus::kSuccess;
 }
 
+MObject NiflyImporter::GetOrCreateJoint(const std::string& boneName) {
+	auto it = jointMap.find(boneName);
+	if (it != jointMap.end()) {
+		return it->second;
+	}
+
+	const nifly::NifFile* boneSource = GetBoneSource();
+	nifly::NiNode* boneNode = boneSource ? boneSource->FindBlockByName<nifly::NiNode>(boneName) : nullptr;
+	if (!boneNode && boneSource != nifFile.get()) {
+		boneNode = nifFile->FindBlockByName<nifly::NiNode>(boneName);
+	}
+	if (!boneNode) {
+		LogError("[NiflyImporter] Bone not found in NIF: " + boneName);
+		return MObject::kNullObj;
+	}
+
+	nifly::NiNode* parentNode = boneSource ? boneSource->GetParentNode(boneNode) : nullptr;
+	MObject parentObj = MObject::kNullObj;
+	if (parentNode) {
+		parentObj = GetOrCreateJoint(parentNode->name.get());
+	}
+	if (parentObj.isNull() && !rootTransform.isNull()) {
+		parentObj = rootTransform;
+	}
+
+	MFnIkJoint jointFn;
+	MObject jointObj = jointFn.create(parentObj);
+	jointFn.setName(MakeMayaName(boneName));
+
+	nifly::MatTransform xform;
+	if (boneSource && boneSource->GetNodeTransformToParent(boneName, xform)) {
+		MTransformationMatrix tm = MakeMayaTransform(xform, importOptions.importScale);
+		jointFn.set(tm);
+	}
+
+	jointMap[boneName] = jointObj;
+	return jointObj;
+}
+
+bool NiflyImporter::ShouldUseReferenceSkeleton(const std::vector<std::string>& boneNames) const {
+	if (boneNames.empty()) {
+		return false;
+	}
+	size_t missing = 0;
+	for (const auto& name : boneNames) {
+		if (name.empty()) {
+			continue;
+		}
+		if (!nifFile->FindBlockByName<nifly::NiNode>(name)) {
+			++missing;
+		}
+	}
+	return missing > 0;
+}
+
+const nifly::NifFile* NiflyImporter::GetBoneSource() const {
+	if (useReferenceSkeleton && referenceSkeleton && referenceSkeleton->IsValid()) {
+		return referenceSkeleton.get();
+	}
+	return nifFile.get();
+}
+
+void NiflyImporter::LoadReferenceSkeleton() {
+	if (referenceSkeleton || importFileDir.empty()) {
+		return;
+	}
+
+	std::filesystem::path nifPath(importFileDir);
+	std::vector<std::filesystem::path> candidateDirs;
+	candidateDirs.push_back(nifPath);
+
+	// Look for a "meshes" folder in the path to build a root search
+	std::filesystem::path current = nifPath;
+	while (current.has_parent_path()) {
+		if (current.filename().string() == "meshes") {
+			std::filesystem::path root = current.parent_path();
+			candidateDirs.push_back(root / "meshes" / "actors" / "character" / "character assets");
+			break;
+		}
+		current = current.parent_path();
+	}
+
+	std::vector<std::string> filenames;
+	const std::string lowerPath = nifPath.string();
+	const bool preferFemale = (lowerPath.find("female") != std::string::npos);
+
+	if (preferFemale) {
+		filenames = {"skeleton_female.nif", "skeleton.nif", "skeletonbeast_female.nif", "skeletonbeast.nif"};
+	} else {
+		filenames = {"skeleton.nif", "skeleton_female.nif", "skeletonbeast.nif", "skeletonbeast_female.nif"};
+	}
+
+	for (const auto& dir : candidateDirs) {
+		for (const auto& file : filenames) {
+			std::filesystem::path candidate = dir / file;
+			if (!std::filesystem::exists(candidate)) {
+				continue;
+			}
+			referenceSkeleton = std::make_unique<nifly::NifFile>();
+			nifly::NifLoadOptions options;
+			int result = referenceSkeleton->Load(candidate, options);
+			if (result == 0 && referenceSkeleton->IsValid()) {
+				LogMessage("[NiflyImporter] Loaded reference skeleton: " + candidate.string());
+				return;
+			}
+			referenceSkeleton.reset();
+		}
+	}
+}
+
+void NiflyImporter::BuildJointHierarchy() {
+	const nifly::NifFile* boneSource = GetBoneSource();
+	if (!boneSource) {
+		return;
+	}
+
+	auto* rootNode = boneSource->GetRootNode();
+	if (!rootNode) {
+		return;
+	}
+
+	std::unordered_set<std::string> visited;
+	size_t created = 0;
+
+	std::function<void(nifly::NiNode*, const MObject&, const std::string&)> visit =
+		[&](nifly::NiNode* node, const MObject& parentJoint, const std::string& parentName) {
+			if (!node) {
+				return;
+			}
+			const std::string name = node->name.get();
+			if (name.empty()) {
+				return;
+			}
+
+			MObject jointObj = MObject::kNullObj;
+			auto it = jointMap.find(name);
+			if (it != jointMap.end()) {
+				jointObj = it->second;
+			} else {
+				MFnIkJoint jointFn;
+				MObject parentObj = parentJoint.isNull() ? rootTransform : parentJoint;
+				jointObj = jointFn.create(parentObj);
+				jointFn.setName(MakeMayaName(name));
+
+				nifly::MatTransform xform;
+				if (useReferenceSkeleton) {
+					nifly::MatTransform nodeGlobal;
+					nifly::MatTransform parentGlobal;
+					const bool hasNodeGlobal = boneSource->GetNodeTransformToGlobal(name, nodeGlobal);
+					const bool hasParentGlobal = (!parentName.empty()) && boneSource->GetNodeTransformToGlobal(parentName, parentGlobal);
+					if (hasNodeGlobal) {
+						nifly::MatTransform localXf = nodeGlobal;
+						if (hasParentGlobal) {
+							localXf = parentGlobal.InverseTransform().ComposeTransforms(nodeGlobal);
+						}
+						jointFn.set(MakeMayaTransform(localXf, importOptions.importScale));
+					} else if (boneSource->GetNodeTransformToParent(name, xform)) {
+						jointFn.set(MakeMayaTransform(xform, importOptions.importScale));
+					}
+				} else if (boneSource->GetNodeTransformToParent(name, xform)) {
+					jointFn.set(MakeMayaTransform(xform, importOptions.importScale));
+				}
+
+				jointMap[name] = jointObj;
+				++created;
+			}
+
+			visited.insert(name);
+
+			auto children = boneSource->GetChildren<nifly::NiNode>(node);
+			for (auto* child : children) {
+				visit(child, jointObj, name);
+			}
+		};
+
+	visit(rootNode, MObject::kNullObj, std::string());
+
+	// Add any loose nodes not reachable from the root as children of rootTransform.
+	auto nodes = boneSource->GetNodes();
+	for (auto* node : nodes) {
+		if (!node) {
+			continue;
+		}
+		const std::string name = node->name.get();
+		if (name.empty() || visited.count(name) != 0) {
+			continue;
+		}
+		MFnIkJoint jointFn;
+		MObject jointObj = jointFn.create(rootTransform);
+		jointFn.setName(MakeMayaName(name));
+
+		nifly::MatTransform xform;
+		if (boneSource->GetNodeTransformToGlobal(name, xform)) {
+			jointFn.set(MakeMayaTransform(xform, importOptions.importScale));
+		} else if (boneSource->GetNodeTransformToParent(name, xform)) {
+			jointFn.set(MakeMayaTransform(xform, importOptions.importScale));
+		}
+
+		jointMap[name] = jointObj;
+		++created;
+	}
+
+	LogMessage("[NiflyImporter] Built joint hierarchy: " + std::to_string(created) + " joints");
+}
+
+MStatus NiflyImporter::ApplySkinning(nifly::NiShape* shape, const MObject& meshObj) {
+	if (!shape || meshObj.isNull()) {
+		return MStatus::kFailure;
+	}
+
+	std::vector<std::string> boneNames;
+	if (nifFile->GetShapeBoneList(shape, boneNames) == 0 || boneNames.empty()) {
+		return MStatus::kSuccess;
+	}
+
+	std::vector<MDagPath> jointPaths;
+	jointPaths.reserve(boneNames.size());
+	for (const auto& boneName : boneNames) {
+		MObject jointObj = GetOrCreateJoint(boneName);
+		if (jointObj.isNull()) {
+			LogError("[NiflyImporter] Failed to create joint for bone: " + boneName);
+			return MStatus::kFailure;
+		}
+
+		MDagPath jointPath;
+		MDagPath::getAPathTo(jointObj, jointPath);
+		jointPaths.push_back(jointPath);
+	}
+
+	MDagPath meshPath;
+	MDagPath::getAPathTo(meshObj, meshPath);
+
+	std::string cmd = "skinCluster -tsb ";
+	for (const auto& jointPath : jointPaths) {
+		cmd.append(jointPath.fullPathName().asChar());
+		cmd.append(" ");
+	}
+	cmd.append(meshPath.fullPathName().asChar());
+
+	MStringArray result;
+	MStatus status = MGlobal::executeCommand(cmd.c_str(), result);
+	if (status != MStatus::kSuccess || result.length() == 0) {
+		LogError("[NiflyImporter] Failed to create skinCluster for mesh: " + std::string(meshPath.partialPathName().asChar()));
+		return MStatus::kFailure;
+	}
+
+	MSelectionList selList;
+	selList.add(result[0]);
+	MObject skinOb;
+	selList.getDependNode(0, skinOb);
+	MFnSkinCluster clusterFn(skinOb, &status);
+	if (status != MStatus::kSuccess) {
+		LogError("[NiflyImporter] Failed to access skinCluster node");
+		return MStatus::kFailure;
+	}
+
+	if (!importOptions.importNormalizedWeights) {
+		MPlug normalizePlug = clusterFn.findPlug("normalizeWeights", true, &status);
+		if (status == MStatus::kSuccess) {
+			normalizePlug.setInt(0);
+		}
+	}
+
+	MFnMesh meshFn(meshObj, &status);
+	if (status != MStatus::kSuccess) {
+		return MStatus::kFailure;
+	}
+	const int numVerts = static_cast<int>(meshFn.numVertices());
+	if (numVerts <= 0) {
+		return MStatus::kFailure;
+	}
+
+	MFnSingleIndexedComponent compFn;
+	MObject vertices = compFn.create(MFn::kMeshVertComponent);
+	MIntArray vertexIndices(numVerts);
+	for (int v = 0; v < numVerts; ++v) {
+		vertexIndices[v] = v;
+	}
+	compFn.addElements(vertexIndices);
+
+	std::vector<std::vector<float>> nifWeights(boneNames.size(), std::vector<float>(numVerts, 0.0f));
+	for (size_t boneIndex = 0; boneIndex < boneNames.size(); ++boneIndex) {
+		std::unordered_map<uint16_t, float> weights;
+		nifFile->GetShapeBoneWeights(shape, static_cast<uint32_t>(boneIndex), weights);
+		for (const auto& entry : weights) {
+			if (entry.first < static_cast<uint16_t>(numVerts)) {
+				nifWeights[boneIndex][entry.first] = entry.second;
+			}
+		}
+	}
+
+	MIntArray influenceList(static_cast<unsigned int>(boneNames.size()));
+	for (unsigned int i = 0; i < boneNames.size(); ++i) {
+		influenceList[i] = static_cast<int>(i);
+	}
+
+	MFloatArray weightList(static_cast<unsigned int>(numVerts * boneNames.size()));
+	int k = 0;
+	for (int v = 0; v < numVerts; ++v) {
+		for (size_t b = 0; b < boneNames.size(); ++b) {
+			weightList[k++] = nifWeights[b][v];
+		}
+	}
+
+	clusterFn.setWeights(meshPath, vertices, influenceList, weightList, importOptions.importNormalizedWeights);
+	LogMessage("[NiflyImporter] Applied skinning: bones=" + std::to_string(boneNames.size()) + " verts=" + std::to_string(numVerts));
+	return MStatus::kSuccess;
+}
+
+void NiflyImporter::ApplyDismemberPartitions(nifly::NiShape* shape, const MObject& meshObj) {
+	if (!shape || meshObj.isNull()) {
+		return;
+	}
+
+	nifly::NiVector<nifly::BSDismemberSkinInstance::PartitionInfo> partitionInfo;
+	std::vector<int> triParts;
+	if (!nifFile->GetShapePartitions(shape, partitionInfo, triParts)) {
+		return;
+	}
+	if (partitionInfo.empty() || triParts.empty()) {
+		return;
+	}
+
+	MFnMesh meshFn(meshObj);
+	meshFn.updateSurface();
+
+	MStringArray longName;
+	MStringArray shortName;
+	MStringArray formatName;
+	longName.append("dismemberValue");
+	shortName.append("dV");
+	formatName.append("int");
+
+	MDagPath meshPath;
+	MDagPath::getAPathTo(meshObj, meshPath);
+
+	int blindDataId = 0;
+	for (size_t partIndex = 0; partIndex < partitionInfo.size(); ++partIndex) {
+		MSelectionList selectedFaces;
+		MStatus status;
+		do {
+			blindDataId++;
+			status = meshFn.createBlindDataType(blindDataId, longName, shortName, formatName);
+		} while (status == MStatus::kFailure);
+
+		MItMeshPolygon polygonIt(meshObj);
+		selectedFaces.add(meshPath);
+		for (size_t t = 0; t < triParts.size() && !polygonIt.isDone(); ++t, polygonIt.next()) {
+			if (triParts[t] == static_cast<int>(partIndex)) {
+				selectedFaces.add(meshPath, polygonIt.currentItem());
+			}
+		}
+
+		MString melCommand = "polyBlindData -id ";
+		melCommand += blindDataId;
+		melCommand += " -associationType \"face\" -ldn \"dismemberValue\" -ind 1";
+		MGlobal::clearSelectionList();
+		MGlobal::setActiveSelectionList(selectedFaces);
+		MGlobal::executeCommand(melCommand);
+
+		meshFn.updateSurface();
+
+		MDGModifier dgModifier;
+		MFnDependencyNode dismemberNode;
+		dismemberNode.create("nifDismemberPartition");
+
+		MPlug inputMessageDismember = dismemberNode.findPlug("targetFaces");
+		MPlug inputMessageShape = dismemberNode.findPlug("targetShape");
+
+		MPlug meshOutMessage = meshFn.findPlug("message");
+		dgModifier.connect(meshOutMessage, inputMessageShape);
+		dgModifier.doIt();
+
+		const auto& info = partitionInfo[partIndex];
+		MStringArray bodyPartsStrings = NifDismemberPartition::bodyPartTypeToStringArray(
+			static_cast<BSDismemberBodyPartType>(info.partID));
+		MStringArray partsStrings = NifDismemberPartition::partToStringArray(
+			static_cast<BSPartFlag>(info.flags));
+
+		melCommand = "setAttr ";
+		melCommand += (dismemberNode.name() + ".bodyPartsFlags");
+		melCommand += " -type \"stringArray\" ";
+		melCommand += bodyPartsStrings.length();
+		for (unsigned int z = 0; z < bodyPartsStrings.length(); ++z) {
+			melCommand += (" \"" + bodyPartsStrings[z] + "\"");
+		}
+		MGlobal::executeCommand(melCommand);
+
+		melCommand = "setAttr ";
+		melCommand += (dismemberNode.name() + ".partsFlags");
+		melCommand += " -type \"stringArray\" ";
+		melCommand += partsStrings.length();
+		for (unsigned int z = 0; z < partsStrings.length(); ++z) {
+			melCommand += (" \"" + partsStrings[z] + "\"");
+		}
+		MGlobal::executeCommand(melCommand);
+
+		MPlugArray connections;
+		MPlug inputMesh = meshFn.findPlug("inMesh");
+		MPlug outMesh;
+		MPlug typeId;
+		MFnDependencyNode nodeOutMesh;
+
+		inputMesh.connectedTo(connections, true, false);
+		if (connections.length() > 0) {
+			outMesh = connections[0];
+			nodeOutMesh.setObject(outMesh.node());
+			typeId = nodeOutMesh.findPlug("typeId");
+		}
+
+		while (!typeId.isNull() && typeId.asInt() != blindDataId) {
+			inputMesh = nodeOutMesh.findPlug("inMesh");
+			connections.clear();
+			inputMesh.connectedTo(connections, true, false);
+			if (connections.length() == 0) {
+				break;
+			}
+			outMesh = connections[0];
+			nodeOutMesh.setObject(outMesh.node());
+			typeId = nodeOutMesh.findPlug("typeId");
+		}
+
+		if (!nodeOutMesh.object().isNull()) {
+			MPlug message = nodeOutMesh.findPlug("message");
+			dgModifier.connect(message, inputMessageDismember);
+			dgModifier.doIt();
+		}
+	}
+}
+
 MString NiflyImporter::ResolveTexturePath(const std::string& texturePath) {
 	if (texturePath.empty()) return MString();
 	
@@ -531,6 +1059,16 @@ MString NiflyImporter::ResolveTexturePath(const std::string& texturePath) {
 	// Replace backslashes with forward slashes
 	for (char& c : path) {
 		if (c == '\\') c = '/';
+	}
+
+	// If already absolute, return as-is when it exists
+	try {
+		std::filesystem::path absPath(path);
+		if (absPath.is_absolute() && std::filesystem::exists(absPath)) {
+			return MString(absPath.lexically_normal().string().c_str());
+		}
+	} catch (...) {
+		// ignore filesystem errors
 	}
 
 	// Strip any leading "./" and normalize texture prefix
@@ -546,10 +1084,36 @@ MString NiflyImporter::ResolveTexturePath(const std::string& texturePath) {
 		texturesSubpath = texturesSubpath.substr(pos + texturesPrefix.size());
 	}
 	
+	// Prefer user-configured texture paths from the importer dialog
+	if (!importOptions.texturePath.empty()) {
+		MStringArray paths;
+		MString(importOptions.texturePath.c_str()).split('|', paths);
+
+		for (unsigned int i = 0; i < paths.length(); i++) {
+			std::string basePath = paths[i].asChar();
+
+			// Absolute base path + full path
+			try {
+				std::filesystem::path base(basePath);
+				std::filesystem::path direct = base / path;
+				if (std::filesystem::exists(direct)) {
+					return MString(direct.lexically_normal().string().c_str());
+				}
+
+				std::filesystem::path withTextures = base / "textures" / texturesSubpath;
+				if (std::filesystem::exists(withTextures)) {
+					return MString(withTextures.lexically_normal().string().c_str());
+				}
+			} catch (...) {
+				// ignore filesystem errors
+			}
+		}
+	}
+
 	MFileObject mFile;
 	mFile.setRawName(MString(path.c_str()));
 	
-	// Check if file exists directly
+	// Check if file exists directly (relative to current Maya project)
 	if (mFile.exists()) {
 		return mFile.resolvedFullName();
 	}
@@ -589,28 +1153,6 @@ MString NiflyImporter::ResolveTexturePath(const std::string& texturePath) {
 			}
 		} catch (...) {
 			// ignore filesystem errors
-		}
-	}
-	
-	// Check in configured texture paths
-	if (!importOptions.texturePath.empty()) {
-		MStringArray paths;
-		MString(importOptions.texturePath.c_str()).split('|', paths);
-		
-		for (unsigned int i = 0; i < paths.length(); i++) {
-			std::string basePath = paths[i].asChar();
-			std::string fullPath = basePath + "/" + path;
-			mFile.setRawName(MString(fullPath.c_str()));
-			if (mFile.exists()) {
-				return mFile.resolvedFullName();
-			}
-
-			// Also try basePath/textures/<subpath>
-			std::string textureFullPath = basePath + "/textures/" + texturesSubpath;
-			mFile.setRawName(MString(textureFullPath.c_str()));
-			if (mFile.exists()) {
-				return mFile.resolvedFullName();
-			}
 		}
 	}
 	

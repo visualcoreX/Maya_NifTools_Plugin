@@ -5,12 +5,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "maya_nif_plugin", "maya_nif_plugin.vcxproj", "{DE2F121F-8326-4144-A766-444451895AFA}"
 	ProjectSection(ProjectDependencies) = postProject
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E} = {19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890} = {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "niflib", "niflib\niflib.vcxproj", "{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nifly", "extern\nifly\nifly.vcxproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -147,35 +144,6 @@ Global
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Release - Static|Win32.Build.0 = Release - Static|Win32
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Release - Static|x64.ActiveCfg = Release - Static|x64
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Release - Static|x64.Build.0 = Release - Static|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug - 2012 x64|Win32.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug - 2012 x64|x64.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug - 2012|Win32.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug - 2012|x64.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug - 2016|Win32.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug - 2016|x64.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug - 8.5|Win32.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug - 8.5|x64.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug - DLL|Win32.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug - DLL|x64.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug - Maya 2012 x64|Win32.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug - Maya 2012 x64|x64.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug - Static|Win32.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug - Static|x64.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release - 2009|Win32.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release - 2009|x64.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release - 2012 x64|Win32.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release - 2012 x64|x64.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release - 2016|Win32.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release - 2016|x64.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release - 2025|Win32.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release - 2025|x64.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release - 2025|x64.Build.0 = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release - 8.5|Win32.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release - 8.5|x64.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release - DLL|Win32.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release - DLL|x64.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release - Static|Win32.ActiveCfg = Release - 2025|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release - Static|x64.ActiveCfg = Release - 2025|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
