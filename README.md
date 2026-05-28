@@ -17,10 +17,8 @@
 2. [Building from Source](#building-from-source)
    - [Prerequisites](#prerequisites)
    - [Step 1 — Clone](#step-1--clone-the-repository)
-   - [Step 2 — Build nifly](#step-2--build-nifly-static-library)
-   - [Step 3 — Build the Plugin](#step-3--build-the-plugin)
-   - [Step 4 — Deploy](#step-4--deploy-to-maya)
-   - [Step 5 — Load in Maya](#step-5--load-the-plugin-in-maya)
+   - [Step 2 — Build](#step-2--build-the-plugin)
+   - [Step 3 — Load in Maya](#step-3--load-the-plugin-in-maya)
 3. [Troubleshooting](#troubleshooting)
 4. [Project Structure](#project-structure)
 
@@ -114,9 +112,16 @@ handled by the nifly path.
 
 ## Building from Source
 
-Everything you need to compile the plugin **from a fresh clone** — no external
-SDK downloads required. The Maya 2025 headers and import libraries are bundled
-in the repo under `extern/maya2025/`.
+Everything you need to compile the plugin is **included in the repo** — no
+external SDK downloads, no CMake, no extra tools beyond Visual Studio and Git.
+
+All dependencies are either bundled or build automatically:
+
+| Dependency | Location | How it's used |
+|:-----------|:---------|:--------------|
+| **Maya 2025 SDK** | `extern/maya2025/` | Headers + import libs — committed in repo |
+| **nifly** | `extern/prebuilt/nifly.lib` | Pre-built static lib committed in repo (source in `extern/nifly/` submodule) |
+| **niflib** | `niflib/` | Builds automatically as a solution dependency |
 
 The build produces two runtime files:
 
@@ -133,14 +138,12 @@ The build produces two runtime files:
 |:------------|:--------|
 | **OS** | Windows 10 or 11 — **x64** |
 | **Visual Studio 2022** | Community / Professional / Enterprise. Install the **"Desktop development with C++"** workload. Uses the **v143** platform toolset. |
-| **CMake 3.10 +** | Only needed to build the nifly static library ([Step 2](#step-2--build-nifly-static-library)). |
 | **Git** | Any recent version — submodule support required. |
 
 > [!NOTE]
-> **No Maya DevKit download needed.** The required Maya 2025 SDK headers and
-> import libraries (`Foundation.lib`, `OpenMaya.lib`, etc.) are already included
-> in the repo at `extern/maya2025/`. You only need Maya itself installed to
-> *run* the plugin — not to compile it.
+> **That's it.** No Maya DevKit download, no CMake, no vcpkg. The Maya 2025
+> headers, import libraries, and pre-built `nifly.lib` are all committed
+> directly in the repo.
 
 ---
 
@@ -165,55 +168,9 @@ cd Maya_NifTools_Plugin
 git submodule update --init --recursive
 ```
 
-**Verify** the submodules and bundled SDK are populated:
-
-```bash
-dir niflib\include
-dir extern\nifly\include
-dir extern\maya2025\include\maya
-```
-
-All three should list header files. If any are empty, re-run the submodule
-command above.
-
 ---
 
-### Step 2 — Build nifly (Static Library)
-
-The plugin **statically links** `nifly.lib`. Nifly uses **CMake** and must be
-built **before** the main solution.
-
-**Open a Developer Command Prompt for VS 2022** (or any terminal with `cmake`
-on `PATH`) and run from the repo root:
-
-```bash
-cd extern\nifly
-mkdir build && cd build
-cmake .. -G "Visual Studio 17 2022" -A x64
-cmake --build . --config Release
-```
-
-This produces:
-
-```
-extern\nifly\build\src\Release\nifly.lib
-```
-
-The main project expects `nifly.lib` at a specific path — **copy it there**:
-
-```bash
-mkdir "..\..\extern\nifly\x64\Release - 2025" 2>nul
-copy build\src\Release\nifly.lib "..\..\extern\nifly\x64\Release - 2025\nifly.lib"
-```
-
-> [!TIP]
-> Instead of copying, you can edit `AdditionalLibraryDirectories` for
-> `Release - 2025` in `maya_nif_plugin.vcxproj` to point directly at
-> `extern\nifly\build\src\Release`.
-
----
-
-### Step 3 — Build the Plugin
+### Step 2 — Build the Plugin
 
 1. Open **`maya_nif_plugin.sln`** in **Visual Studio 2022**.
 2. Set the **Configuration** dropdown to **`Release - 2025`** and **Platform** to **`x64`**.
@@ -226,23 +183,10 @@ The solution compiles two projects in dependency order:
 | 1 | **niflib** | `niflib\bin\niflib_x64.dll` + `niflib\lib\niflib_dll.lib` |
 | 2 | **maya_nif_plugin** | `Release - 2025\nifTranslator.mll` |
 
-> niflib builds automatically as a project dependency — no manual steps needed.
-> Just make sure the `niflib/` submodule is populated from [Step 1](#step-1--clone-the-repository).
+> niflib builds automatically — no manual steps. `nifly.lib` is pre-built and
+> already in the repo at `extern/prebuilt/nifly.lib`.
 
-**What the final plugin links against:**
-
-| Library | Type |
-|:--------|:-----|
-| `nifly.lib` | Static — baked into the `.mll` |
-| `niflib_dll.lib` | Import lib for the niflib DLL |
-| `Foundation.lib`, `OpenMaya.lib`, `OpenMayaAnim.lib`, `OpenMayaUI.lib`, `OpenMayaFX.lib`, `OpenMayaRender.lib`, `Image.lib` | Maya SDK *(bundled in repo)* |
-
----
-
-### Step 4 — Deploy to Maya
-
-The **post-build step runs automatically** on a successful build and copies
-everything to the correct Maya user directories.
+The **post-build step** automatically deploys everything to Maya:
 
 #### Plug-ins → `%USERPROFILE%\Documents\maya\2025\plug-ins\`
 
@@ -272,7 +216,7 @@ everything to the correct Maya user directories.
 
 ---
 
-### Step 5 — Load the Plugin in Maya
+### Step 3 — Load the Plugin in Maya
 
 1. Launch **Maya 2025**.
 2. **Windows → Settings / Preferences → Plug-in Manager**.
@@ -293,15 +237,6 @@ everything to the correct Maya user directories.
 
 Make sure `niflib_x64.dll` is in the **same folder** as `nifTranslator.mll`
 (the `plug-ins` directory), or in a directory on your system `PATH`.
-
-</details>
-
-<details>
-<summary><strong>"nifly.lib not found" — linker error</strong></summary>
-
-Build nifly first ([Step 2](#step-2--build-nifly-static-library)) and place
-`nifly.lib` where the project expects it. Check `AdditionalLibraryDirectories`
-in the `Release - 2025` config of `maya_nif_plugin.vcxproj` for the exact path.
 
 </details>
 
@@ -342,6 +277,23 @@ Common causes:
 
 </details>
 
+<details>
+<summary><strong>Rebuilding nifly from source</strong></summary>
+
+The pre-built `nifly.lib` should work out of the box. If you need to rebuild
+it (e.g. after modifying nifly source), install **CMake 3.10+** and run from
+the repo root:
+
+```bash
+cd extern\nifly
+mkdir build && cd build
+cmake .. -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTING=OFF
+cmake --build . --config Release
+copy build\src\Release\nifly.lib "..\..\..\prebuilt\nifly.lib"
+```
+
+</details>
+
 ---
 
 ## Project Structure
@@ -355,9 +307,10 @@ maya_nif_plugin/
 │
 ├── niflib/                              Submodule ─ niflib DLL (legacy NIF I/O)
 ├── extern/
-│   ├── nifly/                           Submodule ─ nifly static lib (modern NIF I/O)
-│   └── maya2025/                        Bundled Maya 2025 SDK (headers + import libs)
-│       ├── include/maya/                541 Maya API headers
+│   ├── nifly/                           Submodule ─ nifly source (modern NIF I/O)
+│   ├── prebuilt/                        Pre-built nifly.lib (ready to link)
+│   └── maya2025/                        Bundled Maya 2025 SDK
+│       ├── include/maya/                544 Maya API headers
 │       └── lib/                         Foundation, OpenMaya, OpenMayaAnim, etc.
 │
 ├── include/

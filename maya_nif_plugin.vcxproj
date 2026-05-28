@@ -1195,7 +1195,7 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
       <AdditionalOptions>/subsystem:windows /incremental:no /export:initializePlugin /export:uninitializePlugin </AdditionalOptions>
       <AdditionalDependencies>nifly.lib;niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(ProjectDir)$(Configuration)\nifTranslator.mll</OutputFile>
-      <AdditionalLibraryDirectories>$(SolutionDir)\extern\nifly\x64\Release - 2025;$(SolutionDir)\extern\maya2025\lib;$(SolutionDir)\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\extern\prebuilt;$(SolutionDir)\extern\maya2025\lib;$(SolutionDir)\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>$(TEMP)\nifTranslator_$(Configuration)_$(Platform).pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>

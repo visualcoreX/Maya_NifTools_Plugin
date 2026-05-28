@@ -11,3 +11,4 @@ cpp.hint
 Text.txt
 *.mll
 *.dll
+extern/nifly/build/
