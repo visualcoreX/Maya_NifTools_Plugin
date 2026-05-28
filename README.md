@@ -17,12 +17,10 @@
 2. [Building from Source](#building-from-source)
    - [Prerequisites](#prerequisites)
    - [Step 1 — Clone](#step-1--clone-the-repository)
-   - [Step 2 — DevKit Path](#step-2--configure-the-maya-2025-devkit-path)
-   - [Step 3 — Build nifly](#step-3--build-nifly-static-library)
-   - [Step 4 — Build niflib](#step-4--build-niflib-automatic)
-   - [Step 5 — Build the Plugin](#step-5--build-the-plugin)
-   - [Step 6 — Deploy](#step-6--deploy-to-maya)
-   - [Step 7 — Load in Maya](#step-7--load-the-plugin-in-maya)
+   - [Step 2 — Build nifly](#step-2--build-nifly-static-library)
+   - [Step 3 — Build the Plugin](#step-3--build-the-plugin)
+   - [Step 4 — Deploy](#step-4--deploy-to-maya)
+   - [Step 5 — Load in Maya](#step-5--load-the-plugin-in-maya)
 3. [Troubleshooting](#troubleshooting)
 4. [Project Structure](#project-structure)
 
@@ -116,7 +114,10 @@ handled by the nifly path.
 
 ## Building from Source
 
-Everything you need to compile the plugin **from a fresh clone**.
+Everything you need to compile the plugin **from a fresh clone** — no external
+SDK downloads required. The Maya 2025 headers and import libraries are bundled
+in the repo under `extern/maya2025/`.
+
 The build produces two runtime files:
 
 | Output | Role |
@@ -132,12 +133,14 @@ The build produces two runtime files:
 |:------------|:--------|
 | **OS** | Windows 10 or 11 — **x64** |
 | **Visual Studio 2022** | Community / Professional / Enterprise. Install the **"Desktop development with C++"** workload. Uses the **v143** platform toolset. |
-| **CMake 3.10 +** | Only needed to build the nifly static library ([Step 3](#step-3--build-nifly-static-library)). |
+| **CMake 3.10 +** | Only needed to build the nifly static library ([Step 2](#step-2--build-nifly-static-library)). |
 | **Git** | Any recent version — submodule support required. |
-| **Maya 2025 DevKit** | Download from [**Autodesk Developer Network**](https://www.autodesk.com/developer-network/platform-technologies/maya) (free account). Grab the **Windows** devkit `.zip` for Maya 2025 and extract it anywhere. |
 
 > [!NOTE]
-> You do **not** need Maya installed to *compile* the plugin — only to *run* it.
+> **No Maya DevKit download needed.** The required Maya 2025 SDK headers and
+> import libraries (`Foundation.lib`, `OpenMaya.lib`, etc.) are already included
+> in the repo at `extern/maya2025/`. You only need Maya itself installed to
+> *run* the plugin — not to compile it.
 
 ---
 
@@ -162,78 +165,20 @@ cd Maya_NifTools_Plugin
 git submodule update --init --recursive
 ```
 
-**Verify** both directories are populated:
+**Verify** the submodules and bundled SDK are populated:
 
 ```bash
 dir niflib\include
 dir extern\nifly\include
+dir extern\maya2025\include\maya
 ```
 
-Both should list header files. If either is empty, re-run the submodule command.
+All three should list header files. If any are empty, re-run the submodule
+command above.
 
 ---
 
-### Step 2 — Configure the Maya 2025 DevKit Path
-
-The `.vcxproj` ships with a **hardcoded devkit path** that you need to change
-to match your system.
-
-Open **`maya_nif_plugin.vcxproj`** in a text editor and search for
-**`Release - 2025`**. Update **two** blocks:
-
-#### A) Compiler include paths *(around line 1185)*
-
-```xml
-<AdditionalIncludeDirectories>
-  ...
-  E:\Skyrim Animation\...\devkitBase\include;
-  E:\Skyrim Animation\...\devkitBase\include\maya;
-  ...
-</AdditionalIncludeDirectories>
-```
-
-#### B) Linker library paths *(around line 1198)*
-
-```xml
-<AdditionalLibraryDirectories>
-  ...
-  E:\Skyrim Animation\...\devkitBase\lib;
-  ...
-</AdditionalLibraryDirectories>
-```
-
-**Replace** the `E:\Skyrim Animation\...` portion with your own devkit path.
-For example, if you extracted to `C:\Maya2025Devkit`:
-
-```
-C:\Maya2025Devkit\devkitBase\include
-C:\Maya2025Devkit\devkitBase\include\maya
-C:\Maya2025Devkit\devkitBase\lib
-```
-
-<details>
-<summary><strong>Expected devkit folder structure</strong></summary>
-
-```
-<your-devkit>\
- └─ devkitBase\
-     ├─ include\
-     │   └─ maya\
-     │       ├─ MFnPlugin.h
-     │       ├─ MObject.h
-     │       └─ ...
-     └─ lib\
-         ├─ Foundation.lib
-         ├─ OpenMaya.lib
-         ├─ OpenMayaAnim.lib
-         └─ ...
-```
-
-</details>
-
----
-
-### Step 3 — Build nifly (Static Library)
+### Step 2 — Build nifly (Static Library)
 
 The plugin **statically links** `nifly.lib`. Nifly uses **CMake** and must be
 built **before** the main solution.
@@ -268,25 +213,7 @@ copy build\src\Release\nifly.lib "..\..\extern\nifly\x64\Release - 2025\nifly.li
 
 ---
 
-### Step 4 — Build niflib (Automatic)
-
-niflib compiles as a **DLL** and its `.vcxproj` is already part of the solution
-with a matching `Release - 2025 | x64` configuration.
-
-**No manual steps.** It builds automatically as a project dependency in [Step 5](#step-5--build-the-plugin).
-
-It outputs:
-
-| File | Role |
-|:-----|:-----|
-| `niflib\bin\niflib_x64.dll` | Runtime DLL — deployed alongside the plugin |
-| `niflib\lib\niflib_dll.lib` | Import library — used at link time only |
-
-Just make sure `niflib/` is populated ([Step 1](#step-1--clone-the-repository)).
-
----
-
-### Step 5 — Build the Plugin
+### Step 3 — Build the Plugin
 
 1. Open **`maya_nif_plugin.sln`** in **Visual Studio 2022**.
 2. Set the **Configuration** dropdown to **`Release - 2025`** and **Platform** to **`x64`**.
@@ -299,17 +226,20 @@ The solution compiles two projects in dependency order:
 | 1 | **niflib** | `niflib\bin\niflib_x64.dll` + `niflib\lib\niflib_dll.lib` |
 | 2 | **maya_nif_plugin** | `Release - 2025\nifTranslator.mll` |
 
+> niflib builds automatically as a project dependency — no manual steps needed.
+> Just make sure the `niflib/` submodule is populated from [Step 1](#step-1--clone-the-repository).
+
 **What the final plugin links against:**
 
 | Library | Type |
 |:--------|:-----|
 | `nifly.lib` | Static — baked into the `.mll` |
 | `niflib_dll.lib` | Import lib for the niflib DLL |
-| `Foundation.lib`, `OpenMaya.lib`, `OpenMayaAnim.lib`, `OpenMayaUI.lib`, `OpenMayaFX.lib`, `OpenMayaRender.lib`, `Image.lib` | Maya SDK |
+| `Foundation.lib`, `OpenMaya.lib`, `OpenMayaAnim.lib`, `OpenMayaUI.lib`, `OpenMayaFX.lib`, `OpenMayaRender.lib`, `Image.lib` | Maya SDK *(bundled in repo)* |
 
 ---
 
-### Step 6 — Deploy to Maya
+### Step 4 — Deploy to Maya
 
 The **post-build step runs automatically** on a successful build and copies
 everything to the correct Maya user directories.
@@ -342,7 +272,7 @@ everything to the correct Maya user directories.
 
 ---
 
-### Step 7 — Load the Plugin in Maya
+### Step 5 — Load the Plugin in Maya
 
 1. Launch **Maya 2025**.
 2. **Windows → Settings / Preferences → Plug-in Manager**.
@@ -369,7 +299,7 @@ Make sure `niflib_x64.dll` is in the **same folder** as `nifTranslator.mll`
 <details>
 <summary><strong>"nifly.lib not found" — linker error</strong></summary>
 
-Build nifly first ([Step 3](#step-3--build-nifly-static-library)) and place
+Build nifly first ([Step 2](#step-2--build-nifly-static-library)) and place
 `nifly.lib` where the project expects it. Check `AdditionalLibraryDirectories`
 in the `Release - 2025` config of `maya_nif_plugin.vcxproj` for the exact path.
 
@@ -378,9 +308,9 @@ in the `Release - 2025` config of `maya_nif_plugin.vcxproj` for the exact path.
 <details>
 <summary><strong>"Cannot open include file: maya/MFnPlugin.h"</strong></summary>
 
-The Maya 2025 devkit paths in `.vcxproj` don't match your system.
-Go back to [Step 2](#step-2--configure-the-maya-2025-devkit-path) and update
-the include / library directories.
+The Maya SDK headers should already be in `extern/maya2025/include/maya/`. If
+the folder is missing or empty, make sure you have the latest version of the
+repo. The headers are committed directly — no devkit download needed.
 
 </details>
 
@@ -425,7 +355,10 @@ maya_nif_plugin/
 │
 ├── niflib/                              Submodule ─ niflib DLL (legacy NIF I/O)
 ├── extern/
-│   └── nifly/                           Submodule ─ nifly static lib (modern NIF I/O)
+│   ├── nifly/                           Submodule ─ nifly static lib (modern NIF I/O)
+│   └── maya2025/                        Bundled Maya 2025 SDK (headers + import libs)
+│       ├── include/maya/                541 Maya API headers
+│       └── lib/                         Foundation, OpenMaya, OpenMayaAnim, etc.
 │
 ├── include/
 │   ├── Common/                          Shared types, options, utilities
