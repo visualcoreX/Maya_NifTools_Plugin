@@ -3,103 +3,103 @@
 A Maya plug-in for importing and exporting NetImmerse/Gamebryo NIF files
 used by Bethesda games (Skyrim LE/SE/AE, Fallout 3/NV/4).
 
-**Fork:** [DCCStudios/Maya_NifTools_Plugin](https://github.com/DCCStudios/Maya_NifTools_Plugin)
-**Upstream:** [Alecu100/maya_nif_plugin](https://github.com/Alecu100/maya_nif_plugin)
+| | |
+|---|---|
+| **Fork** | [DCCStudios/Maya_NifTools_Plugin](https://github.com/DCCStudios/Maya_NifTools_Plugin) |
+| **Upstream** | [Alecu100/maya_nif_plugin](https://github.com/Alecu100/maya_nif_plugin) |
 
 ---
 
-## Fork Differences from Upstream (Alecu100)
+## What's Different in This Fork
 
-The upstream repository (by Alecu100) was last updated in May 2017 and targets
-Maya 2012–2017. It uses only the **niflib** library for NIF reading/writing, which
-does not understand Skyrim SE/AE's `BSTriShape` geometry nodes — importing any
-SE-era NIF would crash or produce empty meshes.
+The upstream repository (by Alecu100) was last updated in **May 2017** and
+targets **Maya 2012 – 2017**. It uses only the **niflib** library for NIF
+reading/writing, which does not understand Skyrim SE/AE's `BSTriShape`
+geometry nodes — importing any SE-era NIF would crash or produce empty meshes.
 
-This fork (by TheShinyHaxorus / DCCStudios) adds the following on top of upstream:
+This fork (by TheShinyHaxorus / DCCStudios) modernizes the plugin for
+**Maya 2025** and adds a second NIF backend
+([nifly](https://github.com/ousnius/nifly)) for full modern NIF support.
 
-### 1. Maya 2025 Support
-- A new **`Release - 2025 | x64`** build configuration for Maya 2025.
-- Include and library paths target the Maya 2025 devkit.
+### 1 — Maya 2025 Support
+
+- New **`Release - 2025 | x64`** build configuration targeting the Maya 2025 devkit.
 - C++17 language standard enabled (`/std:c++17`).
-- `WIN32_LEAN_AND_MEAN` and `NOMINMAX` preprocessor defines added to prevent
-  Windows header conflicts with Maya and nifly headers.
-- Post-build step automatically deploys the built `.mll` plugin, `niflib_x64.dll`,
-  and all required MEL scripts to the correct Maya 2025 user directories.
+- `WIN32_LEAN_AND_MEAN` / `NOMINMAX` defines to prevent Windows header conflicts.
+- Post-build step auto-deploys the `.mll`, DLL, and MEL scripts to Maya 2025 user dirs.
 - Import scale option wired into the options UI.
 
-### 2. Nifly Importer (BSTriShape / Modern NIF support)
-- Added [nifly](https://github.com/ousnius/nifly) as a Git submodule under
-  `extern/nifly`. Nifly is the same NIF library used by Outfit Studio / BodySlide
-  and correctly handles all modern NIF versions.
-- New `NiflyImporter` class detects modern NIF files automatically
-  (user-version ≥ 12, BSFadeNode root, etc.) and imports them through nifly
-  instead of niflib.
-- Full mesh import: vertices, normals, UVs, vertex colors, triangles.
-- Material / texture import: creates Maya Phong shaders with diffuse, normal, and
-  glow texture maps; resolves texture paths using the user-configured search paths
-  from the import options dialog.
-- Skeleton / skinning import: builds the full joint hierarchy from the NIF, creates
-  Maya joints, applies `skinCluster` with per-vertex bone weights, and supports
-  optional weight normalization.
-- Reference skeleton loading: can source bone transforms from an external skeleton
-  NIF when the mesh NIF only contains bone names without hierarchy data.
-- Dismember partition import: reads `BSDismemberSkinInstance` partition info and
-  creates matching `nifDismemberPartition` custom nodes with blind-data face
-  assignments in Maya.
+### 2 — Nifly Importer (Modern NIF Support)
 
-### 3. Nifly Exporter and Resave Bridge
-- New `NiflyExportingFixture` for native nifly-based geometry export of Skyrim
-  meshes.
-- `ResaveWithNifly()` bridge utility can re-save a niflib-exported NIF through
-  nifly for format consistency.
-- Skyrim material exports now route through nifly directly.
+[nifly](https://github.com/ousnius/nifly) — the same library used by Outfit Studio /
+BodySlide — is added as a Git submodule under `extern/nifly` and correctly handles all
+modern NIF versions.
 
-### 4. Updated niflib Submodule
-- niflib submodule changed from `Alecu100/niflib` to
-  [DCCStudios/Mayaniflib](https://github.com/DCCStudios/Mayaniflib), which adds
-  BSTriShape stub support so the legacy code path no longer crashes on SE NIFs.
+A new `NiflyImporter` class auto-detects modern NIFs (user-version >= 12, BSFadeNode
+root, etc.) and routes them through nifly instead of niflib:
 
-### 5. Fallout 4 Code Removed
-- The upstream Fallout 4 importer/exporter classes (`NifImportingFixtureFallout4`,
-  `NifExportingFixtureFallout4`, `NifMeshImporterFallout4`, `NifMeshExporterFallout4`,
-  `NifNodeImporterFallout4`, `BSSegment`, `BSSubSegment`) were incomplete and
-  non-functional. They have been removed; modern Fallout 4 NIFs are now handled by
-  the nifly import/export path instead.
+| Feature | Details |
+|---------|---------|
+| **Mesh import** | Vertices, normals, UVs, vertex colors, triangles |
+| **Materials** | Maya Phong shaders with diffuse, normal, and glow maps |
+| **Texture paths** | Resolved via user-configured search paths from the import options dialog |
+| **Skeleton / skinning** | Full joint hierarchy, `skinCluster` with per-vertex bone weights, optional normalization |
+| **Reference skeleton** | Sources bone transforms from an external skeleton NIF when the mesh NIF has names only |
+| **Dismember partitions** | Reads `BSDismemberSkinInstance` and creates `nifDismemberPartition` Maya nodes |
 
-### 6. Code Cleanup
-- Skyrim fixture files renamed for consistency
-  (`NifSkyrimImportingFixture` / `NifSkyrimExportingFixture`).
-- `NifMaterialImporterSkyrimFallout4` renamed to `NifMaterialImporterSkyrim`.
+### 3 — Nifly Exporter & Resave Bridge
+
+- `NiflyExportingFixture` for native nifly-based Skyrim geometry export.
+- `ResaveWithNifly()` bridge can re-save a niflib-exported NIF through nifly for
+  format consistency.
+
+### 4 — Updated niflib Submodule
+
+niflib submodule changed from `Alecu100/niflib` to
+[DCCStudios/Mayaniflib](https://github.com/DCCStudios/Mayaniflib), which adds
+BSTriShape stub support so the legacy code path no longer crashes on SE NIFs.
+
+### 5 — Fallout 4 Code Removed
+
+The upstream Fallout 4 classes (`NifImportingFixtureFallout4`,
+`NifMeshImporterFallout4`, `BSSegment`, `BSSubSegment`, etc.) were incomplete and
+non-functional. They have been removed — modern Fallout 4 NIFs are handled by
+nifly instead.
+
+### 6 — Code Cleanup
+
+- Skyrim fixtures renamed (`NifSkyrimImportingFixture` / `NifSkyrimExportingFixture`).
+- `NifMaterialImporterSkyrimFallout4` simplified to `NifMaterialImporterSkyrim`.
 - Removed `.vcxproj.user` with hardcoded user paths.
-- Added `.gitignore` for build artifacts (`x64/`, `Release*/`, `*.mll`, `*.dll`,
-  IDE temp files).
+- Added `.gitignore` for build artifacts.
 - PDB output redirected to `$(TEMP)` to avoid file-locking issues.
 
 ---
 
 ## Building from Source
 
-This section walks you through everything needed to compile the plugin from a
-fresh clone. The build produces `nifTranslator.mll` — a Maya plug-in DLL — and
-the supporting `niflib_x64.dll` runtime library.
+Everything you need to compile the plugin from a fresh clone. The build
+produces two files:
+
+- **`nifTranslator.mll`** — the Maya plug-in
+- **`niflib_x64.dll`** — runtime library loaded alongside the plugin
+
+<br>
 
 ### Prerequisites
 
-You will need:
+| Requirement | Notes |
+|-------------|-------|
+| **Windows 10 / 11 x64** | |
+| **Visual Studio 2022** | Community, Professional, or Enterprise. Install the **"Desktop development with C++"** workload. Uses the **v143** toolset. |
+| **CMake 3.10+** | Only needed to build the nifly static library (Step 3). |
+| **Git** | Any recent version with submodule support. |
+| **Maya 2025 DevKit** | Separate download from [Autodesk Developer Network](https://www.autodesk.com/developer-network/platform-technologies/maya) (free Autodesk account required). Download the **Windows** devkit zip for Maya 2025 and extract it anywhere. |
 
-- **Windows 10/11 x64**
-- **Visual Studio 2022** (Community, Professional, or Enterprise) with the
-  **"Desktop development with C++"** workload installed. The project uses the
-  **v143** platform toolset and **C++17**.
-- **Git** (any recent version) with submodule support.
-- **Autodesk Maya 2025** installed (or at minimum the Maya 2025 Devkit).
-- **Maya 2025 Development Kit (Devkit)** — a separate download from Autodesk
-  containing the C++ headers and import libraries needed to compile Maya plug-ins.
-  Download it from
-  [Autodesk Developer Network](https://www.autodesk.com/developer-network/platform-technologies/maya)
-  (requires an Autodesk account). Look for the **Windows** devkit matching your
-  Maya version. It comes as a zip file — extract it anywhere you like.
-- **CMake 3.10+** (only needed to build the nifly static library).
+> **Note:** You do *not* need Maya itself installed to compile, but you will need
+> it to run / test the plugin.
+
+<br>
 
 ### Step 1 — Clone the Repository
 
@@ -108,31 +108,39 @@ git clone --recursive https://github.com/DCCStudios/Maya_NifTools_Plugin.git
 cd Maya_NifTools_Plugin
 ```
 
-The `--recursive` flag is important — it pulls two required submodules:
+> The **`--recursive`** flag is critical — it pulls two required submodules:
+>
+> | Submodule | Local path | Source |
+> |-----------|------------|--------|
+> | niflib | `niflib/` | [DCCStudios/Mayaniflib](https://github.com/DCCStudios/Mayaniflib) |
+> | nifly | `extern/nifly/` | [ousnius/nifly](https://github.com/ousnius/nifly) |
 
-| Submodule | Path | Repo |
-|-----------|------|------|
-| niflib | `niflib/` | [DCCStudios/Mayaniflib](https://github.com/DCCStudios/Mayaniflib) |
-| nifly | `extern/nifly/` | [ousnius/nifly](https://github.com/ousnius/nifly) |
-
-If you already cloned without `--recursive`, run:
+If you already cloned without `--recursive`:
 
 ```
 git submodule update --init --recursive
 ```
 
 Verify both directories are populated:
+
 ```
 dir niflib\include
 dir extern\nifly\include
 ```
 
-### Step 2 — Point the Project at Your Maya 2025 Devkit
+Both should list header files. If either is empty, the submodule didn't pull —
+re-run the submodule command above.
 
-Open `maya_nif_plugin.vcxproj` in a text editor and search for `Release - 2025`.
-You will find two path references that need to match your devkit location:
+<br>
 
-**Compiler include paths** (line ~1185):
+### Step 2 — Configure the Maya 2025 DevKit Path
+
+The `.vcxproj` ships with a hardcoded devkit path that you almost certainly need
+to change. Open **`maya_nif_plugin.vcxproj`** in any text editor and search for
+**`Release - 2025`**. You'll find two blocks to update:
+
+**A) Compiler include paths** (around line 1185):
+
 ```xml
 <AdditionalIncludeDirectories>
   ...
@@ -142,7 +150,8 @@ You will find two path references that need to match your devkit location:
 </AdditionalIncludeDirectories>
 ```
 
-**Linker library paths** (line ~1198):
+**B) Linker library paths** (around line 1198):
+
 ```xml
 <AdditionalLibraryDirectories>
   ...
@@ -151,38 +160,41 @@ You will find two path references that need to match your devkit location:
 </AdditionalLibraryDirectories>
 ```
 
-Replace both occurrences of the devkit base path with wherever you extracted your
-devkit. For example, if you extracted to `C:\Maya2025Devkit`, you would change the
-paths to:
+Replace the `E:\Skyrim Animation\...` portion with wherever you extracted your
+devkit. For example, if you extracted to `C:\Maya2025Devkit`:
+
 ```
 C:\Maya2025Devkit\devkitBase\include
 C:\Maya2025Devkit\devkitBase\include\maya
 C:\Maya2025Devkit\devkitBase\lib
 ```
 
-The devkit folder structure should look like:
+Your devkit folder should have this structure:
+
 ```
-<your-devkit-path>\
-  devkitBase\
-    include\
-      maya\
-        MFnPlugin.h
-        MObject.h
-        ...
-    lib\
-      Foundation.lib
-      OpenMaya.lib
-      OpenMayaAnim.lib
-      ...
+<your-devkit>\
+ └─ devkitBase\
+     ├─ include\
+     │   └─ maya\
+     │       ├─ MFnPlugin.h
+     │       ├─ MObject.h
+     │       └─ ...
+     └─ lib\
+         ├─ Foundation.lib
+         ├─ OpenMaya.lib
+         ├─ OpenMayaAnim.lib
+         └─ ...
 ```
+
+<br>
 
 ### Step 3 — Build nifly (Static Library)
 
-The plugin links against `nifly.lib` (a static library). Nifly uses CMake and
-must be built separately before the main solution.
+The plugin statically links **`nifly.lib`**. Nifly uses CMake and must be built
+before the main solution.
 
-Open a **Developer Command Prompt for VS 2022** (or any terminal with CMake
-available) and run:
+Open a **Developer Command Prompt for VS 2022** (or any terminal where `cmake`
+is available) and run from the repo root:
 
 ```
 cd extern\nifly
@@ -192,121 +204,153 @@ cmake .. -G "Visual Studio 17 2022" -A x64
 cmake --build . --config Release
 ```
 
-This produces `nifly.lib` inside `build\src\Release\`.
+This produces:
 
-The main project expects `nifly.lib` at:
 ```
-extern\nifly\x64\Release - 2025\nifly.lib
+extern\nifly\build\src\Release\nifly.lib
 ```
 
-Create that directory and copy the lib there:
+The main project's linker expects `nifly.lib` at a specific path. Copy it there:
+
 ```
 mkdir "..\..\extern\nifly\x64\Release - 2025" 2>nul
 copy build\src\Release\nifly.lib "..\..\extern\nifly\x64\Release - 2025\nifly.lib"
 ```
 
-Alternatively, edit the `AdditionalLibraryDirectories` for the `Release - 2025`
-config in `maya_nif_plugin.vcxproj` to point at wherever your `nifly.lib` ended up
-(e.g. `extern\nifly\build\src\Release`).
+> **Alternative:** Instead of copying, you can edit the
+> `AdditionalLibraryDirectories` for `Release - 2025` in
+> `maya_nif_plugin.vcxproj` to point directly at
+> `extern\nifly\build\src\Release`.
 
-### Step 4 — Build niflib (DLL)
+<br>
 
-niflib builds as a **dynamic library** (`niflib_x64.dll` + `niflib_dll.lib`
-import lib). Its project file (`niflib\niflib.vcxproj`) is included in the
-solution and has its own `Release - 2025 | x64` configuration, so it **builds
-automatically** when you build the solution in the next step.
+### Step 4 — Build niflib (Automatic)
 
-niflib outputs:
+niflib builds as a DLL (`niflib_x64.dll`) and its `.vcxproj` is already
+included in the solution with a matching `Release - 2025 | x64` configuration.
+
+**No manual steps needed** — it builds automatically as a dependency when you
+build the solution in Step 5.
+
+It outputs:
+
 ```
-niflib\bin\niflib_x64.dll     ← runtime DLL (deployed alongside the plugin)
-niflib\lib\niflib_dll.lib     ← import library (used at link time)
+niflib\bin\niflib_x64.dll      (runtime DLL — deployed alongside the plugin)
+niflib\lib\niflib_dll.lib      (import library — used at link time only)
 ```
 
-No manual steps needed — just make sure the `niflib/` submodule directory is
-populated (Step 1).
+Just make sure the `niflib/` submodule directory is populated (Step 1).
+
+<br>
 
 ### Step 5 — Build the Plugin
 
 1. Open **`maya_nif_plugin.sln`** in Visual Studio 2022.
-2. In the toolbar, set the configuration to **`Release - 2025`** and the platform
-   to **`x64`**.
-3. Build the solution: **Build → Build Solution** (or press `Ctrl+Shift+B`).
+2. Set the configuration dropdown to **`Release - 2025`** and platform to **`x64`**.
+3. **Build → Build Solution** (`Ctrl+Shift+B`).
 
-The build compiles two projects in order:
+The solution compiles two projects in dependency order:
 
-| Project | Output |
-|---------|--------|
-| niflib | `niflib\bin\niflib_x64.dll` + `niflib\lib\niflib_dll.lib` |
-| maya_nif_plugin | `Release - 2025\nifTranslator.mll` |
+| # | Project | Output |
+|---|---------|--------|
+| 1 | niflib | `niflib\bin\niflib_x64.dll` + `niflib\lib\niflib_dll.lib` |
+| 2 | maya_nif_plugin | `Release - 2025\nifTranslator.mll` |
 
-The main plugin links against:
-- `nifly.lib` (static — baked into the .mll)
-- `niflib_dll.lib` (import lib for the niflib DLL)
-- Maya SDK libs (`Foundation.lib`, `OpenMaya.lib`, `OpenMayaAnim.lib`,
-  `OpenMayaUI.lib`, `OpenMayaFX.lib`, `OpenMayaRender.lib`, `Image.lib`)
+The final plugin (`nifTranslator.mll`) links:
+
+- **`nifly.lib`** — statically baked into the `.mll`
+- **`niflib_dll.lib`** — import lib for the niflib DLL
+- **Maya SDK** — `Foundation.lib`, `OpenMaya.lib`, `OpenMayaAnim.lib`,
+  `OpenMayaUI.lib`, `OpenMayaFX.lib`, `OpenMayaRender.lib`, `Image.lib`
+
+<br>
 
 ### Step 6 — Deploy to Maya
 
-The post-build step runs automatically on a successful build and copies
-everything to the right places:
+The **post-build step runs automatically** after a successful build and copies
+everything to the correct Maya directories:
 
-| File | Destination |
-|------|-------------|
-| `nifTranslator.mll` | `%USERPROFILE%\Documents\maya\2025\plug-ins\` |
-| `niflib_x64.dll` | `%USERPROFILE%\Documents\maya\2025\plug-ins\` |
-| `nifTranslatorOpts.mel` | `%USERPROFILE%\Documents\maya\2025\scripts\` |
-| `nifTranslatorMenuCreate.mel` | `%USERPROFILE%\Documents\maya\2025\scripts\` |
-| `nifTranslatorMenuRemove.mel` | `%USERPROFILE%\Documents\maya\2025\scripts\` |
-| `AEbsLightningShaderTemplate.mel` | `%USERPROFILE%\Documents\maya\2025\scripts\` |
-| `AEnifDismemberPartitionTemplate.mel` | `%USERPROFILE%\Documents\maya\2025\scripts\` |
+**Plug-ins** → `%USERPROFILE%\Documents\maya\2025\plug-ins\`
 
-It also attempts to copy `niflib_x64.dll` to `C:\Program Files\Autodesk\Maya2025\bin\`
-(this requires admin privileges and is optional — the plug-ins folder copy is
-sufficient).
+| File | Purpose |
+|------|---------|
+| `nifTranslator.mll` | The plugin itself |
+| `niflib_x64.dll` | Runtime library (must be next to the `.mll`) |
 
-If the post-build step fails (e.g. Maya is not installed at the default path),
-you can copy these files manually. The two critical files are:
-- `nifTranslator.mll` → Maya's `plug-ins` folder
-- `niflib_x64.dll` → same `plug-ins` folder (must be next to the .mll, or on PATH)
+**Scripts** → `%USERPROFILE%\Documents\maya\2025\scripts\`
 
-The MEL scripts must be in Maya's `scripts` folder for the options dialog and
-NifTools menu to work.
+| File | Purpose |
+|------|---------|
+| `nifTranslatorOpts.mel` | Import/export options dialog |
+| `nifTranslatorMenuCreate.mel` | Creates the NifTools menu |
+| `nifTranslatorMenuRemove.mel` | Removes the NifTools menu on unload |
+| `AEbsLightningShaderTemplate.mel` | Attribute editor for BS Lightning Shader |
+| `AEnifDismemberPartitionTemplate.mel` | Attribute editor for dismember partitions |
 
-**If you are deploying to a different Maya version** (e.g. Maya 2024), change the
-folder name from `2025` to match your version and ensure you compiled against the
-matching devkit.
+> If the post-build step fails (e.g. paths differ on your system), copy these
+> files manually. The two critical ones are `nifTranslator.mll` and
+> `niflib_x64.dll` — they must both be in Maya's `plug-ins` folder.
+
+> **Different Maya version?** Change the folder name from `2025` to match yours
+> and make sure you compiled against the corresponding devkit.
+
+<br>
 
 ### Step 7 — Load the Plugin in Maya
 
 1. Launch **Maya 2025**.
 2. Go to **Windows → Settings/Preferences → Plug-in Manager**.
-3. Scroll down or search for **`nifTranslator.mll`**.
-4. Check **Loaded** (and optionally **Auto load** to load it every time Maya starts).
-5. You should see a **NifTools** menu appear in Maya's menu bar.
-6. Use **File → Import** to open `.nif` files, or **File → Export Selection** to
-   export geometry back to `.nif`.
+3. Find **`nifTranslator.mll`** in the list.
+4. Check **Loaded** (and optionally **Auto load** for future sessions).
+5. A **NifTools** menu should appear in the menu bar.
+6. Use **File → Import** to open `.nif` / `.kf` files, or
+   **File → Export Selection** to write `.nif` geometry.
+
+<br>
 
 ### Troubleshooting
 
-**"Cannot find niflib_x64.dll"** — Make sure `niflib_x64.dll` is in the same
-directory as `nifTranslator.mll` (the `plug-ins` folder), or in a directory on
-your system `PATH`.
+---
 
-**"nifly.lib not found" during linking** — You need to build nifly first (Step 3)
-and place `nifly.lib` where the project expects it. Check the
-`AdditionalLibraryDirectories` in the `Release - 2025` config for the exact path.
+**"Cannot find niflib_x64.dll"**
 
-**"Cannot open include file: maya/MFnPlugin.h"** — The Maya 2025 devkit paths in
-the `.vcxproj` don't match your system. Follow Step 2 to update them.
+Make sure `niflib_x64.dll` is in the same directory as `nifTranslator.mll`
+(the `plug-ins` folder), or in a directory on your system `PATH`.
 
-**Plugin loads but NifTools menu doesn't appear** — The MEL scripts
-(`nifTranslatorMenuCreate.mel`, etc.) are missing from your Maya scripts directory.
-Copy them manually from the repo root to
-`%USERPROFILE%\Documents\maya\2025\scripts\`.
+---
 
-**Import produces empty scene** — Check `%USERPROFILE%\Documents\maya\2025\scripts\nifTranslator_debug.log`
-for error messages. Common causes: the NIF version is too old (pre-Skyrim) and the
-legacy niflib path has a bug, or the file is corrupt.
+**"nifly.lib not found" (link error)**
+
+You need to build nifly first (Step 3) and place `nifly.lib` where the project
+expects it. Check the `AdditionalLibraryDirectories` in the `Release - 2025`
+config of `maya_nif_plugin.vcxproj` for the exact expected path.
+
+---
+
+**"Cannot open include file: maya/MFnPlugin.h"**
+
+The Maya 2025 devkit paths in `.vcxproj` don't match your system. Go back to
+Step 2 and update the include/library directories.
+
+---
+
+**Plugin loads but no NifTools menu appears**
+
+The MEL scripts are missing from your Maya scripts directory. Copy them manually
+from the repo root to `%USERPROFILE%\Documents\maya\2025\scripts\`:
+- `nifTranslatorOpts.mel`
+- `nifTranslatorMenuCreate.mel`
+- `nifTranslatorMenuRemove.mel`
+
+---
+
+**Import produces an empty scene**
+
+Check the debug log at:
+`%USERPROFILE%\Documents\maya\2025\scripts\nifTranslator_debug.log`
+
+Common causes: the NIF version is too old (pre-Skyrim LE) and falls through to
+the legacy niflib code path, or the file is corrupt.
 
 ---
 
@@ -314,20 +358,30 @@ legacy niflib path has a bug, or the file is corrupt.
 
 ```
 maya_nif_plugin/
-├── NifTranslator.cpp/.h          Main Maya translator entry point
-├── maya_nif_plugin.sln            Visual Studio solution
-├── maya_nif_plugin.vcxproj        Visual Studio project
-├── niflib/                        niflib submodule (DLL, legacy NIF read/write)
-├── extern/
-│   └── nifly/                     nifly submodule (static lib, modern NIF read/write)
-├── include/
-│   ├── Common/                    Shared types, options, utilities
-│   ├── Custom Nodes/              Maya custom nodes (BSLightningShader, NifDismemberPartition)
-│   ├── Exporters/                 Export fixture classes
-│   └── Importers/                 Import fixture classes (including NiflyImporter)
-├── src/                           Source files mirroring include/ layout
-├── *.mel                          MEL scripts for Maya UI (options dialog, menus, AE templates)
-└── ReadMe.txt                     This file
+│
+├─ NifTranslator.cpp / .h             Main Maya translator entry point
+├─ maya_nif_plugin.sln                 Visual Studio solution
+├─ maya_nif_plugin.vcxproj             Visual Studio project (build configs)
+│
+├─ niflib/                             Submodule: niflib (DLL — legacy NIF I/O)
+├─ extern/
+│   └─ nifly/                          Submodule: nifly (static lib — modern NIF I/O)
+│
+├─ include/
+│   ├─ Common/                         Shared types, options, utilities
+│   ├─ Custom Nodes/                   BSLightningShader, NifDismemberPartition
+│   ├─ Exporters/                      Export fixture classes
+│   └─ Importers/                      Import fixture classes (incl. NiflyImporter)
+│
+├─ src/                                Implementation files (mirrors include/ layout)
+│
+├─ nifTranslatorOpts.mel               Import/export options dialog
+├─ nifTranslatorMenuCreate.mel         NifTools menu creation script
+├─ nifTranslatorMenuRemove.mel         NifTools menu removal script
+├─ AEbsLightningShaderTemplate.mel     Attribute editor template
+├─ AEnifDismemberPartitionTemplate.mel Attribute editor template
+│
+└─ ReadMe.txt                          This file
 ```
 
 ---
