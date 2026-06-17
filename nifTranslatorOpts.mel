@@ -209,20 +209,30 @@ global proc int nifTranslatorOpts ( string $parent,
 				treeView -edit -addItem "Joints" "" -hideButtons overviewTreeView;
 				treeView -edit -addItem "Misc" "" -hideButtons overviewTreeView;
 
+				string $addedItems[];
+				clear($addedItems);
 				for($i = 0;$i < size($gNifExportedObjects); $i++) {
-					if($gNifExportedObjectsTypes[$i] == "shape") {
-						treeView -edit -addItem $gNifExportedObjects[$i] "Shapes" overviewTreeView;
+					string $itemName = $gNifExportedObjects[$i];
+					int $alreadyAdded = 0;
+					for($k = 0; $k < size($addedItems); $k++) {
+						if($addedItems[$k] == $itemName) {
+							$alreadyAdded = 1;
+							break;
+						}
 					}
-				
-					if($gNifExportedObjectsTypes[$i] == "joint") {
-						treeView -edit -addItem $gNifExportedObjects[$i] "Joints" overviewTreeView;
+					if($alreadyAdded == 0) {
+						if($gNifExportedObjectsTypes[$i] == "shape") {
+							treeView -edit -addItem $itemName "Shapes" overviewTreeView;
+						}
+						if($gNifExportedObjectsTypes[$i] == "joint") {
+							treeView -edit -addItem $itemName "Joints" overviewTreeView;
+						}
+						if($gNifExportedObjectsTypes[$i] == "misc") {
+							treeView -edit -addItem $itemName "Misc" overviewTreeView;
+						}
+						treeView -edit -buttonStyle $itemName 1 "pushButton" overviewTreeView;
+						$addedItems[size($addedItems)] = $itemName;
 					}
-
-					if($gNifExportedObjectsTypes[$i] == "misc") {
-						treeView -edit -addItem $gNifExportedObjects[$i] "Misc" overviewTreeView;
-					}
-				
-					treeView -edit -buttonStyle $gNifExportedObjects[$i] 1 "pushButton" overviewTreeView;
 				}
 			
 				$selectedShapes = `ls -selection -type "transform" -type "joint"`;
@@ -408,9 +418,25 @@ global proc int nifTranslatorOpts ( string $parent,
 						  -annotation "Text optionally added to the begining of all texture paths in the exported NIF file"
 				          expPathPrefixTx;
 			setParent exportColumnLayout;
-
+			
+			rowLayout -numberOfColumns 2
+					  -columnWidth2 120 200
+					  -columnAttach2 "both" "both";
+					  text -label "Game Preset:" -align "left" -font boldLabelFont;
+					  optionMenu -label "" -changeCommand "nifApplyGamePreset(\"#1\")" gamePresetMenu;
+						  menuItem -label "-- Select Game --";
+						  menuItem -label "Morrowind";
+						  menuItem -label "Oblivion";
+						  menuItem -label "Fallout 3";
+						  menuItem -label "Fallout New Vegas";
+						  menuItem -label "Skyrim";
+						  menuItem -label "Skyrim SE";
+						  menuItem -label "Fallout 4";
+						  menuItem -label "Civilization IV";
+			setParent exportColumnLayout;
+			
 		setParent $parent;
-							
+		
 		// Now set to current settings.
 		$currentOptions = $initialSettings;
 		if (size($currentOptions) > 0) {
@@ -1171,3 +1197,70 @@ global proc int onOk(string $dirpath, string $type) {
 	textField -edit -text $dirpath nifTxPath;
 	return true;
 }	
+
+global proc nifApplyGamePreset(string $game) {
+    if ($game == "Morrowind") {
+        textField -edit -text "4.0.0.2" nifVersion;
+        textField -edit -text "0" expUserVersionTx;
+        textField -edit -text "0" expUserVersion2Tx;
+        textField -edit -text "0" expPartBonesTx;
+        radioButton -edit -select nifTranslatorStandardMaterialRd;
+        radioButton -edit -select nifTranslatorNoTangentSpaceDataRd;
+        checkBox -edit -value false expBsFadeNodeRootCk;
+        checkBox -edit -value false expFlatenedSkeletonCk;
+    } else if ($game == "Oblivion") {
+        textField -edit -text "20.0.0.5" nifVersion;
+        textField -edit -text "11" expUserVersionTx;
+        textField -edit -text "11" expUserVersion2Tx;
+        textField -edit -text "20" expPartBonesTx;
+        radioButton -edit -select nifTranslatorStandardMaterialRd;
+        radioButton -edit -select nifTranslatorOblivionTangentSpaceDataRd;
+        checkBox -edit -value false expBsFadeNodeRootCk;
+        checkBox -edit -value false expFlatenedSkeletonCk;
+    } else if ($game == "Fallout 3" || $game == "Fallout New Vegas") {
+        textField -edit -text "20.2.0.7" nifVersion;
+        textField -edit -text "11" expUserVersionTx;
+        textField -edit -text "34" expUserVersion2Tx;
+        textField -edit -text "20" expPartBonesTx;
+        radioButton -edit -select nifTranslatorFalloutMaterialRd;
+        radioButton -edit -select nifTranslatorFalloutSkyrimTangentSpaceDataRd;
+        checkBox -edit -value true expBsFadeNodeRootCk;
+        checkBox -edit -value false expFlatenedSkeletonCk;
+    } else if ($game == "Skyrim") {
+        textField -edit -text "20.2.0.7" nifVersion;
+        textField -edit -text "11" expUserVersionTx;
+        textField -edit -text "83" expUserVersion2Tx;
+        textField -edit -text "20" expPartBonesTx;
+        radioButton -edit -select nifTranslatorSkyrimMaterialRd;
+        radioButton -edit -select nifTranslatorFalloutSkyrimTangentSpaceDataRd;
+        checkBox -edit -value true expBsFadeNodeRootCk;
+        checkBox -edit -value false expFlatenedSkeletonCk;
+    } else if ($game == "Skyrim SE") {
+        textField -edit -text "20.2.0.7" nifVersion;
+        textField -edit -text "11" expUserVersionTx;
+        textField -edit -text "100" expUserVersion2Tx;
+        textField -edit -text "20" expPartBonesTx;
+        radioButton -edit -select nifTranslatorSkyrimMaterialRd;
+        radioButton -edit -select nifTranslatorFalloutSkyrimTangentSpaceDataRd;
+        checkBox -edit -value true expBsFadeNodeRootCk;
+        checkBox -edit -value false expFlatenedSkeletonCk;
+    } else if ($game == "Fallout 4") {
+        textField -edit -text "20.2.0.7" nifVersion;
+        textField -edit -text "12" expUserVersionTx;
+        textField -edit -text "130" expUserVersion2Tx;
+        textField -edit -text "20" expPartBonesTx;
+        radioButton -edit -select nifTranslatorFalloutMaterialRd;
+        radioButton -edit -select nifTranslatorFalloutSkyrimTangentSpaceDataRd;
+        checkBox -edit -value true expBsFadeNodeRootCk;
+        checkBox -edit -value true expFlatenedSkeletonCk;
+    } else if ($game == "Civilization IV") {
+        textField -edit -text "20.0.0.4" nifVersion;
+        textField -edit -text "0" expUserVersionTx;
+        textField -edit -text "0" expUserVersion2Tx;
+        textField -edit -text "4" expPartBonesTx;
+        radioButton -edit -select nifTranslatorStandardMaterialRd;
+        radioButton -edit -select nifTranslatorNoTangentSpaceDataRd;
+        checkBox -edit -value false expBsFadeNodeRootCk;
+        checkBox -edit -value false expFlatenedSkeletonCk;
+    }
+}
