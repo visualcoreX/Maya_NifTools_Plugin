@@ -396,13 +396,10 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 				vector<NiPropertyRef> current_property_group = this->translatorData->importedMaterials[x].first;
 
 				for(int y = 0; y < property_group.size(); y++) {
-					for(int z = 0; z < current_property_group.size(); z++) {
-						if(property_group[y] == current_property_group[z]) {
+					for (int z = 0; z < current_property_group.size(); z++) {
+						if (property_group[y] == current_property_group[z]) {
 							coincidences++;
 						}
-
-						string property_xx = property_group[y]->GetType().GetTypeName();
-						string property_yy = current_property_group[z]->GetType().GetTypeName();
 					}
 
 

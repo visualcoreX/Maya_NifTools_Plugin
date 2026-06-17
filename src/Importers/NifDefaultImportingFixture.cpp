@@ -65,7 +65,18 @@ MStatus NifDefaultImportingFixture::ReadNodes(const MFileObject& file)
 			}
 
 			//Check if the root node has a non-identity transform
-			if (root_node->GetLocalTransform() == Matrix44::IDENTITY)
+			bool hasHashNode = false;
+			vector<NiAVObjectRef> root_children_check = root_node->GetChildren();
+			for (unsigned int i = 0; i < root_children_check.size(); ++i)
+			{
+				string childName = root_children_check[i]->GetName();
+				if (childName.size() >= 2 && childName[0] == '#' && childName[1] == '#')
+				{
+					hasHashNode = true;
+					break;
+				}
+			}
+			if (root_node->GetLocalTransform() == Matrix44::IDENTITY && !hasHashNode)
 			{
 				//Root has no transform, so treat it as the scene root
 				vector<NiAVObjectRef> root_children = root_node->GetChildren();

@@ -186,8 +186,11 @@ MStatus NifTranslator::reader	 (const MFileObject& file, const MString& optionsS
 		if(block_types[block_types_index[0]] == NiControllerSequence::TYPE.GetTypeName()) {
 			import_type = ImportType::AnimationKF;
 		} else if(block_types[block_types_index[0]] == BSFadeNode::TYPE.GetTypeName() ||
-			 file_header.getUserVersion() == 12 || (file_header.getUserVersion() == 11 && file_header.getUserVersion2() == 57) ) {
-			import_type = ImportType::SkyrimFallout;
+          file_header.getUserVersion() == 12 || 
+          (file_header.getUserVersion() == 11 && file_header.getUserVersion2() == 57) ||
+          (file_header.getUserVersion() == 11 && file_header.getUserVersion2() == 34) ) {
+    // uv=11, uv2=34 — Fallout New Vegas
+    import_type = ImportType::SkyrimFallout;
 		} else {
 			for(size_t i = 0; i < block_types.size(); i++) {
 				if(block_types[i] == BSDismemberSkinInstance::TYPE.GetTypeName() || block_types[i] == BSShaderTextureSet::TYPE.GetTypeName()) {

@@ -185,20 +185,11 @@ void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MD
 		this->translatorData->importedMeshes.push_back( pair<NiAVObjectRef,MObject>(niAVObj,obj) );
 	}
 
-	if ( niNode != NULL ) {
-
-		//Check to see if this is a mesh proxy
-		if ( niNode->IsSplitMeshProxy() ) {
-			//out << niNode << " is a split mesh proxy." << endl;
-			//Since this is a mesh proxy, treat it like a mesh and do not
-			//call this function on any children
-			this->translatorData->importedMeshes.push_back( pair<NiAVObjectRef,MObject>(niAVObj,obj) );
-		} else {
-			//Call this function for any children
-			vector<NiAVObjectRef> children = niNode->GetChildren();
-			for ( unsigned int i = 0; i < children.size(); ++i ) {
-				this->ImportNodes( children[i], objs, obj );
-			}
+	if (niNode != NULL) {
+		//Call this function for any children
+		vector<NiAVObjectRef> children = niNode->GetChildren();
+		for (unsigned int i = 0; i < children.size(); ++i) {
+			this->ImportNodes(children[i], objs, obj);
 		}
 	}
 }

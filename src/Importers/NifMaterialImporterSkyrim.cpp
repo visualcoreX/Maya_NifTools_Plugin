@@ -1,4 +1,4 @@
-#include "include/Importers/NifMaterialImporterSkyrim.h"
+﻿#include "include/Importers/NifMaterialImporterSkyrim.h"
 
 
 NifMaterialImporterSkyrim::NifMaterialImporterSkyrim() {
@@ -15,11 +15,12 @@ void NifMaterialImporterSkyrim::ImportMaterialsAndTextures( NiAVObjectRef & root
 	this->GatherMaterialsAndTextures(root);
 }
 
-void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root ) {
+void NifMaterialImporterSkyrim::GatherMaterialsAndTextures(NiAVObjectRef& root) {
 	if (root->GetType().IsDerivedType(NiGeometry::TYPE) ||
 		root->GetType().IsDerivedType(BSTriShape::TYPE)) {
 		NiAlphaPropertyRef alpha_property = NULL;
 		BSLightingShaderPropertyRef shader_property = NULL;
+		BSShaderPPLightingPropertyRef fnv_shader_property = NULL;
 		Niflib::array<2, Ref<NiProperty>> properties;
 
 		if (root->GetType().IsDerivedType(NiGeometry::TYPE)) {
@@ -30,14 +31,31 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 			properties = bs_shape->GetBSProperties();
 		}
 
-		for(int i = 0; i < 2; i++) {
-			NiPropertyRef current_property = properties[i]; 
+		for (int i = 0; i < 2; i++) {
+			NiPropertyRef current_property = properties[i];
 
-			if(current_property != NULL && current_property->GetType().IsSameType(BSLightingShaderProperty::TYPE)) {
+			if (current_property != NULL && current_property->GetType().IsSameType(BSLightingShaderProperty::TYPE)) {
 				shader_property = DynamicCast<BSLightingShaderProperty>(current_property);
 			}
-			if(current_property != NULL && current_property->GetType().IsSameType(NiAlphaProperty::TYPE)) {
+			if (current_property != NULL && current_property->GetType().IsSameType(BSShaderPPLightingProperty::TYPE)) {
+				fnv_shader_property = DynamicCast<BSShaderPPLightingProperty>(current_property);
+			}
+			if (current_property != NULL && current_property->GetType().IsSameType(NiAlphaProperty::TYPE)) {
 				alpha_property = DynamicCast<NiAlphaProperty>(current_property);
+			}
+		}
+
+		if (root->GetType().IsDerivedType(NiGeometry::TYPE)) {
+			NiGeometryRef geometry = DynamicCast<NiGeometry>(root);
+			vector<NiPropertyRef> ni_properties = geometry->GetProperties();
+			for (int i = 0; i < ni_properties.size(); i++) {
+				NiPropertyRef prop = ni_properties[i];
+				if (prop != NULL && prop->GetType().IsSameType(BSShaderPPLightingProperty::TYPE)) {
+					fnv_shader_property = DynamicCast<BSShaderPPLightingProperty>(prop);
+				}
+				if (prop != NULL && prop->GetType().IsSameType(NiAlphaProperty::TYPE)) {
+					alpha_property = DynamicCast<NiAlphaProperty>(prop);
+				}
 			}
 		}
 		
@@ -46,41 +64,49 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 		if(alpha_property != NULL) {
 			valid_properties++;
 		}
-		if(shader_property != NULL) {
+		if (shader_property != NULL) {
+			valid_properties++;
+		}
+		if (fnv_shader_property != NULL) {
 			valid_properties++;
 		}
 
-		if(valid_properties == 0) {
+		if (valid_properties == 0) {
 			return;
 		}
 
 		MObject found_material;
 
-		for(int i = 0; i < this->property_groups.size(); i++) {
+		for (int i = 0; i < this->property_groups.size(); i++) {
 			vector<NiPropertyRef> property_group = this->property_groups[i];
 			int similarities = 0;
 
-			for(int i = 0; i < property_group.size(); i++) {
-				if(alpha_property != NULL && property_group[i]->GetType().IsSameType(NiAlphaProperty::TYPE)) {
-					NiAlphaPropertyRef current_alpha_property = DynamicCast<NiAlphaProperty>(property_group[i]);
-					if(current_alpha_property == alpha_property) {
+			for (int j = 0; j < property_group.size(); j++) {
+				if (alpha_property != NULL && property_group[j]->GetType().IsSameType(NiAlphaProperty::TYPE)) {
+					NiAlphaPropertyRef current_alpha = DynamicCast<NiAlphaProperty>(property_group[j]);
+					if (current_alpha == alpha_property) {
 						similarities++;
 					}
 				}
-				if(shader_property != NULL && property_group[i]->GetType().IsSameType(BSLightingShaderProperty::TYPE)) {
-					BSLightingShaderPropertyRef current_shader_property = DynamicCast<BSLightingShaderProperty>(property_group[i]);
-					if(current_shader_property == shader_property) {
+				if (shader_property != NULL && property_group[j]->GetType().IsSameType(BSLightingShaderProperty::TYPE)) {
+					BSLightingShaderPropertyRef current_shader = DynamicCast<BSLightingShaderProperty>(property_group[j]);
+					if (current_shader == shader_property) {
+						similarities++;
+					}
+				}
+				if (fnv_shader_property != NULL && property_group[j]->GetType().IsSameType(BSShaderPPLightingProperty::TYPE)) {
+					BSShaderPPLightingPropertyRef current_fnv = DynamicCast<BSShaderPPLightingProperty>(property_group[j]);
+					if (current_fnv == fnv_shader_property) {
 						similarities++;
 					}
 				}
 			}
 
-			if(valid_properties != 0 && similarities == valid_properties) {
+			if (valid_properties != 0 && similarities == valid_properties) {
 				found_material = this->imported_materials[i];
 				break;
 			}
 		}
-
 		if(found_material.isNull()) {
 			MFnPhongShader new_shader;
 			found_material = new_shader.create();
@@ -332,28 +358,95 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 				others_plug.child(1).setValue(shader_property->GetHairTintColor().g);
 				others_plug.child(2).setValue(shader_property->GetHairTintColor().b);
 			}
+			else if (fnv_shader_property != NULL) {
+				BSShaderTextureSetRef texture_set = fnv_shader_property->GetTextureSet();
+				if (texture_set != NULL) {
+					MDGModifier dg_modifier;
+					string color_texture = texture_set->GetTexture(0);
+					string normal_map = texture_set->GetTexture(1);
 
-			vector<NiPropertyRef> property_group;
+					if (color_texture.length() > 0) {
+						MString color_texture_file = this->GetTextureFilePath(color_texture);
+						MFnDependencyNode color_texture_node;
+						color_texture_node.create(MString("file"), MString(color_texture.c_str()));
+						color_texture_node.findPlug("ftn").setValue(color_texture_file);
 
-			if(shader_property != NULL) {
-				property_group.push_back(DynamicCast<NiProperty>(shader_property));
+						MItDependencyNodes node_it(MFn::kTextureList);
+						MFnDependencyNode texture_list(node_it.item());
+						MPlug textures = texture_list.findPlug(MString("textures"));
+						MPlug current_texture;
+						int next = 0;
+						while (true) {
+							current_texture = textures.elementByLogicalIndex(next);
+							if (!current_texture.isConnected()) break;
+							next++;
+						}
+						dg_modifier.connect(color_texture_node.findPlug("message"), current_texture);
+						dg_modifier.connect(color_texture_node.findPlug("outColor"), new_shader.findPlug("color"));
+
+						if (alpha_property != NULL) {
+							dg_modifier.connect(color_texture_node.findPlug("outTransparency"), new_shader.findPlug("transparency"));
+						}
+
+						MFnDependencyNode placement;
+						placement.create("place2dTexture", "place2dTexture");
+						dg_modifier.connect(placement.findPlug("outUV"), color_texture_node.findPlug("uvCoord"));
+						dg_modifier.connect(placement.findPlug("outUvFilterSize"), color_texture_node.findPlug("uvFilterSize"));
+						dg_modifier.connect(placement.findPlug("repeatUV"), color_texture_node.findPlug("repeatUV"));
+						dg_modifier.connect(placement.findPlug("wrapU"), color_texture_node.findPlug("wrapU"));
+						dg_modifier.connect(placement.findPlug("wrapV"), color_texture_node.findPlug("wrapV"));
+					}
+
+					if (normal_map.length() > 0) {
+						MString normal_map_file = this->GetTextureFilePath(normal_map);
+						MFnDependencyNode normal_map_node;
+						normal_map_node.create(MString("file"), MString(normal_map.c_str()));
+						normal_map_node.findPlug("ftn").setValue(normal_map_file);
+
+						MFnDependencyNode bump2d_node;
+						bump2d_node.create(MString("bump2d"), MString("bump2d"));
+						bump2d_node.findPlug("bumpInterp").setInt(1);
+
+						dg_modifier.connect(normal_map_node.findPlug("outAlpha"), bump2d_node.findPlug("bumpValue"));
+						dg_modifier.connect(bump2d_node.findPlug("outNormal"), new_shader.findPlug("normalCamera"));
+					}
+
+					dg_modifier.doIt();
+				}
 			}
-			if(alpha_property != NULL) {
-				property_group.push_back(DynamicCast<NiProperty>(alpha_property));
-			}
-
-			this->imported_materials.push_back(found_material);
-			this->property_groups.push_back(property_group);
-			this->translatorData->importedMaterials.push_back(pair<vector<NiPropertyRef>, MObject>(property_group, found_material));
 		}
-		return;
+
+		vector<NiPropertyRef> property_group;
+
+		if (shader_property != NULL) {
+			property_group.push_back(DynamicCast<NiProperty>(shader_property));
+		}
+		if (fnv_shader_property != NULL) {
+			property_group.push_back(DynamicCast<NiProperty>(fnv_shader_property));
+			if (root->GetType().IsDerivedType(NiGeometry::TYPE)) {
+				NiGeometryRef geometry = DynamicCast<NiGeometry>(root);
+				vector<NiPropertyRef> ni_props = geometry->GetProperties();
+				for (int i = 0; i < ni_props.size(); i++) {
+					if (ni_props[i] != NULL && ni_props[i]->GetType().IsSameType(NiMaterialProperty::TYPE)) {
+						property_group.push_back(ni_props[i]);
+					}
+				}
+			}
+		}
+		if (alpha_property != NULL) {
+			property_group.push_back(DynamicCast<NiProperty>(alpha_property));
+		}
+
+		this->imported_materials.push_back(found_material);
+		this->property_groups.push_back(property_group);
+		this->translatorData->importedMaterials.push_back(pair<vector<NiPropertyRef>, MObject>(property_group, found_material));
+
 	}
 
-	if(root->GetType().IsDerivedType(NiNode::TYPE)) {
+	if (root->GetType().IsDerivedType(NiNode::TYPE)) {
 		NiNodeRef node = DynamicCast<NiNode>(root);
 		vector<NiAVObjectRef> children = node->GetChildren();
-
-		for(int i = 0; i < children.size(); i++) {
+		for (int i = 0; i < children.size(); i++) {
 			this->GatherMaterialsAndTextures(children[i]);
 		}
 	}
