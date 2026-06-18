@@ -43,6 +43,15 @@ MStatus NifDefaultExportingFixture::WriteNodes( const MFileObject& file ) {
 	//out << "Exporting nodes..." << endl;
 	this->nodeExporter->ExportDAGNodes();
 
+	if (this->translatorOptions->exportMaterialType == "falloutmaterial") {
+		BSXFlagsRef bsx_flags = new BSXFlags();
+		bsx_flags->SetName("BSX");
+		bsx_flags->SetData(2); // Bit 1 = enable collision, Bit 0 = enable havok Ч стандарт дл€ FNV weapon
+		this->translatorData->exportedSceneRoot->AddExtraData(
+			StaticCast<NiExtraData>(bsx_flags)
+		);
+	}
+
 	//out << "Enumerating skin clusters..." << endl;
 	this->translatorData->meshClusters.clear();
 	this->meshExporter->EnumerateSkinClusters();
@@ -58,13 +67,23 @@ MStatus NifDefaultExportingFixture::WriteNodes( const MFileObject& file ) {
 
 
 	//--Write finished NIF file--//
-
-	//out << "Writing Finished NIF file..." << endl;
 	NifInfo nif_info(this->translatorOptions->exportVersion, this->translatorOptions->exportUserVersion);
-	nif_info.endian = ENDIAN_LITTLE; //Intel endian format
+	nif_info.endian = ENDIAN_LITTLE;
 	nif_info.exportInfo1 = "NifTools Maya NIF Plug-in " + string(PLUGIN_VERSION);
 	nif_info.userVersion2 = this->translatorOptions->exportUserVersion2;
-	WriteNifTree( file.fullName().asChar(), StaticCast<NiObject>(this->translatorData->exportedSceneRoot), nif_info );
+
+	{
+		std::ofstream log("C:\\Users\\rober\\Documents\\maya\\2025\\scripts\\nifTranslator_debug.log",
+			std::ios::out | std::ios::app);
+		if (log.is_open()) {
+			log << "[WriteNodes] exportVersion=" << this->translatorOptions->exportVersion << std::endl;
+			log << "[WriteNodes] exportUserVersion=" << this->translatorOptions->exportUserVersion << std::endl;
+			log << "[WriteNodes] exportUserVersion2=" << this->translatorOptions->exportUserVersion2 << std::endl;
+			log << "[WriteNodes] exportMaterialType=" << this->translatorOptions->exportMaterialType << std::endl;
+		}
+	}
+
+	WriteNifTree(file.fullName().asChar(), StaticCast<NiObject>(this->translatorData->exportedSceneRoot), nif_info);
 
 	//out << "Export Complete." << endl;
 

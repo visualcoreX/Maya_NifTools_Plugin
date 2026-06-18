@@ -79,6 +79,7 @@
 #include <obj/NiTextureProperty.h>
 #include <obj/NiImage.h>
 #include <obj/BSFadeNode.h>
+#include <obj/BSXFlags.h>
 #include <Ref.h>
 
 #include "NifExportingFixture.h"

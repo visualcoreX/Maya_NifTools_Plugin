@@ -205,7 +205,7 @@ MStatus NifDefaultImportingFixture::ReadNodes(const MFileObject& file)
 	{
 		const string message = e.what();
 		if (message.find("premature end of stream") != string::npos) {
-			const char* logPath = "C:\\Users\\rober\\Documents\\maya\\2025\\scripts\\nifTranslator_debug.log";
+			const char* logPath = "C:\\Users\\sauron\\Documents\\maya\\2025\\scripts\\nifTranslator_debug.log";
 			std::ofstream log(logPath, std::ios::out | std::ios::app);
 			if (log.is_open()) {
 				log << "[NifDefaultImportingFixture] abort: premature end of stream" << std::endl;

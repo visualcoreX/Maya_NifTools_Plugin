@@ -143,6 +143,7 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include "include/Custom Nodes/NifDismemberPartition.h"
 #include "include/Custom Nodes/BSLightningShader.h"
 #include "include/Exporters/NifSkyrimExportingFixture.h"
+#include "include/Exporters/NifFalloutExportingFixture.h"
 
 using namespace Niflib;
 using namespace std;

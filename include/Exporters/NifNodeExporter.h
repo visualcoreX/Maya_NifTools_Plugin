@@ -79,6 +79,10 @@
 #include <obj/NiKeyframeData.h>
 #include <obj/NiTextureProperty.h>
 #include <obj/NiImage.h>
+#include <obj/NiTransformController.h>
+#include <obj/NiTransformInterpolator.h>
+#include <obj/NiTransformData.h>
+#include <obj/NiSingleInterpController.h>
 #include <Ref.h>
 
 #include "include/Common/NifTranslatorFixtureItem.h"

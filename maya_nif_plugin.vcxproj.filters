@@ -160,6 +160,15 @@
     <ClInclude Include="include\Custom Nodes\BSLightningShader.h">
       <Filter>Header Files\Custom Nodes</Filter>
     </ClInclude>
+    <ClInclude Include="include\Importers\NiflyImporter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Exporters\NifMaterialExporterFallout.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Exporters\NifFalloutExportingFixture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Exporters\NifAnimationExporter.cpp">
@@ -263,6 +272,15 @@
     </ClCompile>
     <ClCompile Include="src\Custom Nodes\BSLightningShader.cpp">
       <Filter>Source Files\Custom Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Importers\NiflyImporter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exporters\NifMaterialExporterFallout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exporters\NifFalloutExportingFixture.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

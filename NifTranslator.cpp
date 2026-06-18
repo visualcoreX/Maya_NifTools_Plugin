@@ -115,7 +115,7 @@ MStatus NifTranslator::reader	 (const MFileObject& file, const MString& optionsS
 
 	translator_options->ParseOptionsString(optionsString);
 
-	const char* logPath = "C:\\Users\\rober\\Documents\\maya\\2025\\scripts\\nifTranslator_debug.log";
+	const char* logPath = "C:\\Users\\sauron\\Documents\\maya\\2025\\scripts\\nifTranslator_debug.log";
 	std::string filename = file.fullName().asChar();
 	
 	// Log the import attempt
@@ -267,6 +267,10 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 	if(export_type == "geometry") {
 		if(translator_options->exportMaterialType == "standardmaterial") {
 			exporting_fixture = new NifDefaultExportingFixture(translator_data, translator_options, translator_utils);
+		}
+		if (translator_options->exportMaterialType == "falloutmaterial") {
+			exporting_fixture = new NifFalloutExportingFixture(
+				translator_data, translator_options, translator_utils);
 		}
 		if(translator_options->exportMaterialType == "skyrimmaterial") {
 			// Use native nifly export path for Skyrim/Fallout

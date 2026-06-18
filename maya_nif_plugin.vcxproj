@@ -1230,9 +1230,11 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClInclude Include="include\Exporters\NifAnimationExporter.h" />
     <ClInclude Include="include\Exporters\NifDefaultExportingFixture.h" />
     <ClInclude Include="include\Exporters\NifExportingFixture.h" />
+    <ClInclude Include="include\Exporters\NifFalloutExportingFixture.h" />
     <ClInclude Include="include\Exporters\NifKFAnimationExporter.h" />
     <ClInclude Include="include\Exporters\NifKFExportingFixture.h" />
     <ClInclude Include="include\Exporters\NifMaterialExporter.h" />
+    <ClInclude Include="include\Exporters\NifMaterialExporterFallout.h" />
     <ClInclude Include="include\Exporters\NifMaterialExporterSkyrim.h" />
     <ClInclude Include="include\Exporters\NifMeshExporter.h" />
     <ClInclude Include="include\Exporters\NifMeshExporterSkyrim.h" />
@@ -1268,9 +1270,11 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClCompile Include="src\Exporters\NifAnimationExporter.cpp" />
     <ClCompile Include="src\Exporters\NifDefaultExportingFixture.cpp" />
     <ClCompile Include="src\Exporters\NifExportingFixture.cpp" />
+    <ClCompile Include="src\Exporters\NifFalloutExportingFixture.cpp" />
     <ClCompile Include="src\Exporters\NifKFAnimationExporter.cpp" />
     <ClCompile Include="src\Exporters\NifKFExportingFixture.cpp" />
     <ClCompile Include="src\Exporters\NifMaterialExporter.cpp" />
+    <ClCompile Include="src\Exporters\NifMaterialExporterFallout.cpp" />
     <ClCompile Include="src\Exporters\NifMaterialExporterSkyrim.cpp" />
     <ClCompile Include="src\Exporters\NifMeshExporter.cpp" />
     <ClCompile Include="src\Exporters\NifMeshExporterSkyrim.cpp" />

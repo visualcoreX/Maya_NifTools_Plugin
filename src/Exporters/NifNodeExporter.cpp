@@ -272,7 +272,7 @@ void NifNodeExporter::ExportAV( NiAVObjectRef avObj, MObject dagNode, bool world
 	}
 
 	//Set default collision propagation type of "Use triangles"
-	avObj->SetFlags(10);
+	avObj->SetFlags(524302);
 
 	//Set visibility
 	MPlug vis = nodeFn.findPlug( MString("visibility") );
@@ -296,6 +296,27 @@ void NifNodeExporter::ExportAV( NiAVObjectRef avObj, MObject dagNode, bool world
 	//out << "Storing local transform values..." << endl;
 	//Store Transform Values
 	avObj->SetLocalTransform( ni_trans );
+
+	// Для FNV: добавляем пустой NiTransformController на каждую ноду
+	// Данные анимации хранятся в .kf файлах, не в .nif
+	NiTransformControllerRef controller = new NiTransformController();
+	NiTransformInterpolatorRef interpolator = new NiTransformInterpolator();
+
+	// Флаги 76 = Active + CycleType_Clamp (как в оригинале FNV)
+	controller->SetFlags(76);
+	controller->SetFrequency(1.0f);
+	controller->SetPhase(0.0f);
+	controller->SetStartTime(0.0f);
+	controller->SetStopTime(0.0f);
+
+	// Интерполятор с float_min значениями (стандарт для пустого контроллера)
+	interpolator->SetTranslation(Vector3(-1e+30f, -1e+30f, -1e+30f));
+	interpolator->SetRotation(Quaternion(-1e+30f, 0.0f, 0.0f, 0.0f));
+	interpolator->SetScale(1.0f);
+	// Data остаётся None
+
+	controller->SetInterpolator(interpolator.operator->());
+	avObj->AddController(StaticCast<NiTimeController>(controller));
 }
 
 string NifNodeExporter::asString( bool verbose /*= false */ ) const {
