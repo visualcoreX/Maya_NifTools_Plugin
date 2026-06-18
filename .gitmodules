@@ -1,6 +1,6 @@
 [submodule "niflib"]
 	path = niflib
-	url = https://github.com/DCCStudios/Mayaniflib.git
+	url = https://github.com/visualcoreX/Mayaniflib.git
 [submodule "extern/nifly"]
 	path = extern/nifly
 	url = https://github.com/ousnius/nifly.git
