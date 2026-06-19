@@ -297,26 +297,32 @@ void NifNodeExporter::ExportAV( NiAVObjectRef avObj, MObject dagNode, bool world
 	//Store Transform Values
 	avObj->SetLocalTransform( ni_trans );
 
-	// Для FNV: добавляем пустой NiTransformController на каждую ноду
-	// Данные анимации хранятся в .kf файлах, не в .nif
-	NiTransformControllerRef controller = new NiTransformController();
-	NiTransformInterpolatorRef interpolator = new NiTransformInterpolator();
+	// Service nodes (ProjectileNode, ShellCasingNode, SightingNode) must NOT have
+	// a transform controller — adding one breaks weapon visibility while aiming.
+	MString nodeNameStr = nodeFn.name();
+	bool isServiceNode = (nodeNameStr == "ProjectileNode" ||
+		nodeNameStr == "ShellCasingNode" ||
+		nodeNameStr.indexW("SightingNode") != -1);
 
-	// Флаги 76 = Active + CycleType_Clamp (как в оригинале FNV)
-	controller->SetFlags(76);
-	controller->SetFrequency(1.0f);
-	controller->SetPhase(0.0f);
-	controller->SetStartTime(0.0f);
-	controller->SetStopTime(0.0f);
+	if (!isServiceNode) {
+		// For FNV: add an empty NiTransformController on each node.
+		// Animation data lives in external .kf files, not the .nif itself.
+		NiTransformControllerRef controller = new NiTransformController();
+		NiTransformInterpolatorRef interpolator = new NiTransformInterpolator();
 
-	// Интерполятор с float_min значениями (стандарт для пустого контроллера)
-	interpolator->SetTranslation(Vector3(-1e+30f, -1e+30f, -1e+30f));
-	interpolator->SetRotation(Quaternion(-1e+30f, 0.0f, 0.0f, 0.0f));
-	interpolator->SetScale(1.0f);
-	// Data остаётся None
+		controller->SetFlags(76);
+		controller->SetFrequency(1.0f);
+		controller->SetPhase(0.0f);
+		controller->SetStartTime(0.0f);
+		controller->SetStopTime(0.0f);
 
-	controller->SetInterpolator(interpolator.operator->());
-	avObj->AddController(StaticCast<NiTimeController>(controller));
+		interpolator->SetTranslation(Vector3(-1e+30f, -1e+30f, -1e+30f));
+		interpolator->SetRotation(Quaternion(-1e+30f, 0.0f, 0.0f, 0.0f));
+		interpolator->SetScale(1.0f);
+
+		controller->SetInterpolator(interpolator.operator->());
+		avObj->AddController(StaticCast<NiTimeController>(controller));
+	}
 }
 
 string NifNodeExporter::asString( bool verbose /*= false */ ) const {

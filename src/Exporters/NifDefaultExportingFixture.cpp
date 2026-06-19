@@ -28,6 +28,10 @@ MStatus NifDefaultExportingFixture::WriteNodes( const MFileObject& file ) {
 	this->translatorData->exportedSceneRoot->SetName( "Scene Root" );
 	//out << sceneRoot << endl;
 
+	// Set FNV-standard flags on root: Selective Update + Selective Update Transforms 
+	// + Selective Update Controller + No Anim Sync
+	this->translatorData->exportedSceneRoot->SetFlags(524302);
+
 
 	//out << "Exporting shaders..." << endl;
 	this->translatorData->shaders.clear();
@@ -46,7 +50,7 @@ MStatus NifDefaultExportingFixture::WriteNodes( const MFileObject& file ) {
 	if (this->translatorOptions->exportMaterialType == "falloutmaterial") {
 		BSXFlagsRef bsx_flags = new BSXFlags();
 		bsx_flags->SetName("BSX");
-		bsx_flags->SetData(2); // Bit 1 = enable collision, Bit 0 = enable havok Ч стандарт дл€ FNV weapon
+		bsx_flags->SetData(67); // Bit 0 (Animated) + Bit 1 (Havok) + Bit 6 (Dynamic)
 		this->translatorData->exportedSceneRoot->AddExtraData(
 			StaticCast<NiExtraData>(bsx_flags)
 		);

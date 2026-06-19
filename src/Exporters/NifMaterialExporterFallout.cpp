@@ -62,13 +62,19 @@ void NifMaterialExporterFallout::ExportMaterials() {
             }
 
             shader_property->SetTextureSet(shader_textures);
+            // FNV-standard shader flags: Specular, Remappable Textures, ZBuffer Test
+            shader_property->SetShaderFlags((BSShaderFlags)(SF_SPECULAR | SF_REMAPPABLE_TEXTURES | SF_ZBUFFER_TEST));
 
             // NiMaterialProperty
             if (shader_node.object().hasFn(MFn::kPhong)) {
                 MFnPhongShader phong_node(shader_node.object());
                 MColor spec = phong_node.specularColor();
-                mat_property->SetSpecularColor(Color3(spec.r, spec.g, spec.b));
-                mat_property->SetGlossiness(phong_node.findPlug("cosinePower").asFloat());
+
+                // FNV-standard material values (Maya's raw values made mesh invisible/wrong-shiny)
+                mat_property->SetSpecularColor(Color3(0.0f, 0.0f, 0.0f));
+                mat_property->SetGlossiness(80.0f);
+                mat_property->SetTransparency(1.0f); // Alpha = 1.0, fully visible
+
                 MColor emit = phong_node.incandescence();
                 mat_property->SetEmissiveColor(Color3(emit.r, emit.g, emit.b));
             }

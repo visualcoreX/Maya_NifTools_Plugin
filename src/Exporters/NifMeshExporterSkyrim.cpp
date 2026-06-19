@@ -573,14 +573,14 @@ void NifMeshExporterSkyrim::ExportMesh( MObject dagNode ) {
 	if ( splitRoot != NULL ) {
 		//Root is a NiNode with NiTriBasedGeom children.
 		vector<NiAVObjectRef> children = splitRoot->GetChildren();
-		for ( unsigned c = 0; c < children.size(); ++c ) {
-			//Set the default collision propogation flag to "use triangles"
-			children[c]->SetFlags(2);
+		for (unsigned c = 0; c < children.size(); ++c) {
+			//Set the default collision propagation flag — use FNV-standard flags (Selective Update + No Anim Sync)
+			children[c]->SetFlags(524302);
 			// Make the mesh invisible if necessary
-			if ( visibility == false ) {
+			if (visibility == false) {
 				children[c]->SetVisibility(false);
 			}
-		} 
+		}
 
 	} else {
 		//Root must be a NiTriBasedGeom.  Make it invisible if necessary
