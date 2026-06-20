@@ -31,7 +31,7 @@ void NifMaterialExporterFallout::ExportMaterials() {
             MPlugArray connections;
             MObject current_texture;
 
-            // Диффузная текстура (слот 0)
+            // Diffuse map (slot 0)
             this->GetColor(shader_node.object(), "color", color, current_texture);
             if (!current_texture.isNull()) {
                 string file_name = this->ExportTexture(current_texture);
@@ -44,7 +44,7 @@ void NifMaterialExporterFallout::ExportMaterials() {
                 }
             }
 
-            // Нормал-мап (слот 1)
+            // Normal map (slot 1)
             connections.clear();
             MPlug in_normal = shader_node.findPlug("normalCamera");
             in_normal.connectedTo(connections, true, false);
@@ -58,6 +58,39 @@ void NifMaterialExporterFallout::ExportMaterials() {
                     current_texture = connections[0].node();
                     string file_name = this->ExportTexture(current_texture);
                     shader_textures->SetTexture(1, file_name);
+                }
+            }
+
+            // Glow map (slot 2) - read from incandescence/glowIntensity graph
+            connections.clear();
+            MPlug in_incandescence = shader_node.findPlug("incandescence");
+            in_incandescence.connectedTo(connections, true, false);
+            if (connections.length() > 0) {
+                current_texture = connections[0].node();
+                string file_name = this->ExportTexture(current_texture);
+                shader_textures->SetTexture(2, file_name);
+            }
+
+            // Environment cube map (slot 4) - read from reflectedColor graph
+            if (shader_node.object().hasFn(MFn::kPhong)) {
+                connections.clear();
+                MPlug in_reflected_color = shader_node.findPlug("reflectedColor");
+                in_reflected_color.connectedTo(connections, true, false);
+                if (connections.length() > 0) {
+                    current_texture = connections[0].node();
+                    string file_name = this->ExportTexture(current_texture);
+                    shader_textures->SetTexture(4, file_name);
+                }
+
+                // Environment mask (slot 5) - read from reflectivity graph
+                connections.clear();
+                MPlug in_reflectivity = shader_node.findPlug("reflectivity");
+                in_reflectivity.connectedTo(connections, true, false);
+                if (connections.length() > 0) {
+                    // reflectivity is connected to outAlpha of the env mask file node
+                    current_texture = connections[0].node();
+                    string file_name = this->ExportTexture(current_texture);
+                    shader_textures->SetTexture(5, file_name);
                 }
             }
 

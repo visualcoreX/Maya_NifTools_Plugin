@@ -45,7 +45,6 @@
 #include <maya/MVector.h>
 #include <maya/MFnAnimCurve.h>
 #include <maya/MAnimUtil.h>
-#include <maya/MItMeshPolygon.h>
 #include <maya/MItMeshVertex.h>
 #include <maya/MProgressWindow.h>
 
@@ -81,10 +80,10 @@
 #include <obj/NiTextureProperty.h>
 #include <obj/NiImage.h>
 #include <obj/NiAVObject.h>
-#include <obj/NiTriBasedGeom.h>
 #include <obj/BSLightingShaderProperty.h>
 #include <obj/BSShaderTextureSet.h>
 #include "obj/BSShaderPPLightingProperty.h"
+#include <obj/NiStencilProperty.h>
 
 #include "include/Common/NifTranslatorRefObject.h"
 #include "include/Common/NifTranslatorOptions.h"

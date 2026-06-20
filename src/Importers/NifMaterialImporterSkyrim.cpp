@@ -409,6 +409,81 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures(NiAVObjectRef& root) 
 
 						dg_modifier.connect(normal_map_node.findPlug("outAlpha"), bump2d_node.findPlug("bumpValue"));
 						dg_modifier.connect(bump2d_node.findPlug("outNormal"), new_shader.findPlug("normalCamera"));
+
+						// Alpha = specular mask
+						dg_modifier.connect(normal_map_node.findPlug("outAlpha"), new_shader.findPlug("specularColorR"));
+						dg_modifier.connect(normal_map_node.findPlug("outAlpha"), new_shader.findPlug("specularColorG"));
+						dg_modifier.connect(normal_map_node.findPlug("outAlpha"), new_shader.findPlug("specularColorB"));
+					}
+
+					// Use the full texture vector so we can safely check how many slots
+					// this particular NIF actually stores before indexing into it.
+					vector<string> all_textures = texture_set->GetTextures();
+
+					// Slot 2 - Glow / emissive mask (Name_g.dds)
+					if (all_textures.size() > 2 && all_textures[2].length() > 0) {
+						string glow_map = all_textures[2];
+						MString glow_map_file = this->GetTextureFilePath(glow_map);
+						MFnDependencyNode glow_map_node;
+						glow_map_node.create(MString("file"), MString(glow_map.c_str()));
+						glow_map_node.findPlug("ftn").setValue(glow_map_file);
+						glow_map_node.findPlug("alphaGain").setValue(0.25);
+						glow_map_node.findPlug("defaultColorR").setValue(0.0);
+						glow_map_node.findPlug("defaultColorG").setValue(0.0);
+						glow_map_node.findPlug("defaultColorB").setValue(0.0);
+
+						// Mask intensity drives the glow strength, color drives the glow tint
+						dg_modifier.connect(glow_map_node.findPlug("outAlpha"), new_shader.findPlug("glowIntensity"));
+						dg_modifier.connect(glow_map_node.findPlug("outColor"), new_shader.findPlug("incandescence"));
+					}
+
+					// Slot 3 - Parallax / height map (Name_p.dds)
+					if (all_textures.size() > 3 && all_textures[3].length() > 0) {
+						string parallax_map = all_textures[3];
+						MString parallax_file = this->GetTextureFilePath(parallax_map);
+						MFnDependencyNode parallax_node;
+						parallax_node.create(MString("file"), MString(parallax_map.c_str()));
+						parallax_node.findPlug("ftn").setValue(parallax_file);
+						parallax_node.findPlug("alphaIsLuminance").setValue(true);
+
+						MFnDependencyNode parallax_bump_node;
+						parallax_bump_node.create(MString("bump2d"), MString("parallax_bump"));
+						// 0 = standard bump (height-based), not tangent-space normals like the normal map uses
+						parallax_bump_node.findPlug("bumpInterp").setInt(0);
+
+						dg_modifier.connect(parallax_node.findPlug("outAlpha"), parallax_bump_node.findPlug("bumpValue"));
+						// MFnPhongShader has no dedicated displacement input; bump2d's outNormal/outDisplacement
+						// can be wired into a displacementShader node downstream if true displacement is needed.
+					}
+
+					// Slot 4 - Environment cube map (Name_e.dds)
+					if (all_textures.size() > 4 && all_textures[4].length() > 0) {
+						string env_map = all_textures[4];
+						MString env_map_file = this->GetTextureFilePath(env_map);
+						MFnDependencyNode env_map_node;
+						env_map_node.create(MString("file"), MString(env_map.c_str()));
+						env_map_node.findPlug("ftn").setValue(env_map_file);
+
+						dg_modifier.connect(env_map_node.findPlug("outColor"), new_shader.findPlug("reflectedColor"));
+
+						// Keep the reflectedColor connection in the graph for reference, but exclude it
+						// from actual rendering so the env map doesn't show up as a visible reflection
+						// in viewport/software renders - it's only meant to be re-exported back to the NIF.
+						MString mel_command = "shadingConnection -e -cs off \"";
+						mel_command += new_shader.name() + ".rc\"";
+						MGlobal::executeCommand(mel_command);
+					}
+
+					// Slot 5 - Environment mask (Name_em.dds / Name_m.dds)
+					if (all_textures.size() > 5 && all_textures[5].length() > 0) {
+						string env_mask = all_textures[5];
+						MString env_mask_file = this->GetTextureFilePath(env_mask);
+						MFnDependencyNode env_mask_node;
+						env_mask_node.create(MString("file"), MString(env_mask.c_str()));
+						env_mask_node.findPlug("ftn").setValue(env_mask_file);
+
+						// Mask alpha modulates reflection strength
+						dg_modifier.connect(env_mask_node.findPlug("outAlpha"), new_shader.findPlug("reflectivity"));
 					}
 
 					dg_modifier.doIt();
@@ -435,6 +510,19 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures(NiAVObjectRef& root) 
 		}
 		if (alpha_property != NULL) {
 			property_group.push_back(DynamicCast<NiProperty>(alpha_property));
+		}
+
+		// NiStencilProperty (and any other unhandled NiProperty types) must also be
+		// included so this list matches ComplexShape::Merge's property group exactly,
+		// otherwise shader-to-mesh matching in NifMeshImporterSkyrim fails to connect.
+		if (root->GetType().IsDerivedType(NiGeometry::TYPE)) {
+			NiGeometryRef geometry = DynamicCast<NiGeometry>(root);
+			vector<NiPropertyRef> ni_props = geometry->GetProperties();
+			for (int i = 0; i < ni_props.size(); i++) {
+				if (ni_props[i] != NULL && ni_props[i]->GetType().IsSameType(NiStencilProperty::TYPE)) {
+					property_group.push_back(ni_props[i]);
+				}
+			}
 		}
 
 		this->imported_materials.push_back(found_material);

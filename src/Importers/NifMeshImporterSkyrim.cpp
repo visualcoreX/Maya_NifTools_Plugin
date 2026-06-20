@@ -113,6 +113,11 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 
 	meshFn.getPath( meshPath );
 
+	// FNV/DirectX normal maps need Left Handed tangent space coordinate system (bit 1)
+	MPlug tangent_space_plug = meshFn.findPlug("tangentSpace", true);
+	int current_value = tangent_space_plug.asInt();
+	tangent_space_plug.setInt(current_value | 2);
+
 	//out << "Importing vertex colors..." << endl;
 	//Import Vertex Colors
 	vector<Color4> nif_colors = cs.GetColors();
