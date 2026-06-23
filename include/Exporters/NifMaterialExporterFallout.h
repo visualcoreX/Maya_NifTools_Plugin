@@ -13,5 +13,9 @@ public:
     virtual string asString(bool verbose = false) const;
     virtual const Type& GetType() const;
     const static Type TYPE;
+
+    unsigned int stringToFNVShaderFlags(MString flags_string);
+
+    BSShaderType stringToFNVShaderType(MString type_string);
 };
 #endif

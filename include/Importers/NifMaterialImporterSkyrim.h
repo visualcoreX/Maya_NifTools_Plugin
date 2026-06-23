@@ -123,6 +123,10 @@ public:
 
 	MString skyrimShaderTypeToString(unsigned int shader_type);
 
+	// FNV Shaders
+	MString fnvShaderFlags1ToString(unsigned int flags);
+	MString fnvShaderTypeToString(BSShaderType shader_type);
+
 	virtual string asString( bool verbose = false ) const;
 
 	virtual const Type& GetType() const;

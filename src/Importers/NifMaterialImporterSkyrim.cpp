@@ -487,6 +487,20 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures(NiAVObjectRef& root) 
 					}
 
 					dg_modifier.doIt();
+
+					MString flags_str = this->fnvShaderFlags1ToString(
+						(unsigned int)fnv_shader_property->GetShaderFlags()
+					);
+					MString mel;
+					mel = "addAttr -dt \"string\" -shortName fnvShaderFlags ";
+					MGlobal::executeCommand(mel + new_shader.name());
+					mel = "setAttr -type \"string\" ";
+					MGlobal::executeCommand(mel + new_shader.name() + ".fnvShaderFlags \"" + flags_str + "\"");
+
+					// Save shader type as extra attribute on the Phong shader
+					MString type_str = this->fnvShaderTypeToString(fnv_shader_property->GetShaderType());
+					MGlobal::executeCommand("addAttr -dt \"string\" -shortName fnvShaderType " + new_shader.name());
+					MGlobal::executeCommand("setAttr -type \"string\" " + new_shader.name() + ".fnvShaderType \"" + type_str + "\"");
 				}
 			}
 		}
@@ -826,6 +840,66 @@ MString NifMaterialImporterSkyrim::skyrimShaderFlags2ToString( unsigned int shad
 	}
 
 	return ret;
+}
+
+MString NifMaterialImporterSkyrim::fnvShaderFlags1ToString(unsigned int flags) {
+	MString result;
+	struct Entry { const char* name; unsigned int bit; };
+	Entry table[] = {
+		{ "SF_SPECULAR",                   1 },
+		{ "SF_SKINNED",                    2 },
+		{ "SF_LOWDETAIL",                  4 },
+		{ "SF_VERTEX_ALPHA",               8 },
+		{ "SF_UNKNOWN_1",                  16 },
+		{ "SF_SINGLE_PASS",                32 },
+		{ "SF_EMPTY",                      64 },
+		{ "SF_ENVIRONMENT_MAPPING",        128 },
+		{ "SF_ALPHA_TEXTURE",              256 },
+		{ "SF_UNKNOWN_2",                  512 },
+		{ "SF_FACEGEN",                    1024 },
+		{ "SF_PARALLAX_SHADER_INDEX_15",   2048 },
+		{ "SF_UNKNOWN_3",                  4096 },
+		{ "SF_NON_PROJECTIVE_SHADOWS",     8192 },
+		{ "SF_UNKNOWN_4",                  16384 },
+		{ "SF_REFRACTION",                 32768 },
+		{ "SF_FIRE_REFRACTION",            65536 },
+		{ "SF_EYE_ENVIRONMENT_MAPPING",    131072 },
+		{ "SF_HAIR",                       262144 },
+		{ "SF_DYNAMIC_ALPHA",              524288 },
+		{ "SF_LOCALMAP_HIDE_SECRET",       1048576 },
+		{ "SF_WINDOW_ENVIRONMENT_MAPPING", 2097152 },
+		{ "SF_TREE_BILLBOARD",             4194304 },
+		{ "SF_SHADOW_FRUSTUM",             8388608 },
+		{ "SF_MULTIPLE_TEXTURES",          16777216 },
+		{ "SF_REMAPPABLE_TEXTURES",        33554432 },
+		{ "SF_DECAL_SINGLE_PASS",          67108864 },
+		{ "SF_DYNAMIC_DECAL_SINGLE_PASS",  134217728 },
+		{ "SF_PARALLAX_OCCULSION",         268435456 },
+		{ "SF_EXTERNAL_EMITTANCE",         536870912 },
+		{ "SF_SHADOW_MAP",                 1073741824 },
+		{ "SF_ZBUFFER_TEST",               2147483648U },
+	};
+	for (auto& e : table) {
+		if (flags & e.bit) {
+			if (result.length() > 0) result += "|";
+			result += e.name;
+		}
+	}
+	return result;
+}
+
+// Convert BSShaderType enum to string for storage as Maya extra attribute
+MString NifMaterialImporterSkyrim::fnvShaderTypeToString(BSShaderType shader_type) {
+	switch (shader_type) {
+	case SHADER_TALL_GRASS:  return "SHADER_TALL_GRASS";
+	case SHADER_SKY:         return "SHADER_SKY";
+	case SHADER_SKIN:        return "SHADER_SKIN";
+	case SHADER_WATER:       return "SHADER_WATER";
+	case SHADER_LIGHTING30:  return "SHADER_LIGHTING30";
+	case SHADER_TILE:        return "SHADER_TILE";
+	case SHADER_NOLIGHTING:  return "SHADER_NOLIGHTING";
+	default:                 return "SHADER_DEFAULT";
+	}
 }
 
 MString NifMaterialImporterSkyrim::skyrimShaderTypeToString( unsigned int shader_type ) {

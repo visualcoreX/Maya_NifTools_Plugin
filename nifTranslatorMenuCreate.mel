@@ -169,6 +169,71 @@ global proc nifTranslatorMenuCreate() {
 					menuItem -label "SLSF2_HD_LOD_Objects" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_HD_LOD_Objects\", 2)";
 				setParent -menu skyrimShaderFlags2Menu;
 
+			setParent -menu materialsMenu;
+			
+			menuItem -divider true;
+			
+			menuItem -label "FNV default shader quick setup" -command "nifTranslatorSetFNVMaterialQuick()";
+			
+			menuItem -label "FNV shader type" -subMenu true fnvShaderTypeMenu;
+				menuItem -label "Default shader"    -command "nifTranslatorSetFNVShaderType(\"SHADER_DEFAULT\")";
+				menuItem -label "Tall grass shader" -command "nifTranslatorSetFNVShaderType(\"SHADER_TALL_GRASS\")";
+				menuItem -label "Sky shader"        -command "nifTranslatorSetFNVShaderType(\"SHADER_SKY\")";
+				menuItem -label "Skin shader"       -command "nifTranslatorSetFNVShaderType(\"SHADER_SKIN\")";
+				menuItem -label "Water shader"      -command "nifTranslatorSetFNVShaderType(\"SHADER_WATER\")";
+				menuItem -label "Lighting30 shader" -command "nifTranslatorSetFNVShaderType(\"SHADER_LIGHTING30\")";
+				menuItem -label "Tile shader"       -command "nifTranslatorSetFNVShaderType(\"SHADER_TILE\")";
+				menuItem -label "No lighting shader"-command "nifTranslatorSetFNVShaderType(\"SHADER_NOLIGHTING\")";
+			setParent -menu materialsMenu;
+
+			menuItem -label "FNV shader flags 1" -subMenu true fnvShaderFlagsMenu;
+
+				menuItem -label "Shader flags 1-8" -subMenu true fnvShaderFlags18Menu;
+					menuItem -label "SF_SPECULAR"                  -command "nifTranslatorAddFNVShaderFlags(\"SF_SPECULAR\")";
+					menuItem -label "SF_SKINNED"                   -command "nifTranslatorAddFNVShaderFlags(\"SF_SKINNED\")";
+					menuItem -label "SF_LOWDETAIL"                 -command "nifTranslatorAddFNVShaderFlags(\"SF_LOWDETAIL\")";
+					menuItem -label "SF_VERTEX_ALPHA"              -command "nifTranslatorAddFNVShaderFlags(\"SF_VERTEX_ALPHA\")";
+					menuItem -label "SF_UNKNOWN_1"                 -command "nifTranslatorAddFNVShaderFlags(\"SF_UNKNOWN_1\")";
+					menuItem -label "SF_SINGLE_PASS"               -command "nifTranslatorAddFNVShaderFlags(\"SF_SINGLE_PASS\")";
+					menuItem -label "SF_EMPTY"                     -command "nifTranslatorAddFNVShaderFlags(\"SF_EMPTY\")";
+					menuItem -label "SF_ENVIRONMENT_MAPPING"       -command "nifTranslatorAddFNVShaderFlags(\"SF_ENVIRONMENT_MAPPING\")";
+				setParent -menu fnvShaderFlagsMenu;
+
+				menuItem -label "Shader flags 9-16" -subMenu true fnvShaderFlags916Menu;
+					menuItem -label "SF_ALPHA_TEXTURE"             -command "nifTranslatorAddFNVShaderFlags(\"SF_ALPHA_TEXTURE\")";
+					menuItem -label "SF_UNKNOWN_2"                 -command "nifTranslatorAddFNVShaderFlags(\"SF_UNKNOWN_2\")";
+					menuItem -label "SF_FACEGEN"                   -command "nifTranslatorAddFNVShaderFlags(\"SF_FACEGEN\")";
+					menuItem -label "SF_PARALLAX_SHADER_INDEX_15"  -command "nifTranslatorAddFNVShaderFlags(\"SF_PARALLAX_SHADER_INDEX_15\")";
+					menuItem -label "SF_UNKNOWN_3"                 -command "nifTranslatorAddFNVShaderFlags(\"SF_UNKNOWN_3\")";
+					menuItem -label "SF_NON_PROJECTIVE_SHADOWS"    -command "nifTranslatorAddFNVShaderFlags(\"SF_NON_PROJECTIVE_SHADOWS\")";
+					menuItem -label "SF_UNKNOWN_4"                 -command "nifTranslatorAddFNVShaderFlags(\"SF_UNKNOWN_4\")";
+					menuItem -label "SF_REFRACTION"                -command "nifTranslatorAddFNVShaderFlags(\"SF_REFRACTION\")";
+				setParent -menu fnvShaderFlagsMenu;
+
+				menuItem -label "Shader flags 17-24" -subMenu true fnvShaderFlags1724Menu;
+					menuItem -label "SF_FIRE_REFRACTION"           -command "nifTranslatorAddFNVShaderFlags(\"SF_FIRE_REFRACTION\")";
+					menuItem -label "SF_EYE_ENVIRONMENT_MAPPING"   -command "nifTranslatorAddFNVShaderFlags(\"SF_EYE_ENVIRONMENT_MAPPING\")";
+					menuItem -label "SF_HAIR"                      -command "nifTranslatorAddFNVShaderFlags(\"SF_HAIR\")";
+					menuItem -label "SF_DYNAMIC_ALPHA"             -command "nifTranslatorAddFNVShaderFlags(\"SF_DYNAMIC_ALPHA\")";
+					menuItem -label "SF_LOCALMAP_HIDE_SECRET"      -command "nifTranslatorAddFNVShaderFlags(\"SF_LOCALMAP_HIDE_SECRET\")";
+					menuItem -label "SF_WINDOW_ENVIRONMENT_MAPPING"-command "nifTranslatorAddFNVShaderFlags(\"SF_WINDOW_ENVIRONMENT_MAPPING\")";
+					menuItem -label "SF_TREE_BILLBOARD"            -command "nifTranslatorAddFNVShaderFlags(\"SF_TREE_BILLBOARD\")";
+					menuItem -label "SF_SHADOW_FRUSTUM"            -command "nifTranslatorAddFNVShaderFlags(\"SF_SHADOW_FRUSTUM\")";
+				setParent -menu fnvShaderFlagsMenu;
+
+				menuItem -label "Shader flags 25-32" -subMenu true fnvShaderFlags2532Menu;
+					menuItem -label "SF_MULTIPLE_TEXTURES"         -command "nifTranslatorAddFNVShaderFlags(\"SF_MULTIPLE_TEXTURES\")";
+					menuItem -label "SF_REMAPPABLE_TEXTURES"       -command "nifTranslatorAddFNVShaderFlags(\"SF_REMAPPABLE_TEXTURES\")";
+					menuItem -label "SF_DECAL_SINGLE_PASS"         -command "nifTranslatorAddFNVShaderFlags(\"SF_DECAL_SINGLE_PASS\")";
+					menuItem -label "SF_DYNAMIC_DECAL_SINGLE_PASS" -command "nifTranslatorAddFNVShaderFlags(\"SF_DYNAMIC_DECAL_SINGLE_PASS\")";
+					menuItem -label "SF_PARALLAX_OCCULSION"        -command "nifTranslatorAddFNVShaderFlags(\"SF_PARALLAX_OCCULSION\")";
+					menuItem -label "SF_EXTERNAL_EMITTANCE"        -command "nifTranslatorAddFNVShaderFlags(\"SF_EXTERNAL_EMITTANCE\")";
+					menuItem -label "SF_SHADOW_MAP"                -command "nifTranslatorAddFNVShaderFlags(\"SF_SHADOW_MAP\")";
+					menuItem -label "SF_ZBUFFER_TEST"              -command "nifTranslatorAddFNVShaderFlags(\"SF_ZBUFFER_TEST\")";
+				setParent -menu fnvShaderFlagsMenu;
+
+			setParent -menu materialsMenu;
+
 		setParent -menu $nifToolsMenu;
 
 		menuItem -label "Texturing" -subMenu true textureMenu;
@@ -942,6 +1007,45 @@ global proc nifTranslatorAddSkyrimShaderFlags(string $flag, int $type) {
 	}
 }
 
+global proc nifTranslatorAddFNVShaderFlags(string $flag) {
+    string $selection[] = `ls -selection`;
+    string $shaders[];
+
+    for($i = 0; $i < size($selection); $i++) {
+        string $current = $selection[$i];
+        if(`objectType -isAType "lambert" $current` == false) {
+            string $current_shaders[] = nifTranslatorGetConnectedShaders($current);
+            for($j = 0; $j < size($current_shaders); $j++) {
+                $shaders[size($shaders)] = $current_shaders[$j];
+            }
+        } else {
+            $shaders[size($shaders)] = $current;
+        }
+    }
+
+    for($i = 0; $i < size($shaders); $i++) {
+        string $current = $shaders[$i];
+        string $attributes[] = eval("listAttr -shortNames " + $current);
+        int $has_attr = 0;
+        for($j = 0; $j < size($attributes); $j++) {
+            if($attributes[$j] == "fnvShaderFlags") {
+                $has_attr = 1;
+                break;
+            }
+        }
+        if($has_attr == 0) {
+            eval("addAttr -dataType \"string\" -shortName fnvShaderFlags " + $current);
+        }
+        string $flags_string = eval("getAttr " + $current + ".fnvShaderFlags");
+        if(size($flags_string) <= 1) {
+            $flags_string = $flag;
+        } else {
+            $flags_string = $flags_string + "|" + $flag;
+        }
+        eval("setAttr -type \"string\" " + $current + ".fnvShaderFlags \"" + $flags_string + "\"");
+    }
+}
+
 global proc nifTranslatorAddAdditionalTexture(string $textureName) {
 	string $selection[] = `ls -selection`;
 	string $shaders[];
@@ -1013,4 +1117,79 @@ global proc nifTranslatorSetSkyrimShaderType(string $shaderType) {
 		}
 		eval("setAttr -type \"string\" " + $current + "\.skyrimShaderType" + "\"" + $shaderType + "\"");
 	}
+}
+
+global proc nifTranslatorSetFNVMaterialQuick() {
+    string $selection[] = `ls -selection`;
+    string $shaders[];
+
+    for($i = 0; $i < size($selection); $i++) {
+        string $current = $selection[$i];
+        if(`objectType -isAType "lambert" $current` == false) {
+            string $current_shaders[] = nifTranslatorGetConnectedShaders($current);
+            for($j = 0; $j < size($current_shaders); $j++) {
+                $shaders[size($shaders)] = $current_shaders[$j];
+            }
+        } else {
+            $shaders[size($shaders)] = $current;
+        }
+    }
+
+    for($i = 0; $i < size($shaders); $i++) {
+        string $current = $shaders[$i];
+        string $attributes[] = `listAttr -shortNames $current`;
+
+        // Добавляем fnvShaderType
+        int $has_type = 0;
+        for($j = 0; $j < size($attributes); $j++) {
+            if($attributes[$j] == "fnvShaderType") { $has_type = 1; break; }
+        }
+        if($has_type == 0) {
+            eval("addAttr -dataType \"string\" -shortName fnvShaderType " + $current);
+        }
+        eval("setAttr -type \"string\" " + $current + ".fnvShaderType \"SHADER_DEFAULT\"");
+
+        // Сбрасываем fnvShaderFlags и выставляем дефолтный набор
+        int $has_flags = 0;
+        for($j = 0; $j < size($attributes); $j++) {
+            if($attributes[$j] == "fnvShaderFlags") { $has_flags = 1; break; }
+        }
+        if($has_flags == 0) {
+            eval("addAttr -dataType \"string\" -shortName fnvShaderFlags " + $current);
+        }
+        eval("setAttr -type \"string\" " + $current + ".fnvShaderFlags \"SF_SPECULAR|SF_REMAPPABLE_TEXTURES|SF_ZBUFFER_TEST\"");
+    }
+}
+
+global proc nifTranslatorSetFNVShaderType(string $shaderType) {
+    string $selection[] = `ls -selection`;
+    string $shaders[];
+
+    for($i = 0; $i < size($selection); $i++) {
+        string $current = $selection[$i];
+        if(`objectType -isAType "lambert" $current` == false) {
+            string $current_shaders[] = nifTranslatorGetConnectedShaders($current);
+            for($j = 0; $j < size($current_shaders); $j++) {
+                $shaders[size($shaders)] = $current_shaders[$j];
+            }
+        } else {
+            $shaders[size($shaders)] = $current;
+        }
+    }
+
+    for($i = 0; $i < size($shaders); $i++) {
+        string $current = $shaders[$i];
+        int $has_attr = 0;
+        string $attributes[] = `listAttr -shortNames $current`;
+        for($j = 0; $j < size($attributes); $j++) {
+            if($attributes[$j] == "fnvShaderType") {
+                $has_attr = 1;
+                break;
+            }
+        }
+        if($has_attr == 0) {
+            eval("addAttr -dataType \"string\" -shortName fnvShaderType " + $current);
+        }
+        eval("setAttr -type \"string\" " + $current + ".fnvShaderType \"" + $shaderType + "\"");
+    }
 }

@@ -1203,6 +1203,7 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
       <ImportLibrary>Release/Export.lib</ImportLibrary>
       <Version>
       </Version>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
       <Command>powershell -NoProfile -ExecutionPolicy Bypass -Command "&amp; { $ErrorActionPreference='Continue'; $plug = Join-Path $env:USERPROFILE 'Documents\\maya\\2025\\plug-ins'; $scripts = Join-Path $env:USERPROFILE 'Documents\\maya\\2025\\scripts'; New-Item -ItemType Directory -Force -Path $plug,$scripts | Out-Null; Copy-Item -Force \"$(ProjectDir)$(Configuration)\\nifTranslator.mll\" $plug; Copy-Item -Force \"$(ProjectDir)\\niflib\\bin\\niflib_x64.dll\" $plug; Copy-Item -Force \"$(ProjectDir)\\nifTranslatorOpts.mel\" $scripts; Copy-Item -Force \"$(ProjectDir)\\nifTranslatorMenuCreate.mel\" $scripts; Copy-Item -Force \"$(ProjectDir)\\nifTranslatorMenuRemove.mel\" $scripts; Copy-Item -Force \"$(ProjectDir)\\AEbsLightningShaderTemplate.mel\" $scripts; Copy-Item -Force \"$(ProjectDir)\\AEnifDismemberPartitionTemplate.mel\" $scripts; try { Copy-Item -Force \"$(ProjectDir)\\niflib\\bin\\niflib_x64.dll\" 'C:\\Program Files\\Autodesk\\Maya2025\\bin' } catch { } }"</Command>
