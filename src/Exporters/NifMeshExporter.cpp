@@ -67,9 +67,33 @@ void NifMeshExporter::ExportMesh( MObject dagNode )
 	}
 
 	MFnMesh visibleMeshFn(mesh, &stat);
-	if ( stat != MS::kSuccess ) {
-		//out << stat.errorString().asChar() << endl;
+	if (stat != MS::kSuccess) {
 		throw runtime_error("Failed to create visibleMeshFn.");
+	}
+
+	// Disables Auto Key for the rest of this function, so the setValue() calls
+	// below don't create unwanted keyframes. Restored automatically on return
+	// or exception via the destructor.
+	AutoKeyDisabler autoKeyGuard;
+
+	// Force blendShape weights to 0 so we always export the clean base shape.
+	vector<MPlug> savedWeightPlugs;
+	vector<double> savedWeightValues;
+	{
+		MItDependencyGraph dgIt(mesh, MFn::kBlendShape, MItDependencyGraph::kUpstream);
+		for (; !dgIt.isDone(); dgIt.next()) {
+			MFnDependencyNode blendDepNode(dgIt.currentItem());
+			MPlug weightArrayPlug = blendDepNode.findPlug("weight");
+			unsigned int numWeights = weightArrayPlug.numElements();
+			for (unsigned int w = 0; w < numWeights; ++w) {
+				MPlug wPlug = weightArrayPlug.elementByPhysicalIndex(w);
+				double currentVal = 0.0;
+				wPlug.getValue(currentVal);
+				savedWeightPlugs.push_back(wPlug);
+				savedWeightValues.push_back(currentVal);
+				wPlug.setValue(0.0);
+			}
+		}
 	}
 
 	//out << visibleMeshFn.name().asChar() << ") {" << endl;
@@ -411,7 +435,66 @@ void NifMeshExporter::ExportMesh( MObject dagNode )
 		nif_faces[face_index].propGroupIndex = FaceIndices[face_index];
 	}
 
-	cs.SetFaces( nif_faces );
+	cs.SetFaces(nif_faces);
+
+	// Mirror the de-duplication logic inside ComplexShape::Split()'s CompoundVertex
+	// matching loop, WITHOUT building actual geometry data. This tells us, for each
+	// final (post-split) NIF vertex, which original Maya vertex index it came from -
+	// necessary because Split() duplicates vertices on UV seams / hard normal edges.
+	// Single-material mesh assumed: only one shape_num (0), so this is one flat vector.
+	struct DedupKey {
+		Vector3 position;
+		Vector3 normal;
+		Color4 color;
+		map<unsigned int, TexCoord> uvByIndex;
+
+		bool operator==(const DedupKey& o) const {
+			if (position != o.position) return false;
+			if (normal != o.normal) return false;
+			if (color != o.color) return false;
+			if (uvByIndex.size() != o.uvByIndex.size()) return false;
+			for (map<unsigned int, TexCoord>::const_iterator it = uvByIndex.begin(); it != uvByIndex.end(); ++it) {
+				map<unsigned int, TexCoord>::const_iterator oit = o.uvByIndex.find(it->first);
+				if (oit == o.uvByIndex.end()) return false;
+				if (it->second.u != oit->second.u || it->second.v != oit->second.v) return false;
+			}
+			return true;
+		}
+	};
+
+	vector<DedupKey> dedupTable;
+	vector<unsigned int> finalToMayaIndex; // finalToMayaIndex[finalNifVertexIndex] = original Maya vertex index
+
+	for (vector<ComplexFace>::const_iterator face = nif_faces.begin(); face != nif_faces.end(); ++face) {
+		if (face->points.size() < 3) continue;
+
+		for (vector<ComplexPoint>::const_iterator point = face->points.begin(); point != face->points.end(); ++point) {
+			DedupKey key;
+			key.position = nif_vts[point->vertexIndex].position;
+			if (!nif_nmls.empty() && point->normalIndex != CS_NO_INDEX) {
+				key.normal = nif_nmls[point->normalIndex];
+			}
+			if (!niColors.empty() && point->colorIndex != CS_NO_INDEX) {
+				key.color = niColors[point->colorIndex];
+			}
+			for (size_t i = 0; i < point->texCoordIndices.size(); ++i) {
+				const TexCoordIndex& tci = point->texCoordIndices[i];
+				key.uvByIndex[tci.texCoordSetIndex] = nif_uvs[tci.texCoordSetIndex].texCoords[tci.texCoordIndex];
+			}
+
+			bool found = false;
+			for (unsigned int dv = 0; dv < dedupTable.size(); ++dv) {
+				if (dedupTable[dv] == key) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				dedupTable.push_back(key);
+				finalToMayaIndex.push_back(point->vertexIndex);
+			}
+		}
+	}
 
 	//out << "===Exported Face Data===" << endl;
 	//for ( unsigned int i = 0; i < nif_faces.size(); ++i ) {
@@ -579,7 +662,7 @@ void NifMeshExporter::ExportMesh( MObject dagNode )
 			// NEW: attach morph controller to this child shape, if a blendShape exists for it.
 			NiTriBasedGeomRef triGeom = DynamicCast<NiTriBasedGeom>(children[c]);
 			if (triGeom != NULL) {
-				this->morphExporter->ExportMorph(mesh, triGeom);
+				this->morphExporter->ExportMorph(mesh, triGeom, finalToMayaIndex);
 			}
 
 			//Search for Morrowind-Specific body part names in materials, if requested
@@ -660,8 +743,13 @@ void NifMeshExporter::ExportMesh( MObject dagNode )
 		// NEW: attach morph controller directly to avObj.
 		NiTriBasedGeomRef triGeom = DynamicCast<NiTriBasedGeom>(avObj);
 		if (triGeom != NULL) {
-			this->morphExporter->ExportMorph(mesh, triGeom);
+			this->morphExporter->ExportMorph(mesh, triGeom, finalToMayaIndex);
 		}
+	}
+
+	// Restore original blendShape weights.
+	for (size_t i = 0; i < savedWeightPlugs.size(); ++i) {
+		savedWeightPlugs[i].setValue(savedWeightValues[i]);
 	}
 
 

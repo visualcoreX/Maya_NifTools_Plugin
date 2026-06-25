@@ -45,8 +45,8 @@
 #include <maya/MVector.h>
 #include <maya/MFnAnimCurve.h>
 #include <maya/MAnimUtil.h>
-#include <maya/MItMeshPolygon.h>
 #include <maya/MItMeshVertex.h>
+#include <maya/MAnimControl.h>
 
 #include <string> 
 #include <vector>
@@ -86,6 +86,25 @@
 
 using namespace std;
 using namespace Niflib;
+
+// RAII helper: disables Auto Key for its lifetime and restores the previous
+// state on destruction, even if an exception is thrown in between.
+class AutoKeyDisabler {
+public:
+    AutoKeyDisabler() {
+        MGlobal::executeCommand("autoKeyframe -query -state", wasOn);
+        if (wasOn) {
+            MGlobal::executeCommand("autoKeyframe -state false");
+        }
+    }
+    ~AutoKeyDisabler() {
+        if (wasOn) {
+            MGlobal::executeCommand("autoKeyframe -state true");
+        }
+    }
+private:
+    bool wasOn;
+};
 
 class NifMeshExporter;
 

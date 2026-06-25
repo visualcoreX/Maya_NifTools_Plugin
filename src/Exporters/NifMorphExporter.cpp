@@ -1,4 +1,5 @@
 #include "include/Exporters/NifMorphExporter.h"
+#include <fstream>
 
 NifMorphExporter::NifMorphExporter() {
 }
@@ -34,7 +35,7 @@ void NifMorphExporter::EnumerateBlendShapes()
 }
 
 bool NifMorphExporter::GetTargetAbsolutePositions(MFnBlendShapeDeformer& blendFn, unsigned int targetIndex,
-    const vector<Vector3>& baseVerts, vector<Vector3>& outPositions)
+    const vector<Vector3>& baseVerts, const vector<unsigned int>& finalToMayaIndex, vector<Vector3>& outPositions)
 {
     MStatus stat;
 
@@ -75,7 +76,6 @@ bool NifMorphExporter::GetTargetAbsolutePositions(MFnBlendShapeDeformer& blendFn
     if (stat == MS::kSuccess) {
         unsigned int listLen = compListFn.length();
         for (unsigned int c = 0; c < listLen; ++c) {
-            // operator[] returns a copy of the component MObject at this index.
             MObject comp = compListFn[c];
             MFnSingleIndexedComponent compFn(comp, &stat);
             if (stat == MS::kSuccess) {
@@ -93,18 +93,42 @@ bool NifMorphExporter::GetTargetAbsolutePositions(MFnBlendShapeDeformer& blendFn
         return false;
     }
 
-    outPositions = baseVerts;
-
+    // Build a quick lookup: Maya vertex index -> delta, for the vertices this target touches.
+    map<int, Vector3> mayaDeltaByIndex;
     for (unsigned int i = 0; i < affectedIndices.length(); ++i) {
-        int vIdx = affectedIndices[i];
-        if (vIdx < 0 || (unsigned int)vIdx >= outPositions.size()) {
-            continue;
+        Vector3 delta;
+        delta.x = float(deltaPoints[i].x);
+        delta.y = float(deltaPoints[i].y);
+        delta.z = float(deltaPoints[i].z);
+        mayaDeltaByIndex[affectedIndices[i]] = delta;
+    }
+
+    // --- TEMP DEBUG LOG ---
+    //{
+    //    std::ofstream log("E:\\Maya Projects\\FNV\\FNV Project\\Rig\\morph_debug.log", std::ios::out | std::ios::app);
+    //    if (log.is_open()) {
+    //        log << "--- target " << targetIndex << " ---" << std::endl;
+    //        log << "affectedIndices.length(): " << affectedIndices.length() << std::endl;
+    //        for (unsigned int i = 0; i < affectedIndices.length() && i < 20; ++i) {
+    //            log << "  mayaIdx=" << affectedIndices[i]
+    //                << "  delta=(" << deltaPoints[i].x << "," << deltaPoints[i].y << "," << deltaPoints[i].z << ")" << std::endl;
+    //        }
+    //    }
+    //}
+    // --- END TEMP DEBUG LOG ---
+
+    // Now walk every FINAL (post-split) NIF vertex, look up which Maya vertex it
+    // came from, and apply that Maya vertex's delta - this is what correctly
+    // handles Split()'s vertex duplication on UV seams / hard edges.
+    outPositions.assign(baseVerts.size(), Vector3(0.0f, 0.0f, 0.0f));
+    for (unsigned int nifIdx = 0; nifIdx < finalToMayaIndex.size() && nifIdx < outPositions.size(); ++nifIdx) {
+        int mayaIdx = (int)finalToMayaIndex[nifIdx];
+        map<int, Vector3>::iterator dIt = mayaDeltaByIndex.find(mayaIdx);
+        if (dIt != mayaDeltaByIndex.end()) {
+            outPositions[nifIdx].x = dIt->second.x;
+            outPositions[nifIdx].y = dIt->second.y;
+            outPositions[nifIdx].z = dIt->second.z;
         }
-        // inputPointsTarget stores DELTAS relative to the base shape, not
-        // absolute positions - add them on top of the base vertex.
-        outPositions[vIdx].x = baseVerts[vIdx].x + float(deltaPoints[i].x);
-        outPositions[vIdx].y = baseVerts[vIdx].y + float(deltaPoints[i].y);
-        outPositions[vIdx].z = baseVerts[vIdx].z + float(deltaPoints[i].z);
     }
 
     return true;
@@ -143,10 +167,49 @@ vector< Key<float> > NifMorphExporter::ExportWeightKeys(const MPlug& weightPlug)
         keys[i].data = float(curveFn.value(i));
     }
 
+    // --- TEMP DEBUG LOG ---
+    //{
+    //    std::ofstream log("E:\\Maya Projects\\FNV\\FNV Project\\Rig\\morph_debug.log", std::ios::out | std::ios::app);
+    //    if (log.is_open()) {
+    //        log << "=== ExportWeightKeys ===" << std::endl;
+    //        log << "numKeys: " << numKeys << std::endl;
+    //        for (unsigned int i = 0; i < numKeys; ++i) {
+    //            log << "  key[" << i << "] time=" << keys[i].time << " value=" << keys[i].data << std::endl;
+    //        }
+    //    }
+    //}
+    // --- END TEMP DEBUG LOG ---
+
     return keys;
 }
 
-void NifMorphExporter::ExportMorph(MObject mesh, NiTriBasedGeomRef targetGeom)
+string NifMorphExporter::GetTargetAliasName(MFnDependencyNode& blendDepNode, MPlug& weightPlug, unsigned int targetIndex)
+{
+    MStringArray aliasList;
+    blendDepNode.getAliasList(aliasList);
+
+    // weightPlug.name() can return the alias itself instead of the raw "weight[i]"
+    // path when an alias is set, so build the raw plug name manually instead.
+    stringstream rawPlugName;
+    rawPlugName << "weight[" << weightPlug.logicalIndex() << "]";
+    string barePlugName = rawPlugName.str();
+
+    // aliasList alternates: [alias, plugPath, alias, plugPath, ...]
+    for (unsigned int i = 0; i + 1 < aliasList.length(); i += 2) {
+        string plugName = aliasList[i + 1].asChar();
+
+        if (plugName == barePlugName) {
+            return aliasList[i].asChar();
+        }
+    }
+
+    // No alias set in Maya: use a generic fallback name.
+    stringstream fallback;
+    fallback << "Target" << targetIndex;
+    return fallback.str();
+}
+
+void NifMorphExporter::ExportMorph(MObject mesh, NiTriBasedGeomRef targetGeom, const vector<unsigned int>& finalToMayaIndex)
 {
     if (targetGeom == NULL) {
         return;
@@ -170,6 +233,20 @@ void NifMorphExporter::ExportMorph(MObject mesh, NiTriBasedGeomRef targetGeom)
     }
 
     vector<Vector3> baseVerts = geomData->GetVertices();
+    // --- TEMP DEBUG LOG ---
+    //{
+    //    std::ofstream log("E:\\Maya Projects\\FNV\\FNV Project\\Rig\\morph_debug.log", std::ios::out | std::ios::app);
+    //    if (log.is_open()) {
+    //        log << "=== ExportMorph for mesh ===" << std::endl;
+    //        log << "baseVertexCount (NIF): " << baseVerts.size() << std::endl;
+    //        log << "finalToMayaIndex.size(): " << finalToMayaIndex.size() << std::endl;
+    //        for (size_t i = 0; i < finalToMayaIndex.size() && i < 20; ++i) {
+    //            log << "  nifIdx=" << i << " -> mayaIdx=" << finalToMayaIndex[i]
+    //                << "  basePos=(" << baseVerts[i].x << "," << baseVerts[i].y << "," << baseVerts[i].z << ")" << std::endl;
+    //        }
+    //    }
+    //}
+    // --- END TEMP DEBUG LOG ---
     unsigned int baseVertexCount = (unsigned int)baseVerts.size();
     if (baseVertexCount == 0) {
         return;
@@ -183,11 +260,15 @@ void NifMorphExporter::ExportMorph(MObject mesh, NiTriBasedGeomRef targetGeom)
     }
 
     NiMorphDataRef morphData = new NiMorphData();
+    morphData->SetRelativeTargets(true); // NEW: must be 1, as in all official files - the niflib default appears to be 0, which inverts weight interpretation in NifSkope
     morphData->SetVertexCount((int)baseVertexCount);
     morphData->SetMorphCount((int)numTargets + 1);
 
     // Morph 0: base/rest shape, no keys.
     morphData->SetMorphVerts(0, baseVerts);
+    morphData->SetFrameName(0, "Basis"); // matches official FNV file convention
+
+    MFnDependencyNode blendDepNode(blendFn.object());
 
     // One interpolator per target (NOT including the base shape), built in
     // parallel with the NiMorphData entries so both stay in sync.
@@ -209,8 +290,11 @@ void NifMorphExporter::ExportMorph(MObject mesh, NiTriBasedGeomRef targetGeom)
         MPlug weightPlug = weightArrayPlug.elementByPhysicalIndex(t);
         int morphIndex = (int)t + 1;
 
+        string targetName = GetTargetAliasName(blendDepNode, weightPlug, t);
+        morphData->SetFrameName(morphIndex, targetName);
+
         vector<Vector3> targetVerts;
-        if (!GetTargetAbsolutePositions(blendFn, t, baseVerts, targetVerts)) {
+        if (!GetTargetAbsolutePositions(blendFn, t, baseVerts, finalToMayaIndex, targetVerts)) {
             morphData->SetMorphVerts(morphIndex, baseVerts);
             // Still add a placeholder interpolator so the interpolator list
             // stays aligned with the morph target list.

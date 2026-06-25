@@ -5,6 +5,7 @@
 #include <maya/MFnMesh.h>
 #include <maya/MFnBlendShapeDeformer.h>
 #include <maya/MFnComponentListData.h>
+#include <maya/MFnDependencyNode.h>
 #include <maya/MFnSingleIndexedComponent.h>
 #include <maya/MFnGeometryFilter.h>
 #include <maya/MItDependencyNodes.h>
@@ -59,7 +60,7 @@ public:
     // and attaches it to 'targetGeom'. Does nothing if there is no blendShape.
     // 'mesh' must be the *base* (input) mesh object, not the deformed output,
     // so vertex order matches what NifMeshExporter already exported.
-    virtual void ExportMorph(MObject mesh, NiTriBasedGeomRef targetGeom);
+    virtual void ExportMorph(MObject mesh, NiTriBasedGeomRef targetGeom, const vector<unsigned int>& finalToMayaIndex);
 
     virtual string asString(bool verbose = false) const;
     virtual const Type& GetType() const;
@@ -75,12 +76,15 @@ private:
     // in the sparse target data keeps its base position (i.e. zero delta).
     // Returns false if this target slot has no geometry connected.
     bool GetTargetAbsolutePositions(MFnBlendShapeDeformer& blendFn, unsigned int targetIndex,
-        const vector<Vector3>& baseVerts, vector<Vector3>& outPositions);
+        const vector<Vector3>& baseVerts, const vector<unsigned int>& finalToMayaIndex, vector<Vector3>& outPositions);
 
     // Reads the animation curve (if any) driving the blendShape weight plug
     // and converts it into a vector of (time, weight) keys for NiMorphData::SetMorphKeys.
     // Returns a single static key at the current weight value if there is no curve.
     vector< Key<float> > ExportWeightKeys(const MPlug& weightPlug);
+
+    // Gets the Shape Editor alias for a target's weight; falls back to "TargetN".
+    string GetTargetAliasName(MFnDependencyNode& blendDepNode, MPlug& weightPlug, unsigned int targetIndex);
 };
 
 #endif
