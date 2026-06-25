@@ -580,12 +580,23 @@ void NifMeshExporterSkyrim::ExportMesh( MObject dagNode ) {
 			if (visibility == false) {
 				children[c]->SetVisibility(false);
 			}
+			// NEW: attach a NiGeomMorpherController if this mesh has a Maya blendShape deformer.
+			NiTriBasedGeomRef triGeom = DynamicCast<NiTriBasedGeom>(children[c]);
+			if (triGeom != NULL) {
+				this->morphExporter->ExportMorph(mesh, triGeom);
+			}
+		}
+	}
+	else {
+		// Root must be a single NiTriBasedGeom (no skin). Make it invisible if necessary.
+		if (visibility == false) {
+			avObj->SetVisibility(false);
 		}
 
-	} else {
-		//Root must be a NiTriBasedGeom.  Make it invisible if necessary
-		if ( visibility == false ) {
-			avObj->SetVisibility(false);
+		// NEW: attach morph controller directly to avObj.
+		NiTriBasedGeomRef triGeom = DynamicCast<NiTriBasedGeom>(avObj);
+		if (triGeom != NULL) {
+			this->morphExporter->ExportMorph(mesh, triGeom);
 		}
 	}
 

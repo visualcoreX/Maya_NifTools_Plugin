@@ -169,6 +169,9 @@
     <ClInclude Include="include\Exporters\NifFalloutExportingFixture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\Exporters\NifMorphExporter.h">
+      <Filter>Header Files\Exporters</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Exporters\NifAnimationExporter.cpp">
@@ -281,6 +284,9 @@
     </ClCompile>
     <ClCompile Include="src\Exporters\NifFalloutExportingFixture.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exporters\NifMorphExporter.cpp">
+      <Filter>Source Files\Exporters</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

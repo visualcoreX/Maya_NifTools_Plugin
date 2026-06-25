@@ -12,7 +12,7 @@ NifFalloutExportingFixture::NifFalloutExportingFixture(
     this->translatorUtils = translatorUtils;
     this->nodeExporter = new NifNodeExporter(translatorOptions, translatorData, translatorUtils);
     this->meshExporter = new NifMeshExporterSkyrim(this->nodeExporter, translatorOptions, translatorData, translatorUtils);
-    // Подменяем на Fallout-версию materialExporter:
+    this->meshExporter->morphExporter = new NifMorphExporter(translatorOptions, translatorData, translatorUtils); // NEW
     this->materialExporter = new NifMaterialExporterFallout(translatorOptions, translatorData, translatorUtils);
     this->animationExporter = new NifAnimationExporter(translatorOptions, translatorData, translatorUtils);
 }

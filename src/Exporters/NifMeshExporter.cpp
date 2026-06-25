@@ -4,9 +4,11 @@ NifMeshExporter::NifMeshExporter() {
 
 }
 
-NifMeshExporter::NifMeshExporter( NifNodeExporterRef nodeExporter, NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils ) 
+NifMeshExporter::NifMeshExporter(NifNodeExporterRef nodeExporter, NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils)
 	: NifTranslatorFixtureItem(translatorOptions, translatorData, translatorUtils) {
-		this->nodeExporter = nodeExporter;
+	this->nodeExporter = nodeExporter;
+	// morphExporter is assigned externally by the owning fixture (NifDefaultExportingFixture,
+	// NifSkyrimExportingFixture, NifFalloutExportingFixture) right after construction.
 }
 
 
@@ -574,6 +576,12 @@ void NifMeshExporter::ExportMesh( MObject dagNode )
 				children[c]->SetVisibility(false);
 			}
 
+			// NEW: attach morph controller to this child shape, if a blendShape exists for it.
+			NiTriBasedGeomRef triGeom = DynamicCast<NiTriBasedGeom>(children[c]);
+			if (triGeom != NULL) {
+				this->morphExporter->ExportMorph(mesh, triGeom);
+			}
+
 			//Search for Morrowind-Specific body part names in materials, if requested
 			if( this->translatorOptions->exportMorrowindRename ) {
 				NiMaterialPropertyRef niMatProp = DynamicCast<NiMaterialProperty>( children[c]->GetPropertyByType(NiMaterialProperty::TYPE) );
@@ -647,6 +655,12 @@ void NifMeshExporter::ExportMesh( MObject dagNode )
 		//Root must be a NiTriBasedGeom.  Make it invisible if necessary
 		if ( visibility == false ) {
 			avObj->SetVisibility(false);
+		}
+
+		// NEW: attach morph controller directly to avObj.
+		NiTriBasedGeomRef triGeom = DynamicCast<NiTriBasedGeom>(avObj);
+		if (triGeom != NULL) {
+			this->morphExporter->ExportMorph(mesh, triGeom);
 		}
 	}
 

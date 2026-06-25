@@ -82,6 +82,7 @@
 
 #include "include/Common/NifTranslatorFixtureItem.h"
 #include "include/Exporters/NifNodeExporter.h"
+#include "include/Exporters/NifMorphExporter.h"
 
 using namespace std;
 using namespace Niflib;
@@ -99,6 +100,8 @@ public:
 	NifMeshExporter(NifNodeExporterRef nodeExporter, NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
 
 	NifNodeExporterRef nodeExporter;
+
+	NifMorphExporterRef morphExporter; // NEW: shared across all mesh exporters (base + Skyrim/Fallout subclass)
 
 	virtual void EnumerateSkinClusters();
 

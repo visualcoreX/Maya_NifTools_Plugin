@@ -5,13 +5,14 @@ NifSkyrimExportingFixture::NifSkyrimExportingFixture() {
 }
 
 NifSkyrimExportingFixture::NifSkyrimExportingFixture(NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions, NifTranslatorUtilsRef translatorUtils) {
-	this->translatorOptions = translatorOptions;
-	this->translatorData = translatorData;
-	this->translatorUtils = translatorUtils;
-	this->nodeExporter = new NifNodeExporter(translatorOptions, translatorData, translatorUtils);
-	this->meshExporter = new NifMeshExporterSkyrim(this->nodeExporter, translatorOptions, translatorData, translatorUtils);
-	this->materialExporter = new NifMaterialExporterSkyrim(translatorOptions, translatorData, translatorUtils);
-	this->animationExporter = new NifAnimationExporter(translatorOptions, translatorData, translatorUtils);
+    this->translatorOptions = translatorOptions;
+    this->translatorData = translatorData;
+    this->translatorUtils = translatorUtils;
+    this->nodeExporter = new NifNodeExporter(translatorOptions, translatorData, translatorUtils);
+    this->meshExporter = new NifMeshExporterSkyrim(this->nodeExporter, translatorOptions, translatorData, translatorUtils);
+    this->meshExporter->morphExporter = new NifMorphExporter(translatorOptions, translatorData, translatorUtils); // NEW: same wiring as NifDefaultExportingFixture
+    this->materialExporter = new NifMaterialExporterSkyrim(translatorOptions, translatorData, translatorUtils);
+    this->animationExporter = new NifAnimationExporter(translatorOptions, translatorData, translatorUtils);
 }
 
 

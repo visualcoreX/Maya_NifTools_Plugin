@@ -4,12 +4,13 @@ NifDefaultExportingFixture::NifDefaultExportingFixture() {
 
 }
 
-NifDefaultExportingFixture::NifDefaultExportingFixture( NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions, NifTranslatorUtilsRef translatorUtils ) {
+NifDefaultExportingFixture::NifDefaultExportingFixture(NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions, NifTranslatorUtilsRef translatorUtils) {
 	this->translatorOptions = translatorOptions;
 	this->translatorData = translatorData;
 	this->translatorUtils = translatorUtils;
 	this->nodeExporter = new NifNodeExporter(translatorOptions, translatorData, translatorUtils);
 	this->meshExporter = new NifMeshExporter(this->nodeExporter, translatorOptions, translatorData, translatorUtils);
+	this->meshExporter->morphExporter = new NifMorphExporter(translatorOptions, translatorData, translatorUtils); // NEW: create and attach the morph exporter
 	this->materialExporter = new NifMaterialExporter(translatorOptions, translatorData, translatorUtils);
 	this->animationExporter = new NifAnimationExporter(translatorOptions, translatorData, translatorUtils);
 }
@@ -59,6 +60,7 @@ MStatus NifDefaultExportingFixture::WriteNodes( const MFileObject& file ) {
 	//out << "Enumerating skin clusters..." << endl;
 	this->translatorData->meshClusters.clear();
 	this->meshExporter->EnumerateSkinClusters();
+	this->meshExporter->morphExporter->EnumerateBlendShapes(); // NEW: cache mesh -> blendShape lookups once, before any ExportMesh() calls
 
 	//out << "Exporting meshes..." << endl;
 	for ( list<MObject>::iterator mesh = this->translatorData->meshes.begin(); mesh != this->translatorData->meshes.end(); ++mesh ) {

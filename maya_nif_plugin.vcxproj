@@ -1239,6 +1239,7 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClInclude Include="include\Exporters\NifMaterialExporterSkyrim.h" />
     <ClInclude Include="include\Exporters\NifMeshExporter.h" />
     <ClInclude Include="include\Exporters\NifMeshExporterSkyrim.h" />
+    <ClInclude Include="include\Exporters\NifMorphExporter.h" />
     <ClInclude Include="include\Exporters\NifNodeExporter.h" />
     <ClInclude Include="include\Exporters\NiflyExportingFixture.h" />
     <ClInclude Include="include\Exporters\NifSkyrimExportingFixture.h" />
@@ -1279,6 +1280,7 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClCompile Include="src\Exporters\NifMaterialExporterSkyrim.cpp" />
     <ClCompile Include="src\Exporters\NifMeshExporter.cpp" />
     <ClCompile Include="src\Exporters\NifMeshExporterSkyrim.cpp" />
+    <ClCompile Include="src\Exporters\NifMorphExporter.cpp" />
     <ClCompile Include="src\Exporters\NifNodeExporter.cpp" />
     <ClCompile Include="src\Exporters\NiflyExportingFixture.cpp" />
     <ClCompile Include="src\Exporters\NifSkyrimExportingFixture.cpp" />
