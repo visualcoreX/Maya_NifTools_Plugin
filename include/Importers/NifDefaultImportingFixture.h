@@ -88,6 +88,7 @@
 #include "include/Importers/NifAnimationImporter.h"
 #include "include/Importers/NifMeshImporter.h"
 #include "include/Importers/NifMaterialImporter.h"
+#include "include/Importers/NifCollisionImporter.h"
 
 class NifDefaultImportingFixture;
 
@@ -103,6 +104,8 @@ public:
 	NifMaterialImporterRef materialImporter;
 
 	NifAnimationImporterRef animationImporter;
+
+	NifCollisionImporterRef collisionImporter;
 
 	NifDefaultImportingFixture();
 

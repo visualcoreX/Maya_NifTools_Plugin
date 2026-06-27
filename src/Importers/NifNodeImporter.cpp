@@ -179,6 +179,23 @@ void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MD
 
 	}
 
+	//Check if this node has a Havok collision object attached
+	if (niNode != NULL) {
+		MGlobal::displayInfo(MString("NifNodeImporter: niNode is valid for \"") + name + "\", checking collisionImporter...");
+		if (this->collisionImporter == NULL) {
+			MGlobal::displayWarning("NifNodeImporter: collisionImporter is NULL - check NifDefaultImportingFixture constructor wiring and NifNodeImporter.h field declaration.");
+		}
+		else {
+			MDagPath objPath;
+			MFnDagNode objDagFn(obj);
+			objDagFn.getPath(objPath);
+			this->collisionImporter->ImportCollision(niNode, objPath);
+		}
+	}
+	else {
+		MGlobal::displayInfo(MString("NifNodeImporter: \"") + name + "\" is not a NiNode (niNode == NULL), skipping collision check.");
+	}
+
 	//Check to see if this is a mesh
 	if ( niAVObj->IsDerivedType( NiTriBasedGeom::TYPE ) || niAVObj->IsDerivedType( BSShape::TYPE ) ) {
 		//This is a mesh, so add it to the mesh list

@@ -7,6 +7,7 @@ NifTranslatorOptions::NifTranslatorOptions()
 	this->exportUserVersion = 0;
 	this->importBindPose = false;
 	this->importNormals = false;
+	this->importCollision = true;
 	this->importNoAmbient = false;
 	this->importScale = 1.0f;
 	this->exportWhiteAmbient = false;
@@ -26,6 +27,7 @@ void NifTranslatorOptions::Reset()
 	this->exportUserVersion = 0;
 	this->importBindPose = false;
 	this->importNormals = false;
+	this->importCollision = true;
 	this->importNoAmbient = false;
 	this->importScale = 1.0f;
 	this->exportWhiteAmbient = false;
@@ -395,6 +397,32 @@ void NifTranslatorOptions::ParseOptionsString(const MString& optionsString)
 			{
 				this->cycleType = CYCLE_REVERSE;
 			}
+		}
+
+		if (tokens[0] == "importNormals")
+		{
+			if (tokens[1] == "1")
+			{
+				this->importNormals = true;
+			}
+			else
+			{
+				this->importNormals = false;
+			}
+			//out << "Import Normals: " << import_normals << endl;
+		}
+
+		if (tokens[0] == "importCollision")
+		{
+			if (tokens[1] == "1")
+			{
+				this->importCollision = true;
+			}
+			else
+			{
+				this->importCollision = false;
+			}
+			//out << "Import Collision: " << this->importCollision << endl;
 		}
 	}
 }

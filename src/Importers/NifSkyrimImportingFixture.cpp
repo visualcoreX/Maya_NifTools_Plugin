@@ -5,7 +5,7 @@ NifSkyrimImportingFixture::NifSkyrimImportingFixture() {
 
 }
 
-NifSkyrimImportingFixture::NifSkyrimImportingFixture( NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils ) {
+NifSkyrimImportingFixture::NifSkyrimImportingFixture(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils) {
 	this->translatorOptions = translatorOptions;
 	this->translatorData = translatorData;
 	this->translatorUtils = translatorUtils;
@@ -13,6 +13,8 @@ NifSkyrimImportingFixture::NifSkyrimImportingFixture( NifTranslatorOptionsRef tr
 	this->meshImporter = new NifMeshImporterSkyrim(translatorOptions, translatorData, translatorUtils);
 	this->materialImporter = new NifMaterialImporterSkyrim(translatorOptions, translatorData, translatorUtils);
 	this->animationImporter = new NifAnimationImporter(translatorOptions, translatorData, translatorUtils);
+	this->collisionImporter = new NifCollisionImporter(translatorOptions, translatorData, translatorUtils);
+	this->nodeImporter->collisionImporter = this->collisionImporter;
 }
 
 string NifSkyrimImportingFixture::asString( bool verbose /*= false */ ) const {

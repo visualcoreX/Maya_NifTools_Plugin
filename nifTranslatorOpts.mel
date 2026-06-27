@@ -136,6 +136,10 @@ global proc int nifTranslatorOpts ( string $parent,
 					      -value 0
 						  -annotation "Uses the default ambient color instead of what is in the NIF file; usually white."
 						  impNoAmbientCk;
+				checkBox -label "Import Collision"
+					      -value 1
+						  -annotation "Imports bhkRigidBody/bhkRigidBodyT collision data (shape, material, physics properties) as Maya transforms and custom attribute nodes. Disable to skip collision import entirely and speed up large imports."
+						  impCollisionCk;
 				rowLayout -numberOfColumns 2
 					  -columnWidth2 120 200
 					  -columnAttach2 "both" "both";
@@ -520,6 +524,13 @@ global proc int nifTranslatorOpts ( string $parent,
 						checkBox -edit -value false impNormalsCk;
 					}
 				}
+				if ($optionBreakDown[0] == "importCollision") {
+					if ($optionBreakDown[1] == "1" ) {
+						checkBox -edit -value true impCollisionCk;
+					} else {
+						checkBox -edit -value false impCollisionCk;
+					}
+				}
 				if ($optionBreakDown[0] == "materialType") {
 					if ($optionBreakDown[1] == "standardmaterial") {
 						radioButton -edit -select nifTranslatorStandardMaterialRd;
@@ -804,6 +815,9 @@ global proc int nifTranslatorOpts ( string $parent,
 		
 		$ckVal = `checkBox -query -value impNoAmbientCk`;
 		$currentOptions = $currentOptions + "importNoAmbient=" + $ckVal + ";";
+
+		$ckVal = `checkBox -query -value impCollisionCk`;
+		$currentOptions = $currentOptions + "importCollision=" + $ckVal + ";";
 
 		int $scaleSelection = `optionMenu -query -select importScaleMenu`;
 		if ($scaleSelection < 1 || $scaleSelection > size($importScaleValues)) {

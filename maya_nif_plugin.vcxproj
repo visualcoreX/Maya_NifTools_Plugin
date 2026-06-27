@@ -1227,6 +1227,8 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClInclude Include="include\Common\NifTranslatorRefObject.h" />
     <ClInclude Include="include\Common\NifTranslatorUtils.h" />
     <ClInclude Include="include\Custom Nodes\BSLightningShader.h" />
+    <ClInclude Include="include\Custom Nodes\NifBhkRigidBody.h" />
+    <ClInclude Include="include\Custom Nodes\NifBhkShape.h" />
     <ClInclude Include="include\Custom Nodes\NifDismemberPartition.h" />
     <ClInclude Include="include\Exporters\NifAnimationExporter.h" />
     <ClInclude Include="include\Exporters\NifDefaultExportingFixture.h" />
@@ -1244,6 +1246,7 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClInclude Include="include\Exporters\NiflyExportingFixture.h" />
     <ClInclude Include="include\Exporters\NifSkyrimExportingFixture.h" />
     <ClInclude Include="include\Importers\NifAnimationImporter.h" />
+    <ClInclude Include="include\Importers\NifCollisionImporter.h" />
     <ClInclude Include="include\Importers\NifDefaultImportingFixture.h" />
     <ClInclude Include="include\Importers\NifImportingFixture.h" />
     <ClInclude Include="include\Importers\NifKFAnimationImporter.h" />
@@ -1268,6 +1271,8 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClCompile Include="src\Common\NifTranslatorRefObject.cpp" />
     <ClCompile Include="src\Common\NifTranslatorUtils.cpp" />
     <ClCompile Include="src\Custom Nodes\BSLightningShader.cpp" />
+    <ClCompile Include="src\Custom Nodes\NifBhkRigidBody.cpp" />
+    <ClCompile Include="src\Custom Nodes\NifBhkShape.cpp" />
     <ClCompile Include="src\Custom Nodes\NifDismemberPartition.cpp" />
     <ClCompile Include="src\Exporters\NifAnimationExporter.cpp" />
     <ClCompile Include="src\Exporters\NifDefaultExportingFixture.cpp" />
@@ -1285,6 +1290,7 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClCompile Include="src\Exporters\NiflyExportingFixture.cpp" />
     <ClCompile Include="src\Exporters\NifSkyrimExportingFixture.cpp" />
     <ClCompile Include="src\Importers\NifAnimationImporter.cpp" />
+    <ClCompile Include="src\Importers\NifCollisionImporter.cpp" />
     <ClCompile Include="src\Importers\NifDefaultImportingFixture.cpp" />
     <ClCompile Include="src\Importers\NifImportingFixture.cpp" />
     <ClCompile Include="src\Importers\NifKFAnimationImporter.cpp" />

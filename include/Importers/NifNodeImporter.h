@@ -45,7 +45,6 @@
 #include <maya/MVector.h>
 #include <maya/MFnAnimCurve.h>
 #include <maya/MAnimUtil.h>
-#include <maya/MItMeshPolygon.h>
 #include <maya/MItMeshVertex.h>
 
 #include <string> 
@@ -80,13 +79,13 @@
 #include <obj/NiTextureProperty.h>
 #include <obj/NiImage.h>
 #include <obj/NiAVObject.h>
-#include <obj/NiTriBasedGeom.h>
 
 #include "include/Common/NifTranslatorRefObject.h"
 #include "include/Common/NifTranslatorOptions.h"
 #include "include/Common/NifTranslatorData.h"
 #include "include/Common/NifTranslatorUtils.h"
 #include "include/Common/NifTranslatorFixtureItem.h"
+#include "include/Importers/NifCollisionImporter.h"
 
 using namespace Niflib;
 using namespace std;
@@ -95,18 +94,20 @@ class NifNodeImporter;
 
 typedef Ref<NifNodeImporter> NifNodeImporterRef;
 
-class NifNodeImporter : public NifTranslatorFixtureItem{
+class NifNodeImporter : public NifTranslatorFixtureItem {
 public:
 
-	virtual void ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent = MObject::kNullObj );
+	virtual void ImportNodes(NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath >& objs, MObject parent = MObject::kNullObj);
 
 	virtual ~NifNodeImporter();
 
 	NifNodeImporter();
 
-	NifNodeImporter(NifTranslatorOptionsRef translatorOptions,NifTranslatorDataRef translatorData,NifTranslatorUtilsRef translatorUtils);
+	NifNodeImporter(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
 
-	virtual string asString( bool verbose = false ) const;
+	NifCollisionImporterRef collisionImporter; // set externally by NifDefaultImportingFixture after construction
+
+	virtual string asString(bool verbose = false) const;
 
 	virtual const Type& GetType() const;
 

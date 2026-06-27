@@ -114,6 +114,8 @@ public:
 
 	bool importAllNodesAsJoints; //Determines if should import all the nodes in the file as joints in maya
 
+	bool importCollision; //Determines whether bhkCollisionObject chains are imported as Maya collision proxy objects
+
 	bool exportFlatenedSkeleton; //Determines if the skeleton hierarchy should be flattened
 
 	bool exportBsFadeNodeRoot; //Determines if the root will be a bs fade node
