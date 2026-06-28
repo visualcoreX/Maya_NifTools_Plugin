@@ -1,6 +1,5 @@
 #ifndef _NIFNODEEXPORTER_H
 #define _NIFNODEEXPORTER_H
-
 #include <maya/MDagPath.h>
 #include <maya/MDagPathArray.h>
 #include <maya/MEulerRotation.h>
@@ -47,14 +46,12 @@
 #include <maya/MAnimUtil.h>
 #include <maya/MItMeshVertex.h>
 #include <maya/MCommandResult.h>
-
 #include <string> 
 #include <vector>
 #include <sstream>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-
 #include <ComplexShape.h>
 #include <MatTexCollection.h>
 #include <niflib.h>
@@ -83,32 +80,29 @@
 #include <obj/NiTransformData.h>
 #include <obj/NiSingleInterpController.h>
 #include <Ref.h>
-
 #include "include/Common/NifTranslatorFixtureItem.h"
-
+#include "include/Exporters/NifCollisionExporter.h"
 using namespace std;
 using namespace Niflib;
-
 class NifNodeExporter;
-
 typedef Ref<NifNodeExporter> NifNodeExporterRef;
-
 class NifNodeExporter : public NifTranslatorFixtureItem {
-
 public:
-
 	NifNodeExporter();
 	NifNodeExporter(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
-
 	virtual void ExportDAGNodes();
-
 	virtual void ExportAV(NiAVObjectRef avObj, MObject dagNode, bool worldTransform = false);
-
-	virtual string asString( bool verbose = false ) const;
-
+	virtual string asString(bool verbose = false) const;
 	virtual const Type& GetType() const;
-
 	const static Type TYPE;
-};
 
+	// Set externally by whichever ExportingFixture owns this node exporter
+	// (same pattern as NifNodeImporter::collisionImporter on the import
+	// side). Used inside ExportDAGNodes to check each exported joint's own
+	// Maya DAG children for a "bhkRigidBody"/"bhkRigidBodyT" collision
+	// transform - NOT to create a separate NiNode for the collision itself,
+	// just to attach it (via SetCollisionObject) to the NiNode that joint
+	// already produced.
+	NifCollisionExporterRef collisionExporter;
+};
 #endif

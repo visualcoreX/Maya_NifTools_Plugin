@@ -8,6 +8,7 @@ NifTranslatorOptions::NifTranslatorOptions()
 	this->importBindPose = false;
 	this->importNormals = false;
 	this->importCollision = true;
+	this->importRootNode = false;
 	this->importNoAmbient = false;
 	this->importScale = 1.0f;
 	this->exportWhiteAmbient = false;
@@ -28,6 +29,7 @@ void NifTranslatorOptions::Reset()
 	this->importBindPose = false;
 	this->importNormals = false;
 	this->importCollision = true;
+	this->importRootNode = false;
 	this->importNoAmbient = false;
 	this->importScale = 1.0f;
 	this->exportWhiteAmbient = false;
@@ -423,6 +425,18 @@ void NifTranslatorOptions::ParseOptionsString(const MString& optionsString)
 				this->importCollision = false;
 			}
 			//out << "Import Collision: " << this->importCollision << endl;
+		}
+
+		if (tokens[0] == "importRootNode")
+		{
+			if (tokens[1] == "1")
+			{
+				this->importRootNode = true;
+			}
+			else
+			{
+				this->importRootNode = false;
+			}
 		}
 	}
 }

@@ -1,6 +1,5 @@
 #ifndef _NIFDEFAULTEXPORTINGFIXTURE_H
 #define _NIFDEFAULTEXPORTINGFIXTURE_H
-
 #include <maya/MDagPath.h>
 #include <maya/MDagPathArray.h>
 #include <maya/MEulerRotation.h>
@@ -24,7 +23,7 @@
 #include <maya/MFStream.h>
 #include <maya/MGlobal.h>
 #include <maya/MIntArray.h>
-#include <maya/MIOStream.h> 
+#include <maya/MIOStream.h>
 #include <maya/MItDag.h>
 #include <maya/MItDependencyGraph.h>
 #include <maya/MItDependencyNodes.h>
@@ -45,16 +44,13 @@
 #include <maya/MVector.h>
 #include <maya/MFnAnimCurve.h>
 #include <maya/MAnimUtil.h>
-#include <maya/MItMeshPolygon.h>
 #include <maya/MItMeshVertex.h>
-
-#include <string> 
+#include <string>
 #include <vector>
 #include <sstream>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-
 #include <ComplexShape.h>
 #include <MatTexCollection.h>
 #include <niflib.h>
@@ -81,44 +77,28 @@
 #include <obj/BSFadeNode.h>
 #include <obj/BSXFlags.h>
 #include <Ref.h>
-
 #include "NifExportingFixture.h"
 #include "NifMeshExporter.h"
 #include "NifNodeExporter.h"
 #include "NifMaterialExporter.h"
 #include "NifAnimationExporter.h"
-
+#include "NifCollisionExporter.h"
 using namespace Niflib;
 using namespace std;
-
 class NifDefaultExportingFixture;
-
 typedef Ref<NifDefaultExportingFixture> NifDefaultExportingFixtureRef;
-
 class NifDefaultExportingFixture : public NifExportingFixture {
-
 public:
-
 	NifNodeExporterRef nodeExporter;
-
 	NifMeshExporterRef meshExporter;
-
 	NifMaterialExporterRef materialExporter;
-
 	NifAnimationExporterRef animationExporter;
-
+	NifCollisionExporterRef collisionExporter;
 	NifDefaultExportingFixture();
-
 	NifDefaultExportingFixture(NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions, NifTranslatorUtilsRef translatorUtils);
-
-	virtual MStatus WriteNodes( const MFileObject& file );
-
-	virtual string asString( bool verbose = false ) const;
-
+	virtual MStatus WriteNodes(const MFileObject& file);
+	virtual string asString(bool verbose = false) const;
 	virtual const Type& getType() const;
-
 	const static Type TYPE;
-
 };
-
 #endif

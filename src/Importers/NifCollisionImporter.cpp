@@ -28,7 +28,7 @@ NifCollisionImporter::NifCollisionImporter(NifTranslatorOptionsRef translatorOpt
 NifCollisionImporter::~NifCollisionImporter() {
 }
 
-MStatus NifCollisionImporter::ImportCollision(NiNodeRef niNode, MDagPath nodeDagPath) {
+MStatus NifCollisionImporter::ImportCollision(NiNodeRef niNode, MObject parentTransform) {
 	// Skip entirely if the user disabled collision import (see NifTranslatorOptions)
 	if (this->translatorOptions->importCollision == false) {
 		MGlobal::displayInfo("NifCollisionImporter: importCollision option is OFF, skipping.");
@@ -72,7 +72,7 @@ MStatus NifCollisionImporter::ImportCollision(NiNodeRef niNode, MDagPath nodeDag
 
 	unsigned short bhkFlagsValue = bhkCollision->GetFlags();
 
-	return this->ImportRigidBody(rigidBody, nodeDagPath.node(), bhkFlagsValue);
+	return this->ImportRigidBody(rigidBody, parentTransform, bhkFlagsValue);
 }
 
 MStatus NifCollisionImporter::ImportRigidBody(bhkRigidBodyRef rigidBody, MObject parentTransform, unsigned short bhkFlagsValue) {
@@ -123,6 +123,15 @@ MStatus NifCollisionImporter::ImportRigidBody(bhkRigidBodyRef rigidBody, MObject
 	SkyrimLayer layerValue = rigidBody->GetSkyrimLayer();
 	MPlug(attrNodeObj, NifBhkRigidBody::layer).setValue((short)layerValue);
 
+	// bhkWorldObject::flagsAndPartNumber - the raw byte NifSkope shows as
+	// the "Flags" component of "Havok Filter". Same version reasoning as
+	// GetSkyrimLayer() above: bhkWorldObject::Read only populates this field
+	// (vs. the legacy colFilter) for info.version >= VER_20_2_0_7, which
+	// every FNV file satisfies - confirmed via the niflib fork patch adding
+	// public GetFlagsAndPartNumber()/GetColFilter() accessors.
+	Niflib::byte havokFilterFlagsValue = rigidBody->GetFlagsAndPartNumber();
+	MPlug(attrNodeObj, NifBhkRigidBody::havokFilterFlags).setValue((short)havokFilterFlagsValue);
+
 	// bhkRigidBody fields
 	MPlug(attrNodeObj, NifBhkRigidBody::motionSystem).setValue((short)rigidBody->GetMotionSystem());
 	MPlug(attrNodeObj, NifBhkRigidBody::qualityType).setValue((short)rigidBody->GetQualityType());
@@ -159,6 +168,33 @@ MStatus NifCollisionImporter::ImportRigidBody(bhkRigidBodyRef rigidBody, MObject
 	MPlug(attrNodeObj, NifBhkRigidBody::havokRotation).child(1).setValue(havokRot.y);
 	MPlug(attrNodeObj, NifBhkRigidBody::havokRotation).child(2).setValue(havokRot.z);
 	MPlug(attrNodeObj, NifBhkRigidBody::havokRotationW).setValue(havokRot.w);
+
+	// Center of mass - confirmed via bhkRigidBody.h: GetCenter() returns a
+	// Vector4 (w unused). Same Havok-to-Bethesda unit scale as translation,
+	// since it's a spatial position like translation, not a purely physical
+	// quantity like mass/inertia.
+	Vector4 havokCenter = rigidBody->GetCenter();
+	MPlug(attrNodeObj, NifBhkRigidBody::center).child(0).setValue(havokCenter.x * HAVOK_TO_BETHESDA_SCALE * scale);
+	MPlug(attrNodeObj, NifBhkRigidBody::center).child(1).setValue(havokCenter.y * HAVOK_TO_BETHESDA_SCALE * scale);
+	MPlug(attrNodeObj, NifBhkRigidBody::center).child(2).setValue(havokCenter.z * HAVOK_TO_BETHESDA_SCALE * scale);
+
+	// Inertia tensor - confirmed via bhkRigidBody.h/nif_math.h: GetInertia()
+	// returns an InertiaMatrix (3 rows of 4 floats, m11-m34, m14/m24/m34
+	// unused). Stored RAW/unscaled - this is a physical quantity (moment of
+	// inertia), not a spatial position, so the Havok-to-Bethesda position
+	// scale doesn't apply here. NOTE: this scaling choice (i.e. none) is not
+	// independently verified against a real round-trip yet - if exported
+	// values come back visibly wrong, this is the first place to check.
+	InertiaMatrix havokInertia = rigidBody->GetInertia();
+	MPlug(attrNodeObj, NifBhkRigidBody::inertiaM11).child(0).setValue(havokInertia[0][0]);
+	MPlug(attrNodeObj, NifBhkRigidBody::inertiaM11).child(1).setValue(havokInertia[0][1]);
+	MPlug(attrNodeObj, NifBhkRigidBody::inertiaM11).child(2).setValue(havokInertia[0][2]);
+	MPlug(attrNodeObj, NifBhkRigidBody::inertiaM21).child(0).setValue(havokInertia[1][0]);
+	MPlug(attrNodeObj, NifBhkRigidBody::inertiaM21).child(1).setValue(havokInertia[1][1]);
+	MPlug(attrNodeObj, NifBhkRigidBody::inertiaM21).child(2).setValue(havokInertia[1][2]);
+	MPlug(attrNodeObj, NifBhkRigidBody::inertiaM31).child(0).setValue(havokInertia[2][0]);
+	MPlug(attrNodeObj, NifBhkRigidBody::inertiaM31).child(1).setValue(havokInertia[2][1]);
+	MPlug(attrNodeObj, NifBhkRigidBody::inertiaM31).child(2).setValue(havokInertia[2][2]);
 
 	// Apply the translation/rotation to the actual transform only when this is
 	// a real bhkRigidBodyT - per niflib's own comment on the class ("the 'T'

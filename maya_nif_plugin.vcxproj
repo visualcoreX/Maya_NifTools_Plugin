@@ -1231,6 +1231,7 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClInclude Include="include\Custom Nodes\NifBhkShape.h" />
     <ClInclude Include="include\Custom Nodes\NifDismemberPartition.h" />
     <ClInclude Include="include\Exporters\NifAnimationExporter.h" />
+    <ClInclude Include="include\Exporters\NifCollisionExporter.h" />
     <ClInclude Include="include\Exporters\NifDefaultExportingFixture.h" />
     <ClInclude Include="include\Exporters\NifExportingFixture.h" />
     <ClInclude Include="include\Exporters\NifFalloutExportingFixture.h" />
@@ -1275,6 +1276,7 @@ copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Docu
     <ClCompile Include="src\Custom Nodes\NifBhkShape.cpp" />
     <ClCompile Include="src\Custom Nodes\NifDismemberPartition.cpp" />
     <ClCompile Include="src\Exporters\NifAnimationExporter.cpp" />
+    <ClCompile Include="src\Exporters\NifCollisionExporter.cpp" />
     <ClCompile Include="src\Exporters\NifDefaultExportingFixture.cpp" />
     <ClCompile Include="src\Exporters\NifExportingFixture.cpp" />
     <ClCompile Include="src\Exporters\NifFalloutExportingFixture.cpp" />

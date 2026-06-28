@@ -227,6 +227,21 @@ MStatus NifBhkRigidBody::initialize() {
 	enum_attribute.setStorable(true);
 	status = MPxNode::addAttribute(layer);
 
+	// Raw byte from bhkWorldObject::colFilter/flagsAndPartNumber (version-
+	// dependent which one niflib actually reads/writes) - confirmed via a
+	// real NifSkope screenshot that this byte's value (129 in that example)
+	// does NOT match any constructor default, so it's read here rather than
+	// left unhandled. Stored as a plain numeric attribute (not an enum)
+	// since its bit layout ("LINK"/"collision off"/"SCALED"/part-number,
+	// per bhkWorldObject.h's field comment) isn't broken out into separate
+	// checkboxes here - that would be a reasonable future improvement.
+	MFnNumericAttribute havok_filter_attribute;
+	havokFilterFlags = havok_filter_attribute.create("havokFilterFlags", "hff", MFnNumericData::kShort, 0, &status);
+	havok_filter_attribute.setMin(0);
+	havok_filter_attribute.setMax(255);
+	havok_filter_attribute.setStorable(true);
+	status = MPxNode::addAttribute(havokFilterFlags);
+
 	// Live RGB output driven by layer (see compute()). Output-only: not
 	// storable/writable, since it's always derived, never set directly.
 	layerColorR = numeric_attribute.create("layerColorR", "lyCR", MFnNumericData::kFloat, 1.0);
@@ -367,6 +382,39 @@ MStatus NifBhkRigidBody::initialize() {
 	havokRotationW = numeric_attribute.create("havokRotationW", "hRW", MFnNumericData::kFloat, 1.0, &status);
 	numeric_attribute.setStorable(true);
 	status = MPxNode::addAttribute(havokRotationW);
+
+	// Center of mass - confirmed via bhkRigidBody.h: GetCenter()/SetCenter(const Vector4&)
+	MObject centerX = numeric_attribute.create("centerX", "cnX", MFnNumericData::kFloat, 0.0);
+	MObject centerY = numeric_attribute.create("centerY", "cnY", MFnNumericData::kFloat, 0.0);
+	MObject centerZ = numeric_attribute.create("centerZ", "cnZ", MFnNumericData::kFloat, 0.0);
+	center = numeric_attribute.create("center", "cnt", centerX, centerY, centerZ, &status);
+	numeric_attribute.setStorable(true);
+	status = MPxNode::addAttribute(center);
+
+	// Inertia tensor (InertiaMatrix in niflib - confirmed via nif_math.h:
+	// 3 rows of 4 floats each, m11-m34, m14/m24/m34 unused). Stored as 3
+	// compound rows of 3 floats each (one per matrix row), matching how
+	// NifSkope's "Inertia Tensor" display groups them.
+	MObject inertiaM11Obj = numeric_attribute.create("inertiaM11", "iM11", MFnNumericData::kFloat, 1.0);
+	MObject inertiaM12Obj = numeric_attribute.create("inertiaM12", "iM12", MFnNumericData::kFloat, 0.0);
+	MObject inertiaM13Obj = numeric_attribute.create("inertiaM13", "iM13", MFnNumericData::kFloat, 0.0);
+	inertiaM11 = numeric_attribute.create("inertiaRow1", "iR1", inertiaM11Obj, inertiaM12Obj, inertiaM13Obj, &status);
+	numeric_attribute.setStorable(true);
+	status = MPxNode::addAttribute(inertiaM11);
+
+	MObject inertiaM21Obj = numeric_attribute.create("inertiaM21", "iM21", MFnNumericData::kFloat, 0.0);
+	MObject inertiaM22Obj = numeric_attribute.create("inertiaM22", "iM22", MFnNumericData::kFloat, 1.0);
+	MObject inertiaM23Obj = numeric_attribute.create("inertiaM23", "iM23", MFnNumericData::kFloat, 0.0);
+	inertiaM21 = numeric_attribute.create("inertiaRow2", "iR2", inertiaM21Obj, inertiaM22Obj, inertiaM23Obj, &status);
+	numeric_attribute.setStorable(true);
+	status = MPxNode::addAttribute(inertiaM21);
+
+	MObject inertiaM31Obj = numeric_attribute.create("inertiaM31", "iM31", MFnNumericData::kFloat, 0.0);
+	MObject inertiaM32Obj = numeric_attribute.create("inertiaM32", "iM32", MFnNumericData::kFloat, 0.0);
+	MObject inertiaM33Obj = numeric_attribute.create("inertiaM33", "iM33", MFnNumericData::kFloat, 1.0);
+	inertiaM31 = numeric_attribute.create("inertiaRow3", "iR3", inertiaM31Obj, inertiaM32Obj, inertiaM33Obj, &status);
+	numeric_attribute.setStorable(true);
+	status = MPxNode::addAttribute(inertiaM31);
 
 	return MStatus::kSuccess;
 }
@@ -672,6 +720,7 @@ MObject NifBhkRigidBody::bhkFlagAnimTargeted;
 MObject NifBhkRigidBody::bhkFlagDismemberedLimb;
 MObject NifBhkRigidBody::isHavokT;
 MObject NifBhkRigidBody::layer;
+MObject NifBhkRigidBody::havokFilterFlags;
 MObject NifBhkRigidBody::layerColor;
 MObject NifBhkRigidBody::layerColorR;
 MObject NifBhkRigidBody::layerColorG;
@@ -692,6 +741,10 @@ MObject NifBhkRigidBody::penetrationDepth;
 MObject NifBhkRigidBody::havokTranslation;
 MObject NifBhkRigidBody::havokRotation;
 MObject NifBhkRigidBody::havokRotationW;
+MObject NifBhkRigidBody::center;
+MObject NifBhkRigidBody::inertiaM11;
+MObject NifBhkRigidBody::inertiaM21;
+MObject NifBhkRigidBody::inertiaM31;
 
 // Unique type ID - must not collide with NifDismemberPartition (0x7ff11) or
 // any other custom node ID registered in the plugin. Verify against the full

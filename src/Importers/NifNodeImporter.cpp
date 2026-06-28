@@ -4,12 +4,12 @@ NifNodeImporter::NifNodeImporter() {
 
 }
 
-NifNodeImporter::NifNodeImporter(NifTranslatorOptionsRef translatorOptions,NifTranslatorDataRef translatorData,NifTranslatorUtilsRef translatorUtils) 
-	: NifTranslatorFixtureItem(translatorOptions,translatorData,translatorUtils) {
+NifNodeImporter::NifNodeImporter(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils)
+	: NifTranslatorFixtureItem(translatorOptions, translatorData, translatorUtils) {
 
 }
 
-void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent )
+void NifNodeImporter::ImportNodes(NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath >& objs, MObject parent)
 {
 	MObject obj;
 	const float scale = this->translatorOptions->importScale;
@@ -27,35 +27,37 @@ void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MD
 
 	vector<NiAVObjectRef> nodesToTest;
 
-	if ( niAVObj->IsDerivedType( NiNode::TYPE ) ) {
+	if (niAVObj->IsDerivedType(NiNode::TYPE)) {
 		NiNodeRef nnr = DynamicCast<NiNode>(niAVObj);
-		if ( nnr->IsSplitMeshProxy() ) {
+		if (nnr->IsSplitMeshProxy()) {
 			//Test all children
 			nodesToTest = nnr->GetChildren();
 		}
-	} else if ( niAVObj->IsDerivedType(NiTriBasedGeom::TYPE ) ) {
+	}
+	else if (niAVObj->IsDerivedType(NiTriBasedGeom::TYPE)) {
 		//This is a shape, so test it.
 		nodesToTest.push_back(niAVObj);
-	} else if ( niAVObj->IsDerivedType(BSShape::TYPE ) ) {
+	}
+	else if (niAVObj->IsDerivedType(BSShape::TYPE)) {
 		//This is a BSTriShape/BSShape, so test it.
 		nodesToTest.push_back(niAVObj);
 	}
 
-	for ( size_t i = 0; i < nodesToTest.size(); ++i ) {
-		NiTriBasedGeomRef niTriGeom = DynamicCast<NiTriBasedGeom>( nodesToTest[i] );
-		if ( niTriGeom && niTriGeom->IsSkin() ) {
+	for (size_t i = 0; i < nodesToTest.size(); ++i) {
+		NiTriBasedGeomRef niTriGeom = DynamicCast<NiTriBasedGeom>(nodesToTest[i]);
+		if (niTriGeom && niTriGeom->IsSkin()) {
 			is_skin = true;
 			break;
 		}
 	}
 
-	if ( is_skin ) {
+	if (is_skin) {
 		parent = MObject::kNullObj;
 	}
 
 	//This must be a node, so process its basic attributes	
 	MFnTransform transFn;
-	MString name = this->translatorUtils->MakeMayaName( niAVObj->GetName() );
+	MString name = this->translatorUtils->MakeMayaName(niAVObj->GetName());
 	string strName = name.asChar();
 
 	int flags = niAVObj->GetFlags();
@@ -70,17 +72,18 @@ void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MD
 
 	//Determine whether this node is an IK joint
 	bool is_joint = false;
-	if ( niNode != NULL) {
-		for (int c = 0; c <  joint_matches.length(); c++)
+	if (niNode != NULL) {
+		for (int c = 0; c < joint_matches.length(); c++)
 		{
 			if (this->translatorOptions->jointMatch != "" && strName.find(joint_matches[c].asChar()) != string::npos) {
 				is_joint = true;
 			}
 		}
 
-		if ( this->translatorOptions->jointMatch != "" && strName.find(this->translatorOptions->jointMatch) != string::npos ) {
+		if (this->translatorOptions->jointMatch != "" && strName.find(this->translatorOptions->jointMatch) != string::npos) {
 			is_joint = true;
-		} else if ( niNode->IsSkinInfluence() == true ) {
+		}
+		else if (niNode->IsSkinInfluence() == true) {
 			is_joint = true;
 		}
 
@@ -91,91 +94,93 @@ void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MD
 
 	//Check if the user wants us to try to combine new skins with an
 	//existing skeleton
-	if ( this->translatorOptions->importCombineSkeletons ) {
+	if (this->translatorOptions->importCombineSkeletons) {
 		//Check if joint already exits in scene.  If so, use it.
-		if ( is_joint ) {
-			obj = this->translatorUtils->GetExistingJoint( name.asChar() );
+		if (is_joint) {
+			obj = this->translatorUtils->GetExistingJoint(name.asChar());
 		}
 	}
 
-	if ( obj.isNull() == false ) {
+	if (obj.isNull() == false) {
 		//A matching object was found
-		transFn.setObject( obj );
-	} else {
-		if ( is_joint ) {
+		transFn.setObject(obj);
+	}
+	else {
+		if (is_joint) {
 			// This is a bone, create an IK joint parented to the given parent
 			MFnIkJoint IKjointFn;
-			obj = IKjointFn.create( parent );
+			obj = IKjointFn.create(parent);
 
 			//Set Transform Fn to work on the new IK joint
-			transFn.setObject( obj );
+			transFn.setObject(obj);
 		}
 		else {
 			//Not a bone, create a transform node parented to the given parent
-			obj = transFn.create( parent );
+			obj = transFn.create(parent);
 		}
 
 		//--Set the Transform Matrix--//
 		Matrix44 transform;
 
-		if ( is_skin ) {
+		if (is_skin) {
 			transform = niAVObj->GetWorldTransform();
-		} else {
+		}
+		else {
 			transform = niAVObj->GetLocalTransform();
 		}
 
 		//put matrix into a float array
 		float trans_arr[4][4];
-		transform.AsFloatArr( trans_arr );
+		transform.AsFloatArr(trans_arr);
 
 		trans_arr[3][0] *= scale;
 		trans_arr[3][1] *= scale;
 		trans_arr[3][2] *= scale;
-		transFn.set( MTransformationMatrix(MMatrix(trans_arr)) );
-		transFn.setRotationOrder( MTransformationMatrix::kXYZ, false );
+		transFn.set(MTransformationMatrix(MMatrix(trans_arr)));
+		transFn.setRotationOrder(MTransformationMatrix::kXYZ, false);
 
 		//Set name
 		MFnDependencyNode dnFn;
 		dnFn.setObject(obj);
-		dnFn.setName( name );	
+		dnFn.setName(name);
 	}
 
 	//Add the newly created object to the objects list
 	MDagPath path;
-	transFn.getPath( path );
+	transFn.getPath(path);
 	objs[niAVObj] = path;
 
 	//Check if this object has a bounding box
-	if ( niAVObj->HasBoundingBox() ) {
+	if (niAVObj->HasBoundingBox()) {
 		//Get bounding box info
-		BoundingBox bb = niAVObj->GetBoundingBox();		
+		BoundingBox bb = niAVObj->GetBoundingBox();
 
 		//Create a transform node to move the bounding box around
 		MFnTransform tranFn;
-		tranFn.create( obj );
+		tranFn.create(obj);
 		tranFn.setName("BoundingBox");
 		Vector3 scaledTranslation = bb.translation * scale;
-		Matrix44 bbTrans( scaledTranslation, bb.rotation, 1.0f);
+		Matrix44 bbTrans(scaledTranslation, bb.rotation, 1.0f);
 		//out << "bbTrans:" << endl << bbTrans << endl;
 		//out << "Translation:  " << bb.translation << endl;
 		//out << "Rotation:  " << bb.rotation << endl;
 
 		//put matrix into a float array
 		float bb_arr[4][4];
-		bbTrans.AsFloatArr( bb_arr );
-		MStatus stat = tranFn.set( MTransformationMatrix(MMatrix(bb_arr)) );
-		if ( stat != MS::kSuccess ) {
+		bbTrans.AsFloatArr(bb_arr);
+		MStatus stat = tranFn.set(MTransformationMatrix(MMatrix(bb_arr)));
+		if (stat != MS::kSuccess) {
 			//out << stat.errorString().asChar() << endl;
 			throw runtime_error("Failed to set bounding box transforms.");
 		}
-		tranFn.setRotationOrder( MTransformationMatrix::kXYZ, false );
+		tranFn.setRotationOrder(MTransformationMatrix::kXYZ, false);
 
 		//Create an implicit box parented to the node we just created
 		MFnDagNode dagFn;
-		dagFn.create( "implicitBox", tranFn.object() );
-		dagFn.findPlug("sizeX").setValue( bb.radius.x * scale );
-		dagFn.findPlug("sizeY").setValue( bb.radius.y * scale );
-		dagFn.findPlug("sizeZ").setValue( bb.radius.z * scale );
+		dagFn.create("implicitBox", tranFn.object());
+		dagFn.findPlug("sizeX").setValue(bb.radius.x * scale);
+		dagFn.findPlug("sizeY").setValue(bb.radius.y * scale);
+		dagFn.findPlug("sizeZ").setValue(bb.radius.z * scale);
 
 	}
 
@@ -186,10 +191,11 @@ void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MD
 			MGlobal::displayWarning("NifNodeImporter: collisionImporter is NULL - check NifDefaultImportingFixture constructor wiring and NifNodeImporter.h field declaration.");
 		}
 		else {
-			MDagPath objPath;
-			MFnDagNode objDagFn(obj);
-			objDagFn.getPath(objPath);
-			this->collisionImporter->ImportCollision(niNode, objPath);
+			// ImportCollision now takes a plain MObject (not MDagPath) - obj
+			// is already the transform/joint this function just created for
+			// niNode, so it can be passed directly without building an
+			// MDagPath first.
+			this->collisionImporter->ImportCollision(niNode, obj);
 		}
 	}
 	else {
@@ -197,9 +203,9 @@ void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MD
 	}
 
 	//Check to see if this is a mesh
-	if ( niAVObj->IsDerivedType( NiTriBasedGeom::TYPE ) || niAVObj->IsDerivedType( BSShape::TYPE ) ) {
+	if (niAVObj->IsDerivedType(NiTriBasedGeom::TYPE) || niAVObj->IsDerivedType(BSShape::TYPE)) {
 		//This is a mesh, so add it to the mesh list
-		this->translatorData->importedMeshes.push_back( pair<NiAVObjectRef,MObject>(niAVObj,obj) );
+		this->translatorData->importedMeshes.push_back(pair<NiAVObjectRef, MObject>(niAVObj, obj));
 	}
 
 	if (niNode != NULL) {
@@ -215,11 +221,11 @@ NifNodeImporter::~NifNodeImporter() {
 
 }
 
-std::string NifNodeImporter::asString( bool verbose /*= false */ ) const {
+std::string NifNodeImporter::asString(bool verbose /*= false */) const {
 	stringstream out;
 
-	out<<NifTranslatorFixtureItem::asString(verbose);
-	out<<"NifNodeImporter"<<endl;
+	out << NifTranslatorFixtureItem::asString(verbose);
+	out << "NifNodeImporter" << endl;
 
 	return out.str();
 }
@@ -228,5 +234,4 @@ const Type& NifNodeImporter::GetType() const {
 	return TYPE;
 }
 
-const Type NifNodeImporter::TYPE("NifTranslatorNodeImporter",&NifTranslatorFixtureItem::TYPE);
-
+const Type NifNodeImporter::TYPE("NifTranslatorNodeImporter", &NifTranslatorFixtureItem::TYPE);

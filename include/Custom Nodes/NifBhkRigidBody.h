@@ -166,6 +166,22 @@ public:
 	// bhkWorldObject field (inherited by bhkRigidBody via bhkEntity)
 	static MObject layer;
 
+	// bhkWorldObject::colFilter (FNV/Oblivion) or ::flagsAndPartNumber
+	// (Skyrim) - whichever one is active depends on file version, but both
+	// are read into this single raw-byte attribute on import (whichever one
+	// niflib actually populated for this file's version), and written back
+	// to BOTH on export (so the value round-trips correctly regardless of
+	// which field the target version actually serializes). Now readable/
+	// writable thanks to the niflib fork patch adding GetColFilter/
+	// SetColFilter and GetFlagsAndPartNumber/SetFlagsAndPartNumber.
+	static MObject havokFilterFlags; // raw byte (0-255), shown in NifSkope as the "Flags" component of "Havok Filter"
+
+	// bhkWorldObject's unknownShort, shown in NifSkope as the "Group"
+	// component of "Havok Filter", right after Layer/Flags. No dedicated
+	// getter exists in this niflib fork for this one yet - left for a
+	// future patch if it turns out to matter; not added here since the user
+	// only asked for the Layer/Flags duplication fix.
+
 	// Output-only float3, live-computed from layer via LayerToColor (see
 	// compute() in the .cpp). Connected to a collision shape transform's
 	// overrideColorRGB on import so the wireframe color stays in sync if
@@ -197,6 +213,22 @@ public:
 	static MObject havokTranslation; // float3 (x,y,z) - w component of Vector4 is always 0, not stored
 	static MObject havokRotation;    // float3 (x,y,z of the quaternion)
 	static MObject havokRotationW;   // float (w of the quaternion)
+
+	// bhkRigidBody::center (Vector4 in niflib, w unused/always 0 here) -
+	// confirmed via bhkRigidBody.h: GetCenter()/SetCenter(const Vector4&)
+	// are public. Center of mass, used for balancing objects in constraints.
+	static MObject center; // float3 (x,y,z)
+
+	// bhkRigidBody::inertia (InertiaMatrix in niflib - confirmed via
+	// nif_math.h: a 3x4 matrix, rows[3] of Float4 each, constructed from
+	// m11-m14/m21-m24/m31-m34). The m14/m24/m34 column is unused (always 0
+	// for every real-world example seen so far) and not stored separately.
+	// Stored as 3 compound "rows" (one per matrix row), each holding 3
+	// floats - matches how NifSkope's "Inertia Tensor" display groups them,
+	// and avoids the 3-children-per-compound limit on a single compound.
+	static MObject inertiaM11; // row 1 compound: holds inertiaM11/M12/M13 children
+	static MObject inertiaM21; // row 2 compound: holds inertiaM21/M22/M23 children
+	static MObject inertiaM31; // row 3 compound: holds inertiaM31/M32/M33 children
 
 	static MTypeId id;
 };

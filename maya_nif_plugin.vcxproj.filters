@@ -181,6 +181,9 @@
     <ClInclude Include="include\Custom Nodes\NifBhkShape.h">
       <Filter>Header Files\Custom Nodes</Filter>
     </ClInclude>
+    <ClInclude Include="include\Exporters\NifCollisionExporter.h">
+      <Filter>Header Files\Exporters</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Exporters\NifAnimationExporter.cpp">
@@ -305,6 +308,9 @@
     </ClCompile>
     <ClCompile Include="src\Custom Nodes\NifBhkShape.cpp">
       <Filter>Source Files\Custom Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exporters\NifCollisionExporter.cpp">
+      <Filter>Source Files\Exporters</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

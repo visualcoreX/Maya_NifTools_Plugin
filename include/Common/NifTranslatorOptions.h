@@ -116,6 +116,8 @@ public:
 
 	bool importCollision; //Determines whether bhkCollisionObject chains are imported as Maya collision proxy objects
 
+	bool importRootNode; //Determines whether the root NiNode itself (e.g. BSFadeNode) is imported as a Maya joint/transform, or skipped entirely so its children become top-level scene objects instead (the long-standing default behavior)
+
 	bool exportFlatenedSkeleton; //Determines if the skeleton hierarchy should be flattened
 
 	bool exportBsFadeNodeRoot; //Determines if the root will be a bs fade node

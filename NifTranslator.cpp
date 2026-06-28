@@ -114,6 +114,7 @@ MStatus initializePlugin(MObject obj) {
 			"        editorTemplate -endLayout;\n"
 			"        editorTemplate -addControl \"isHavokT\";\n"
 			"        editorTemplate -addControl \"layer\";\n"
+			"        editorTemplate -addControl \"havokFilterFlags\";\n"
 			"        editorTemplate -addControl \"motionSystem\";\n"
 			"        editorTemplate -addControl \"qualityType\";\n"
 			"        editorTemplate -addControl \"deactivatorType\";\n"
@@ -130,6 +131,10 @@ MStatus initializePlugin(MObject obj) {
 			"        editorTemplate -addControl \"havokTranslation\";\n"
 			"        editorTemplate -addControl \"havokRotation\";\n"
 			"        editorTemplate -addControl \"havokRotationW\";\n"
+			"        editorTemplate -addControl \"center\";\n"
+			"        editorTemplate -addControl \"inertiaRow1\";\n"
+			"        editorTemplate -addControl \"inertiaRow2\";\n"
+			"        editorTemplate -addControl \"inertiaRow3\";\n"
 			"    editorTemplate -endScrollLayout;\n"
 			"}\n";
 

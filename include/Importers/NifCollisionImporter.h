@@ -100,12 +100,29 @@ public:
 	virtual ~NifCollisionImporter();
 
 	// Entry point - called once per NiNode from NifNodeImporter::ImportNodes.
-	// nodeDagPath is the transform already created for niNode.
-	virtual MStatus ImportCollision(NiNodeRef niNode, MDagPath nodeDagPath);
+	// parentTransform is the transform already created for niNode, or
+	// MObject::kNullObj for root-level collision when there's no real Maya
+	// transform to attach to (importRootNode off) - bhkRigidBody is then
+	// created directly under the Maya scene root instead of under a
+	// dedicated wrapper transform, since MFnTransform::create() accepts
+	// kNullObj natively as "no parent, create at scene root".
+	virtual MStatus ImportCollision(NiNodeRef niNode, MObject parentTransform);
 
 	virtual string asString(bool verbose = false) const;
 	virtual const Type& GetType() const;
 	const static Type TYPE;
+
+	// Incremental 3D convex hull (Vector3 points -> Triangle faces, CCW winding,
+	// outward-facing normals). Pure geometry helper, no Maya/niflib dependency
+	// beyond the Vector3/Triangle types already used elsewhere in this class.
+	// Returns an empty vector if the input is degenerate (fewer than 4 points,
+	// or all points coplanar/collinear/coincident).
+	// Public (not protected, despite being an internal implementation detail
+	// for this class) so NifCollisionExporter can reuse the exact same
+	// algorithm when reconstructing bhkConvexVerticesShape half-spaces on
+	// export - keeps a single source of truth instead of two copies that
+	// could drift apart.
+	static vector<Triangle> ComputeConvexHull(const vector<Vector3>& points);
 
 protected:
 	// Builds the rigid body sub-transform + attribute node, fills in physics props
@@ -134,13 +151,6 @@ protected:
 	// layerColor (see ApplyWireframeDisplayOverride).
 	MObject CreateMeshFromVertices(const vector<Vector4>& verts, const vector<Triangle>& tris, MObject parent, const char* name, SkyrimLayer layer, MObject rigidBodyAttrsNode);
 	MObject CreateMeshFromVertices(const vector<Vector3>& verts, const vector<Triangle>& tris, MObject parent, const char* name, SkyrimLayer layer, MObject rigidBodyAttrsNode);
-
-	// Incremental 3D convex hull (Vector3 points -> Triangle faces, CCW winding,
-	// outward-facing normals). Pure geometry helper, no Maya/niflib dependency
-	// beyond the Vector3/Triangle types already used elsewhere in this class.
-	// Returns an empty vector if the input is degenerate (fewer than 4 points,
-	// or all points coplanar/collinear/coincident).
-	static vector<Triangle> ComputeConvexHull(const vector<Vector3>& points);
 
 	// Generates a capsule mesh (cylinder shaft + hemisphere cap at each end)
 	// between p1 and p2 with the given radius, in the same Havok-unit space

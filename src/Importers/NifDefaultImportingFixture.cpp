@@ -1,5 +1,28 @@
 #include "include/Importers/NifDefaultImportingFixture.h"
 #include <fstream>
+#include <iomanip>
+#include <cmath>
+
+// Exact Matrix44::IDENTITY == comparison fails for files with tiny
+// accumulated floating-point rounding error from export/conversion tools -
+// confirmed with a real file (10MMPistol.nif) whose root has a ~4.9e-08
+// radian rotation that NifSkope displays as "-0.00" (visually zero) but is
+// not bit-exact zero, causing the exact comparison to wrongly report the
+// transform as non-identity. 1e-5 is comfortably above that kind of rounding
+// noise while still being far below any rotation/translation a file would
+// plausibly have on purpose.
+static bool IsApproximatelyIdentity(const Matrix44& mat) {
+	const float EPS = 1e-5f;
+	for (int row = 0; row < 4; ++row) {
+		for (int col = 0; col < 4; ++col) {
+			float expected = (row == col) ? 1.0f : 0.0f;
+			if (fabsf(mat[row][col] - expected) > EPS) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
 
 NifDefaultImportingFixture::NifDefaultImportingFixture()
 {
@@ -63,47 +86,74 @@ MStatus NifDefaultImportingFixture::ReadNodes(const MFileObject& file)
 					break;
 				}
 			}
-			if (root_node->GetLocalTransform() == Matrix44::IDENTITY && !hasHashNode)
+
+			// TEMPORARY DIAGNOSTIC - logs the root's local transform matrix at
+			// high precision, to determine whether root_node->GetLocalTransform()
+			// == Matrix44::IDENTITY is failing due to floating-point precision
+			// (near-zero but not exactly zero values) or some other reason.
+			// Remove once the importRootNode/hasHashNode issue is resolved.
 			{
-				// Root has no transform, so treat it as the scene root - we
+				Matrix44 rootMat = root_node->GetLocalTransform();
+				bool isIdentityResult = IsApproximatelyIdentity(rootMat);
+				const char* logPath = "C:\\Users\\sauron\\Documents\\maya\\2025\\scripts\\nifTranslator_debug.log";
+				std::ofstream log(logPath, std::ios::out | std::ios::app);
+				if (log.is_open()) {
+					log << std::setprecision(15);
+					log << "[NifDefaultImportingFixture] root local transform diagnostic:" << std::endl;
+					log << "  row0: " << rootMat[0][0] << ", " << rootMat[0][1] << ", " << rootMat[0][2] << ", " << rootMat[0][3] << std::endl;
+					log << "  row1: " << rootMat[1][0] << ", " << rootMat[1][1] << ", " << rootMat[1][2] << ", " << rootMat[1][3] << std::endl;
+					log << "  row2: " << rootMat[2][0] << ", " << rootMat[2][1] << ", " << rootMat[2][2] << ", " << rootMat[2][3] << std::endl;
+					log << "  row3: " << rootMat[3][0] << ", " << rootMat[3][1] << ", " << rootMat[3][2] << ", " << rootMat[3][3] << std::endl;
+					log << "  hasHashNode=" << hasHashNode << ", isIdentityResult=" << isIdentityResult << ", importRootNode=" << this->translatorOptions->importRootNode << std::endl;
+				}
+			}
+
+			// importRootNode lets the user choose whether the root NiNode
+			// itself (e.g. BSFadeNode) becomes a real Maya joint/transform,
+			// or is skipped so its children become the scene's top-level
+			// objects (the long-standing default). When skipped, any data
+			// attached directly to the root (not its children) - most
+			// notably a bhkCollisionObject - would otherwise be silently
+			// lost, since ImportNodes (the only place that checks for
+			// collision) never runs on the root in that branch. The
+			// dedicated "_RootCollision" transform below covers that case
+			// when importRootNode is off; when it's on, the root gets a
+			// real transform/joint via ImportNodes and its collision is
+			// picked up naturally, same as any other node.
+			//
+			// NOTE: this check is now fully overridden by importRootNode,
+			// even when hasHashNode is true. hasHashNode normally forces the
+			// root to be imported regardless (it signals "##"-prefixed
+			// children - weapon mechanism parts like ##Slide/##Trigger/
+			// ##Hammer that are animated relative to the root as a whole),
+			// so explicitly turning importRootNode off on a file like that
+			// is unusual enough to warrant a warning rather than silently
+			// doing something the file's structure suggests it doesn't want.
+			if (hasHashNode && !this->translatorOptions->importRootNode) {
+				MGlobal::displayWarning("NifDefaultImportingFixture: this file has \"##\"-prefixed children (e.g. weapon mechanism parts like ##Slide/##Trigger/##Hammer), which normally means the root node needs to be imported for their relative animation to work correctly. \"Import Root Node\" is currently OFF, so the root will be skipped anyway - this may break that animation.");
+			}
+
+			bool skipRoot = (IsApproximatelyIdentity(root_node->GetLocalTransform()) && !this->translatorOptions->importRootNode);
+
+			if (skipRoot)
+			{
+				// Root has no transform and the user hasn't asked for it to
+				// be imported, so treat it purely as the scene root - we
 				// deliberately don't call ImportNodes on root_node itself
 				// here (that would create an unwanted extra "Scene Root"
 				// transform in Maya), only on its children below.
 				//
-				// BUT: any data attached directly to the root itself (not
-				// its children) would then be silently lost, since
-				// ImportNodes is the only place that currently checks for a
-				// collision object. Confirmed with a real FNV file where
-				// bhkCollisionObject was attached straight to the root
-				// BSFadeNode - the import never even checked for it. Fix:
-				// explicitly check for collision data on root_node here, and
-				// if there is any, give it a small dedicated transform under
-				// the scene root (named after the root node) to attach to -
-				// same approach NifNodeImporter uses for any other node's
-				// collision data, just done once here instead of inside the
-				// recursive ImportNodes.
+				// Collision attached directly to the root still needs
+				// somewhere to go though. Since ImportCollision now takes a
+				// plain MObject (not MDagPath), MObject::kNullObj can be
+				// passed straight through - ImportRigidBody's
+				// MFnTransform::create(parentTransform) call accepts
+				// kNullObj natively as "no parent, create at the Maya scene
+				// root", so the resulting "bhkRigidBody"/"bhkRigidBodyT"
+				// transform appears directly at the top level of the scene,
+				// with no dedicated wrapper transform needed around it.
 				if (this->collisionImporter != NULL) {
-					MFnTransform rootCollisionTransFn;
-					MObject rootCollisionTransform = rootCollisionTransFn.create(MObject::kNullObj);
-					MString rootName = this->translatorUtils->MakeMayaName(root_node->GetName());
-					rootCollisionTransFn.setName(rootName + "_RootCollision");
-
-					MDagPath rootCollisionDagPath;
-					rootCollisionTransFn.getPath(rootCollisionDagPath);
-
-					this->collisionImporter->ImportCollision(root_node, rootCollisionDagPath);
-
-					// If no collision was actually found on the root, this
-					// transform is harmless but unnecessary clutter - remove
-					// it. ImportCollision returns success either way (no
-					// collision found is not an error), so check the
-					// transform's child count instead: ImportCollision adds
-					// a "bhkRigidBody"/"bhkRigidBodyT" child only when it
-					// actually finds something to import.
-					MFnDagNode rootCollisionDagFn(rootCollisionTransform);
-					if (rootCollisionDagFn.childCount() == 0) {
-						MGlobal::deleteNode(rootCollisionTransform);
-					}
+					this->collisionImporter->ImportCollision(root_node, MObject::kNullObj);
 				}
 
 				vector<NiAVObjectRef> root_children = root_node->GetChildren();
@@ -136,6 +186,13 @@ MStatus NifDefaultImportingFixture::ReadNodes(const MFileObject& file)
 			}
 			else
 			{
+				// Either the root has a real transform, has "##"-prefixed
+				// children, or the user explicitly asked for the root node
+				// to be imported (importRootNode=true) - either way,
+				// ImportNodes runs on the root itself, recursing into its
+				// children normally and picking up any collision data
+				// attached to the root the same way it would for any other
+				// node.
 				this->nodeImporter->ImportNodes(StaticCast<NiAVObject>(root_node), this->translatorData->importedNodes);
 			}
 		}

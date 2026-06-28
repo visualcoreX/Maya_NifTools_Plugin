@@ -1,4 +1,5 @@
 #include "include/Exporters/NifFalloutExportingFixture.h"
+#include "include/Exporters/NifCollisionExporter.h"
 
 NifFalloutExportingFixture::NifFalloutExportingFixture() {}
 
@@ -15,6 +16,14 @@ NifFalloutExportingFixture::NifFalloutExportingFixture(
     this->meshExporter->morphExporter = new NifMorphExporter(translatorOptions, translatorData, translatorUtils); // NEW
     this->materialExporter = new NifMaterialExporterFallout(translatorOptions, translatorData, translatorUtils);
     this->animationExporter = new NifAnimationExporter(translatorOptions, translatorData, translatorUtils);
+
+    // Same wiring as NifDefaultExportingFixture's constructor - this class
+    // has its own constructor (doesn't call the base one), so collisionExporter
+    // needs to be wired here too, or collision data would silently never be
+    // exported for the FNV ("falloutmaterial") path, which is what
+    // NifTranslator.cpp actually uses for FNV exports.
+    this->collisionExporter = new NifCollisionExporter(translatorOptions, translatorData, translatorUtils);
+    this->nodeExporter->collisionExporter = this->collisionExporter;
 }
 
 string NifFalloutExportingFixture::asString(bool verbose) const {
