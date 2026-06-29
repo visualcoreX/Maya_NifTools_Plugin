@@ -9,6 +9,7 @@ NifTranslatorOptions::NifTranslatorOptions()
 	this->importNormals = false;
 	this->importCollision = true;
 	this->importRootNode = false;
+	this->importAnimation = true; // import embedded animation by default
 	this->importNoAmbient = false;
 	this->importScale = 1.0f;
 	this->exportWhiteAmbient = false;
@@ -30,6 +31,7 @@ void NifTranslatorOptions::Reset()
 	this->importNormals = false;
 	this->importCollision = true;
 	this->importRootNode = false;
+	this->importAnimation = true; // import embedded animation by default
 	this->importNoAmbient = false;
 	this->importScale = 1.0f;
 	this->exportWhiteAmbient = false;
@@ -436,6 +438,18 @@ void NifTranslatorOptions::ParseOptionsString(const MString& optionsString)
 			else
 			{
 				this->importRootNode = false;
+			}
+		}
+
+		if (tokens[0] == "importAnimation")
+		{
+			if (tokens[1] == "1")
+			{
+				this->importAnimation = true;
+			}
+			else
+			{
+				this->importAnimation = false;
 			}
 		}
 	}

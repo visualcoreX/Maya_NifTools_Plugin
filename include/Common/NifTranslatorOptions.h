@@ -118,6 +118,8 @@ public:
 
 	bool importRootNode; //Determines whether the root NiNode itself (e.g. BSFadeNode) is imported as a Maya joint/transform, or skipped entirely so its children become top-level scene objects instead (the long-standing default behavior)
 
+	bool importAnimation; //Determines whether animation embedded in the NIF (NiTransformController keyframe data) is imported as Maya anim curves
+
 	bool exportFlatenedSkeleton; //Determines if the skeleton hierarchy should be flattened
 
 	bool exportBsFadeNodeRoot; //Determines if the root will be a bs fade node

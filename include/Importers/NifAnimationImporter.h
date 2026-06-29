@@ -45,7 +45,6 @@
 #include <maya/MVector.h>
 #include <maya/MFnAnimCurve.h>
 #include <maya/MAnimUtil.h>
-#include <maya/MItMeshPolygon.h>
 #include <maya/MItMeshVertex.h>
 
 #include <string> 
@@ -76,6 +75,9 @@
 #include <obj/NiTimeController.h>
 #include <obj/NiKeyframeController.h>
 #include <obj/NiKeyframeData.h>
+// FNV uses NiTransformController + NiTransformInterpolator; the KF importer
+// header already pulls in all interpolator/data types we need, so reuse it.
+#include <obj/NiSingleInterpController.h>
 #include <obj/NiTextureProperty.h>
 #include <obj/NiImage.h>
 
@@ -84,6 +86,7 @@
 #include "include/Common/NifTranslatorData.h"
 #include "include/Common/NifTranslatorUtils.h"
 #include "include/Common/NifTranslatorFixtureItem.h"
+#include "include/Importers/NifKFAnimationImporter.h"
 
 
 using namespace Niflib;
@@ -100,7 +103,15 @@ public:
 
 	NifAnimationImporter(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
 
-	virtual void ImportControllers( NiAVObjectRef niAVObj, MDagPath & path );
+	virtual void ImportControllers(NiAVObjectRef niAVObj, MDagPath& path);
+
+	// Reused parser that turns any interpolator into Maya anim curves.
+	NifKFAnimationImporter kfImporter;
+
+	// True only if the interpolator carries real keyed data. Empty placeholder
+	// controllers from the exporter (sentinel transform, no NiTransformData)
+	// must be skipped to avoid junk curves / null deref.
+	static bool HasRealAnimation(NiInterpolatorRef interp);
 
 	virtual ~NifAnimationImporter();
 

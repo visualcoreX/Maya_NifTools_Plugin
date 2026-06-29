@@ -45,9 +45,7 @@
 #include <maya/MVector.h>
 #include <maya/MFnAnimCurve.h>
 #include <maya/MAnimUtil.h>
-#include <maya/MItMeshPolygon.h>
 #include <maya/MItMeshVertex.h>
-#include <maya/MVector.h>
 
 #include <string> 
 #include <vector>
@@ -116,8 +114,24 @@ public:
 
 	NifKFAnimationExporter(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
 	
-	virtual void ExportAnimation(NiControllerSequenceRef controller_sequence, MObject object);
+	// Builds a NiTransformInterpolator (+ NiTransformData) from a node's anim
+	// curves, using the exact sampling logic as .kf export. Factored out so
+	// embedded-NIF animation (NifNodeExporter::ExportAV) can reuse it. Only the
+	// NiTransformInterpolator case is handled here - the one used for transform-
+	// node animation in FNV. The interpolator's base translation/rotation/scale
+	// are left as the -FLT_MAX sentinel (vanilla stores the base there even when
+	// NiTransformData is present); the real values live in the keyed data.
+	//
+	// Returns NULL if the node has no translate/scale/rotate curves.
+	//
+	// outStartTime/outStopTime (optional): receive this node's own key time range
+	// - the first and last key across all its curves - matching what vanilla puts
+	// on the NiTransformController's Start/Stop Time. Left untouched if the node
+	// has no keys, so callers should pre-seed them (e.g. to 0.0).
+	virtual NiTransformInterpolatorRef BuildTransformInterpolator(MObject object,
+		float* outStartTime = NULL, float* outStopTime = NULL);
 
+	virtual void ExportAnimation(NiControllerSequenceRef controller_sequence, MObject object);
 	virtual float GetAnimationStartTime();
 
 	virtual float GetAnimationEndTime();

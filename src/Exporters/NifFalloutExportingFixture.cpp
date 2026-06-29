@@ -1,5 +1,6 @@
 #include "include/Exporters/NifFalloutExportingFixture.h"
 #include "include/Exporters/NifCollisionExporter.h"
+#include "include/Exporters/NifKFAnimationExporter.h"
 
 NifFalloutExportingFixture::NifFalloutExportingFixture() {}
 
@@ -24,8 +25,12 @@ NifFalloutExportingFixture::NifFalloutExportingFixture(
     // NifTranslator.cpp actually uses for FNV exports.
     this->collisionExporter = new NifCollisionExporter(translatorOptions, translatorData, translatorUtils);
     this->nodeExporter->collisionExporter = this->collisionExporter;
+    // Let the node exporter reuse the KF curve sampler for embedded animation
+    // (exportType == "nifanimation"). nodeExporter needs the KF exporter
+    // specifically (it owns BuildTransformInterpolator), which is a different
+    // class than this->animationExporter (NifAnimationExporter).
+    this->nodeExporter->animationExporter = new NifKFAnimationExporter(translatorOptions, translatorData, translatorUtils);
 }
-
 string NifFalloutExportingFixture::asString(bool verbose) const {
     stringstream out;
     out << NifSkyrimExportingFixture::asString(verbose) << endl;

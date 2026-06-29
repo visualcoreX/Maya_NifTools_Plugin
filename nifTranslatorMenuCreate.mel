@@ -28,6 +28,8 @@ global proc nifTranslatorMenuCreate() {
 				menuItem -label "Set to NiPoint3Interpolator" -command "nifTranslatorSetInterpolatorToNiPoint3Interpolator";
 				menuItem -label "Set to NiFloatInterpolator" -command "nifTranslatorSetInterpolatorToNiFloatInterpolator";
 				menuItem -label "Set to NiBoolInterpolator" -command "nifTranslatorSetInterpolatorToNiBoolInterpolator";
+				menuItem -divider true;
+				menuItem -label "Specify Target ID for NiFloatInterpolator" -command "nifTranslatorSpecifyTargetID";
 			setParent -menu animationMenu;
 
 			menuItem -label "Rest transformation" -subMenu true;
@@ -504,6 +506,31 @@ global proc nifTranslatorSetInterpolator(string $type) {
 			eval("addAttr -dataType \"string\" -shortName \"interpolatorType\" " + $selection[$i]);	
 		}
 		eval("setAttr -type \"string\" " + $selection[$i] + "\.interpolatorType" + " " + $type);
+
+		// For NiFloatInterpolator, add the "targetID" string attribute. If exactly
+		// one node is selected, also pop the picker right away for convenience;
+		// for multi-selection we just create the attr (a single picked ID almost
+		// never applies to several different nodes) and leave it to be filled via
+		// "Specify Target ID..." or by hand.
+		if($type == "NiFloatInterpolator") {
+			int $hasTargetID = 0;
+			string $attrs2[] = `listAttr -shortNames $selection[$i]`;
+			for($k = 0; $k < size($attrs2); $k++) {
+				if($attrs2[$k] == "targetID") {
+					$hasTargetID = 1;
+					break;
+				}
+			}
+			if($hasTargetID == 0) {
+				eval("addAttr -dataType \"string\" -shortName \"targetID\" -longName \"targetID\" " + $selection[$i]);
+			}
+
+			// Only auto-open the picker for a single node, and only if there are
+			// blendShape targets to pick from (otherwise just leave the empty attr).
+			if(size($selection) == 1 && size(`ls -type "blendShape"`) > 0) {
+				nifTranslatorSpecifyTargetIDFor($selection[$i]);
+			}
+		}
 	}
 
 	if(size($selection) == 0) {
@@ -1192,4 +1219,78 @@ global proc nifTranslatorSetFNVShaderType(string $shaderType) {
         }
         eval("setAttr -type \"string\" " + $current + ".fnvShaderType \"" + $shaderType + "\"");
     }
+}
+
+// Opens a picker listing every blendShape target (weight alias) in the scene.
+// Double-click (or Select) writes the chosen name into targetID of the last
+// selected joint/shape. Decouples the choice from the auto-generated Extra
+// Attributes section, where a button can't reliably sit next to the field.
+// Menu entry point: resolves the target node from the current selection, then
+// delegates to the per-node version below.
+global proc nifTranslatorSpecifyTargetID() {
+	string $sel[] = `ls -selection -type "joint" -type "shape"`;
+	if(size($sel) == 0) {
+		error "Select the animated joint/shape first, then pick a target.";
+		return;
+	}
+	nifTranslatorSpecifyTargetIDFor($sel[size($sel) - 1]);
+}
+
+// Opens the blendShape-target picker and writes the chosen name into
+// <target>.targetID. Shared by the menu entry and by auto-open on single-node
+// NiFloatInterpolator assignment.
+global proc nifTranslatorSpecifyTargetIDFor(string $target) {
+	// Gather all blendShape target names (weight aliases) in the scene.
+	string $names[];
+	string $blendShapes[] = `ls -type "blendShape"`;
+	for($b = 0; $b < size($blendShapes); $b++) {
+		string $aliases[] = `aliasAttr -query $blendShapes[$b]`;
+		for($a = 0; $a < size($aliases); $a += 2) {
+			$names[size($names)] = $aliases[$a];
+		}
+	}
+
+	if(size($names) == 0) {
+		warning "No blendShape targets found in the scene; targetID left empty.";
+		return;
+	}
+
+	if(`window -exists nifTargetIDPicker`) deleteUI nifTargetIDPicker;
+	window -title ("Specify Target ID  ->  " + $target) -widthHeight 280 360 nifTargetIDPicker;
+	columnLayout -adjustableColumn true -rowSpacing 4 -columnAttach "both" 6;
+		text -label ("Writing into: " + $target + ".targetID") -align "left";
+		textScrollList -numberOfRows 16 -allowMultiSelection false
+			-doubleClickCommand ("nifTargetIDPickerApply(\"" + $target + "\")")
+			nifTargetIDList;
+		for($i = 0; $i < size($names); $i++) {
+			textScrollList -edit -append $names[$i] nifTargetIDList;
+		}
+		rowLayout -numberOfColumns 2 -columnWidth2 134 134;
+			button -label "Select" -command ("nifTargetIDPickerApply(\"" + $target + "\")");
+			button -label "Cancel" -command "deleteUI nifTargetIDPicker";
+		setParent ..;
+	setParent ..;
+	showWindow nifTargetIDPicker;
+}
+
+// Writes the picked list item into <node>.targetID (creating the attr if needed).
+global proc nifTargetIDPickerApply(string $target) {
+	string $picked[] = `textScrollList -query -selectItem nifTargetIDList`;
+	if(size($picked) == 0) {
+		warning "Pick a target from the list first.";
+		return;
+	}
+
+	int $hasTargetID = 0;
+	string $attrs[] = `listAttr -shortNames $target`;
+	for($j = 0; $j < size($attrs); $j++) {
+		if($attrs[$j] == "targetID") { $hasTargetID = 1; break; }
+	}
+	if($hasTargetID == 0) {
+		eval("addAttr -dataType \"string\" -shortName \"targetID\" -longName \"targetID\" " + $target);
+	}
+
+	eval("setAttr -type \"string\" " + $target + "\.targetID \"" + $picked[0] + "\"");
+	print ("\nSet " + $target + ".targetID = " + $picked[0] + "\n");
+	deleteUI nifTargetIDPicker;
 }

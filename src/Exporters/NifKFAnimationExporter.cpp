@@ -8,6 +8,639 @@ NifKFAnimationExporter::NifKFAnimationExporter( NifTranslatorOptionsRef translat
 	: NifTranslatorFixtureItem(translatorOptions, translatorData, translatorUtils) {
 }
 
+NiTransformInterpolatorRef NifKFAnimationExporter::BuildTransformInterpolator(MObject object,
+	float* outStartTime, float* outStopTime) {
+	MFnTransform node(object);
+
+	// --- Collect animated translate/scale/rotate plugs (same as ExportAnimation) ---
+	MPlugArray animated_plugs;
+	MAnimUtil::findAnimatedPlugs(object, animated_plugs);
+
+	MPlug translationX_plug, translationY_plug, translationZ_plug;
+	MPlug scaleX_plug, scaleY_plug, scaleZ_plug;
+	MPlug rotationX_plug, rotationY_plug, rotationZ_plug;
+
+	for (int i = 0; i < animated_plugs.length(); i++) {
+		MString pn = animated_plugs[i].partialName();
+		if (pn == "tx") { translationX_plug = animated_plugs[i]; continue; }
+		if (pn == "ty") { translationY_plug = animated_plugs[i]; continue; }
+		if (pn == "tz") { translationZ_plug = animated_plugs[i]; continue; }
+		if (pn == "sx") { scaleX_plug = animated_plugs[i]; continue; }
+		if (pn == "sy") { scaleY_plug = animated_plugs[i]; continue; }
+		if (pn == "sz") { scaleZ_plug = animated_plugs[i]; continue; }
+		if (pn == "rx") { rotationX_plug = animated_plugs[i]; continue; }
+		if (pn == "ry") { rotationY_plug = animated_plugs[i]; continue; }
+		if (pn == "rz") { rotationZ_plug = animated_plugs[i]; continue; }
+	}
+
+	MObjectArray animation_array;
+	MFnAnimCurve translateX, translateY, translateZ;
+	MFnAnimCurve scaleX, scaleY, scaleZ;
+	MFnAnimCurve rotateX, rotateY, rotateZ;
+
+	if (!translationX_plug.isNull()) { MAnimUtil::findAnimation(translationX_plug, animation_array); translateX.setObject(animation_array[0]); animation_array.clear(); }
+	if (!translationY_plug.isNull()) { MAnimUtil::findAnimation(translationY_plug, animation_array); translateY.setObject(animation_array[0]); animation_array.clear(); }
+	if (!translationZ_plug.isNull()) { MAnimUtil::findAnimation(translationZ_plug, animation_array); translateZ.setObject(animation_array[0]); animation_array.clear(); }
+	if (!scaleX_plug.isNull()) { MAnimUtil::findAnimation(scaleX_plug, animation_array); scaleX.setObject(animation_array[0]); animation_array.clear(); }
+	if (!scaleY_plug.isNull()) { MAnimUtil::findAnimation(scaleY_plug, animation_array); scaleY.setObject(animation_array[0]); animation_array.clear(); }
+	if (!scaleZ_plug.isNull()) { MAnimUtil::findAnimation(scaleZ_plug, animation_array); scaleZ.setObject(animation_array[0]); animation_array.clear(); }
+	if (!rotationX_plug.isNull()) { MAnimUtil::findAnimation(rotationX_plug, animation_array); rotateX.setObject(animation_array[0]); animation_array.clear(); }
+	if (!rotationY_plug.isNull()) { MAnimUtil::findAnimation(rotationY_plug, animation_array); rotateY.setObject(animation_array[0]); animation_array.clear(); }
+	if (!rotationZ_plug.isNull()) { MAnimUtil::findAnimation(rotationZ_plug, animation_array); rotateZ.setObject(animation_array[0]); animation_array.clear(); }
+
+	// No transform animation at all -> nothing to embed.
+	if (translateX.object().isNull() && translateY.object().isNull() && translateZ.object().isNull() &&
+		scaleX.object().isNull() && scaleY.object().isNull() && scaleZ.object().isNull() &&
+		rotateX.object().isNull() && rotateY.object().isNull() && rotateZ.object().isNull()) {
+		return NULL;
+	}
+
+	// --- Rest pose / *Rest attributes (same as ExportAnimation) ---
+	MTransformationMatrix rest_position = node.transformation();
+	MVector rest_translation = rest_position.getTranslation(MSpace::kPostTransform);
+	double rest_scale[3];
+	rest_position.getScale(rest_scale, MSpace::kPostTransform);
+	double rest_q_x, rest_q_y, rest_q_z, rest_q_w;
+	rest_position.getRotationQuaternion(rest_q_x, rest_q_y, rest_q_z, rest_q_w, MSpace::kPostTransform);
+
+	MPlug rest_plug;
+	rest_plug = node.findPlug("translateRest");
+	if (!rest_plug.isNull()) {
+		rest_translation.x = node.findPlug("translateRestX").asDouble();
+		rest_translation.y = node.findPlug("translateRestY").asDouble();
+		rest_translation.z = node.findPlug("translateRestZ").asDouble();
+	}
+	rest_plug = node.findPlug("scaleRest");
+	if (!rest_plug.isNull()) {
+		rest_scale[0] = node.findPlug("scaleRestX").asDouble();
+		rest_scale[1] = node.findPlug("scaleRestY").asDouble();
+		rest_scale[2] = node.findPlug("scaleRestZ").asDouble();
+	}
+	rest_plug = node.findPlug("rotateRest");
+	if (!rest_plug.isNull()) {
+		double rx = node.findPlug("rotateRestX").asDouble();
+		double ry = node.findPlug("rotateRestY").asDouble();
+		double rz = node.findPlug("rotateRestZ").asDouble();
+		MEulerRotation euler_qq((rx / 180) * PI, (ry / 180) * PI, (rz / 180) * PI);
+		MQuaternion qq = euler_qq.asQuaternion();
+		rest_q_w = qq.w; rest_q_x = qq.x; rest_q_y = qq.y; rest_q_z = qq.z;
+	}
+
+	NiTransformInterpolatorRef transform_interpolator = DynamicCast<NiTransformInterpolator>(NiTransformInterpolator::Create());
+
+	// Vanilla FNV stores the interpolator base as the "not set" sentinel even
+	// when NiTransformData is present (confirmed in 10mmpistol.nif: Translation/
+	// Rotation/Scale all show <float_min> = -FLT_MAX while Data points to a real
+	// NiTransformData). The engine reads the base from the keyed data, not these
+	// fields, so we must NOT bake the rest pose here - that's what made our export
+	// differ from vanilla.
+	const float NIF_NO_VALUE = -FLT_MAX; // NifSkope shows this as <float_min>
+
+	// Per-channel base. The engine reads the interpolator base ONLY for channels
+	// that have NO keys in NiTransformData. A keyed channel ignores its base, so we
+	// keep the -FLT_MAX sentinel there (matches vanilla). A NON-keyed channel MUST
+	// hold the real rest value; otherwise the engine reads -FLT_MAX and the channel
+	// breaks (classic example: weapon scale collapsing because scale was never keyed
+	// and the base was sentinel instead of 1.0).
+	// Booleans mirror the per-channel guards used when building the keys below.
+	bool has_translation_keys = !translateX.object().isNull() || !translateY.object().isNull() || !translateZ.object().isNull();
+	bool has_scale_keys = !scaleX.object().isNull() || !scaleY.object().isNull() || !scaleZ.object().isNull();
+	bool has_rotation_keys = !rotateX.object().isNull() || !rotateY.object().isNull() || !rotateZ.object().isNull();
+
+	// Translation
+	if (has_translation_keys)
+		transform_interpolator->SetTranslation(Vector3(NIF_NO_VALUE, NIF_NO_VALUE, NIF_NO_VALUE));
+	else
+		transform_interpolator->SetTranslation(Vector3(rest_translation.x, rest_translation.y, rest_translation.z));
+
+	// Rotation (niflib Quaternion ctor is (w, x, y, z), same order as the spline path)
+	if (has_rotation_keys)
+		transform_interpolator->SetRotation(Quaternion(NIF_NO_VALUE, NIF_NO_VALUE, NIF_NO_VALUE, NIF_NO_VALUE));
+	else
+		transform_interpolator->SetRotation(Quaternion(rest_q_w, rest_q_x, rest_q_y, rest_q_z));
+
+	// Scale (collapse non-uniform rest scale to one float via geometric mean,
+	// matching the keyed-scale convention used at SetScaleKeys below)
+	if (has_scale_keys)
+		transform_interpolator->SetScale(NIF_NO_VALUE);
+	else
+		transform_interpolator->SetScale(pow((float)(rest_scale[0] * rest_scale[1] * rest_scale[2]), (float)(1.0 / 3.0)));
+
+	if (!translateX.object().isNull() || !translateY.object().isNull() || !translateZ.object().isNull()) {
+		vector<Key<Vector3>> translationKeys;
+
+		float default_x = node.transformation().translation(MSpace::kPostTransform).x;
+		float default_y = node.transformation().translation(MSpace::kPostTransform).y;
+		float default_z = node.transformation().translation(MSpace::kPostTransform).z;
+
+		int translate_index_x = 0;
+		int translate_index_y = 0;
+		int translate_index_z = 0;
+		MTime time_min(100000.0, MTime::kSeconds);
+		int choice = -1;
+
+		while (translate_index_x < translateX.numKeys() || translate_index_y < translateY.numKeys() || translate_index_z < translateZ.numKeys()) {
+			time_min.setValue(100000.0);
+
+			float x = default_x;
+			float y = default_y;
+			float z = default_z;
+
+			if (!translateX.object().isNull() && time_min > translateX.time(translate_index_x)) {
+				time_min = translateX.time(translate_index_x);
+				choice = 0;
+			}
+			if (!translateY.object().isNull() && time_min > translateY.time(translate_index_y)) {
+				time_min = translateY.time(translate_index_y);
+				choice = 1;
+			}
+			if (!translateZ.object().isNull() && time_min > translateZ.time(translate_index_z)) {
+				time_min = translateZ.time(translate_index_z);
+				choice = 2;
+			}
+
+			if (choice == 0) {
+				x = translateX.value(translate_index_x);
+				translate_index_x++;
+
+				if (!translateY.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - translateY.time(translate_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
+						y = translateY.value(translate_index_y);
+						translate_index_y++;
+					}
+					else {
+						y = translateY.evaluate(time_min);
+					}
+				}
+
+				if (!translateZ.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - translateZ.time(translate_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
+						z = translateZ.value(translate_index_z);
+						translate_index_z++;
+					}
+					else {
+						z = translateZ.evaluate(time_min);
+					}
+				}
+			}
+
+			if (choice == 1) {
+				y = translateY.value(translate_index_y);
+				translate_index_y++;
+
+				if (!translateX.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - translateX.time(translate_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
+						x = translateX.value(translate_index_x);
+						translate_index_x++;
+					}
+					else {
+						x = translateX.evaluate(time_min);
+					}
+				}
+
+				if (!translateZ.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - translateZ.time(translate_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
+						z = translateZ.value(translate_index_z);
+						translate_index_z++;
+					}
+					else {
+						z = translateZ.evaluate(time_min);
+					}
+				}
+			}
+
+			if (choice == 2) {
+				z = translateZ.value(translate_index_z);
+				translate_index_z++;
+
+				if (!translateX.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - translateX.time(translate_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
+						x = translateX.value(translate_index_x);
+						translate_index_x++;
+					}
+					else {
+						x = translateX.evaluate(time_min);
+					}
+				}
+
+				if (!translateY.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - translateY.time(translate_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
+						y = translateY.value(translate_index_y);
+						translate_index_y++;
+					}
+					else {
+						y = translateY.evaluate(time_min);
+					}
+				}
+			}
+
+			Key<Vector3> translation_key;
+			translation_key.time = time_min.asUnits(MTime::kSeconds);
+			translation_key.data.x = x;
+			translation_key.data.y = y;
+			translation_key.data.z = z;
+
+			translationKeys.push_back(translation_key);
+		}
+
+		if (transform_interpolator->GetData() == NULL) {
+			NiTransformDataRef transform_data = DynamicCast<NiTransformData>(NiTransformData::Create());
+			transform_interpolator->SetData(transform_data);
+		}
+
+		transform_interpolator->GetData()->SetTranslateType(KeyType::LINEAR_KEY);
+		transform_interpolator->GetData()->SetTranslateKeys(translationKeys);
+	}
+
+	// Fix copy-paste typo: third check must be scaleZ, not scaleY again
+	if (!scaleX.object().isNull() || !scaleY.object().isNull() || !scaleZ.object().isNull()) {
+		vector<Key<float>> scaleKeys;
+
+		double ss[3];
+		node.transformation().getScale(ss, MSpace::kPostTransform);
+
+		float default_x = ss[0];
+		float default_y = ss[1];
+		float default_z = ss[2];
+
+		int scale_index_x = 0;
+		int scale_index_y = 0;
+		int scale_index_z = 0;
+		MTime time_min(100000.0, MTime::kSeconds);
+		int choice = -1;
+
+		while (scale_index_x < scaleX.numKeys() || scale_index_y < scaleY.numKeys() || scale_index_z < scaleZ.numKeys()) {
+			time_min.setValue(100000.0);
+
+			float x = default_x;
+			float y = default_y;
+			float z = default_z;
+
+			if (!scaleX.object().isNull() && time_min > scaleX.time(scale_index_x)) {
+				time_min = scaleX.time(scale_index_x);
+				choice = 0;
+			}
+			if (!scaleY.object().isNull() && time_min > scaleY.time(scale_index_y)) {
+				time_min = scaleY.time(scale_index_y);
+				choice = 1;
+			}
+			if (!scaleZ.object().isNull() && time_min > scaleZ.time(scale_index_z)) {
+				time_min = scaleZ.time(scale_index_z);
+				choice = 2;
+			}
+
+			if (choice == 0) {
+				x = scaleX.value(scale_index_x);
+				scale_index_x++;
+
+				if (!scaleY.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - scaleY.time(scale_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
+						y = scaleY.value(scale_index_y);
+						scale_index_y++;
+					}
+					else {
+						y = scaleY.evaluate(time_min);
+					}
+				}
+
+				if (!scaleZ.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - scaleZ.time(scale_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
+						z = scaleZ.value(scale_index_z);
+						scale_index_z++;
+					}
+					else {
+						z = scaleZ.evaluate(time_min);
+					}
+				}
+			}
+
+			if (choice == 1) {
+				y = scaleY.value(scale_index_y);
+				scale_index_y++;
+
+				if (!scaleX.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - scaleX.time(scale_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
+						x = scaleX.value(scale_index_x);
+						scale_index_x++;
+					}
+					else {
+						x = scaleX.evaluate(time_min);
+					}
+				}
+
+				if (!scaleZ.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - scaleZ.time(scale_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
+						z = scaleZ.value(scale_index_z);
+						scale_index_z++;
+					}
+					else {
+						z = scaleZ.evaluate(time_min);
+					}
+				}
+			}
+
+			if (choice == 2) {
+				z = scaleZ.value(scale_index_z);
+				scale_index_z++;
+
+				if (!scaleX.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - scaleX.time(scale_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
+						x = scaleX.value(scale_index_x);
+						scale_index_x++;
+					}
+					else {
+						x = scaleX.evaluate(time_min);
+					}
+				}
+
+				if (!scaleY.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - scaleY.time(scale_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
+						y = scaleY.value(scale_index_y);
+						scale_index_y++;
+					}
+					else {
+						y = scaleY.evaluate(time_min);
+					}
+				}
+			}
+
+			Key<float> scale_key;
+			scale_key.time = time_min.asUnits(MTime::kSeconds);
+			scale_key.data = pow(x * y * z, 1.0f / 3.0f);
+
+			scaleKeys.push_back(scale_key);
+		}
+
+		if (transform_interpolator->GetData() == NULL) {
+			NiTransformDataRef transform_data = DynamicCast<NiTransformData>(NiTransformData::Create());
+			transform_interpolator->SetData(transform_data);
+		}
+
+		transform_interpolator->GetData()->SetScaleType(KeyType::LINEAR_KEY);
+		transform_interpolator->GetData()->SetScaleKeys(scaleKeys);
+	}
+
+	if (!rotateX.object().isNull() || !rotateY.object().isNull() || !rotateZ.object().isNull()) {
+		vector<Key<Vector3>> rotationKeys;
+
+		double rr[3];
+
+		MTransformationMatrix::RotationOrder ord;
+
+		node.transformation().getRotation(rr, ord, MSpace::kPostTransform);
+
+		float default_x;
+		float default_y;
+		float default_z;
+
+		switch (ord) {
+		case MTransformationMatrix::RotationOrder::kXYZ:
+			default_x = rr[0];
+			default_y = rr[1];
+			default_z = rr[2];
+			break;
+		case MTransformationMatrix::RotationOrder::kXZY:
+			default_x = rr[0];
+			default_y = rr[2];
+			default_z = rr[1];
+			break;
+		case MTransformationMatrix::RotationOrder::kYXZ:
+			default_x = rr[1];
+			default_y = rr[0];
+			default_z = rr[2];
+			break;
+		case MTransformationMatrix::RotationOrder::kYZX:
+			default_x = rr[2];
+			default_y = rr[0];
+			default_z = rr[1];
+			break;
+		case MTransformationMatrix::RotationOrder::kZXY:
+			default_x = rr[1];
+			default_y = rr[2];
+			default_z = rr[0];
+			break;
+		case MTransformationMatrix::RotationOrder::kZYX:
+			default_x = rr[2];
+			default_y = rr[1];
+			default_z = rr[0];
+			break;
+		}
+
+		int choice = -1;
+		int rotate_index_x = 0;
+		int rotate_index_y = 0;
+		int rotate_index_z = 0;
+
+		MTime time_min(100000.0, MTime::kSeconds);
+
+		while (rotate_index_x < rotateX.numKeys() || rotate_index_y < rotateY.numKeys() || rotate_index_z < rotateZ.numKeys()) {
+			time_min.setValue(100000.0);
+
+			float x = default_x;
+			float y = default_y;
+			float z = default_z;
+
+			if (!rotateX.object().isNull() && time_min > rotateX.time(rotate_index_x)) {
+				time_min = rotateX.time(rotate_index_x);
+				choice = 0;
+			}
+			if (!rotateY.object().isNull() && time_min > rotateY.time(rotate_index_y)) {
+				time_min = rotateY.time(rotate_index_y);
+				choice = 1;
+			}
+			if (!rotateZ.object().isNull() && time_min > rotateZ.time(rotate_index_z)) {
+				time_min = rotateZ.time(rotate_index_z);
+				choice = 2;
+			}
+
+			if (choice == 0) {
+				x = rotateX.value(rotate_index_x);
+				rotate_index_x++;
+
+				if (!rotateY.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - rotateY.time(rotate_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
+						y = rotateY.value(rotate_index_y);
+						rotate_index_y++;
+					}
+					else {
+						y = rotateY.evaluate(time_min);
+					}
+				}
+				if (!rotateZ.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - rotateZ.time(rotate_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
+						z = rotateZ.value(rotate_index_z);
+						rotate_index_z++;
+					}
+					else {
+						z = rotateZ.evaluate(time_min);
+					}
+				}
+			}
+
+			if (choice == 1) {
+				y = rotateY.value(rotate_index_y);
+				rotate_index_y++;
+
+				if (!rotateX.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - rotateX.time(rotate_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
+						x = rotateX.value(rotate_index_x);
+						rotate_index_x++;
+					}
+					else {
+						x = rotateX.evaluate(time_min);
+					}
+				}
+				if (!rotateZ.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - rotateZ.time(rotate_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
+						z = rotateZ.value(rotate_index_z);
+						rotate_index_z++;
+					}
+					else {
+						z = rotateZ.evaluate(time_min);
+					}
+				}
+			}
+
+			if (choice == 2) {
+				z = rotateZ.value(rotate_index_z);
+				rotate_index_z++;
+
+				if (!rotateX.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - rotateX.time(rotate_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
+						x = rotateX.value(rotate_index_x);
+						rotate_index_x++;
+					}
+					else {
+						x = rotateX.evaluate(time_min);
+					}
+				}
+				if (!rotateY.object().isNull()) {
+					if (abs(time_min.asUnits(MTime::kSeconds) - rotateY.time(rotate_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
+						y = rotateY.value(rotate_index_y);
+						rotate_index_y++;
+					}
+					else {
+						y = rotateY.evaluate(time_min);
+					}
+				}
+			}
+
+			Key<Vector3> rotation_key;
+			rotation_key.time = time_min.asUnits(MTime::kSeconds);
+			rotation_key.data.x = x;
+			rotation_key.data.y = y;
+			rotation_key.data.z = z;
+
+			rotationKeys.push_back(rotation_key);
+		}
+
+		MString rotation_type = "XYZ";
+		MPlug rotation_plug = node.findPlug("rotationType");
+		string node_name = node.name().asChar();
+
+		if (!rotation_plug.isNull()) {
+			rotation_type = rotation_plug.asString();
+		}
+
+		if (transform_interpolator->GetData() == NULL) {
+			NiTransformDataRef transform_data = DynamicCast<NiTransformData>(NiTransformData::Create());
+			transform_interpolator->SetData(transform_data);
+		}
+
+		NiTransformDataRef transform_data = transform_interpolator->GetData();
+
+		if (rotation_type == "XYZ") {
+			transform_data->SetRotateType(KeyType::XYZ_ROTATION_KEY);
+
+			transform_data->SetXRotateType(KeyType::LINEAR_KEY);
+			transform_data->SetYRotateType(KeyType::LINEAR_KEY);
+			transform_data->SetZRotateType(KeyType::LINEAR_KEY);
+
+			vector<Key<float>> rotationXKeys;
+			vector<Key<float>> rotationYKeys;
+			vector<Key<float>> rotationZKeys;
+
+			for (int i = 0; i < rotationKeys.size(); i++) {
+				Key<float> rotateX_key;
+				Key<float> rotateY_key;
+				Key<float> rotateZ_key;
+
+				rotateX_key.time = rotationKeys[i].time;
+				rotateY_key.time = rotationKeys[i].time;
+				rotateZ_key.time = rotationKeys[i].time;
+
+				rotateX_key.data = rotationKeys[i].data.x;
+				rotateY_key.data = rotationKeys[i].data.y;
+				rotateZ_key.data = rotationKeys[i].data.z;
+
+				rotationXKeys.push_back(rotateX_key);
+				rotationYKeys.push_back(rotateY_key);
+				rotationZKeys.push_back(rotateZ_key);
+			}
+
+			transform_data->SetXRotateKeys(rotationXKeys);
+			transform_data->SetYRotateKeys(rotationYKeys);
+			transform_data->SetZRotateKeys(rotationZKeys);
+		}
+		else {
+			transform_data->SetRotateType(KeyType::LINEAR_KEY);
+
+			vector<Key<Quaternion>> rotateQuaternionKeys;
+
+			for (int i = 0; i < rotationKeys.size(); i++) {
+				Key<Quaternion> rotate_key;
+
+				MEulerRotation m_euler_rotation(rotationKeys[i].data.x, rotationKeys[i].data.y, rotationKeys[i].data.z);
+				MQuaternion m_quaternion = m_euler_rotation.asQuaternion();
+
+				rotate_key.data.x = m_quaternion.x;
+				rotate_key.data.y = m_quaternion.y;
+				rotate_key.data.z = m_quaternion.z;
+				rotate_key.data.w = m_quaternion.w;
+
+				rotate_key.time = rotationKeys[i].time;
+
+				rotateQuaternionKeys.push_back(rotate_key);
+			}
+
+			transform_data->SetQuatRotateKeys(rotateQuaternionKeys);
+		}
+	}
+
+	// Compute this node's own key time range (first/last key across all curves)
+	// for the controller's Start/Stop Time, matching vanilla FNV (e.g. -0.0333333
+	// to 0.0 for a -1..0 frame anim at 30 fps). Uses the same MFnAnimCurve objects
+	// already gathered above.
+	{
+		float start = FLT_MAX;
+		float stop = -FLT_MAX;
+
+		// MFnAnimCurve makes operator& private, so we can't put these in an array
+		// of pointers. Fold each curve's first/last key time in via a helper that
+		// takes the function set by reference instead.
+		auto fold = [&](MFnAnimCurve& curve) {
+			if (curve.object().isNull()) return;
+			unsigned n = curve.numKeys();
+			if (n == 0) return;
+			float first = (float)curve.time(0).asUnits(MTime::kSeconds);
+			float last = (float)curve.time(n - 1).asUnits(MTime::kSeconds);
+			if (first < start) start = first;
+			if (last > stop)  stop = last;
+			};
+
+		fold(translateX); fold(translateY); fold(translateZ);
+		fold(scaleX);     fold(scaleY);     fold(scaleZ);
+		fold(rotateX);    fold(rotateY);    fold(rotateZ);
+
+		if (start != FLT_MAX && stop != -FLT_MAX) {
+			if (outStartTime) *outStartTime = start;
+			if (outStopTime)  *outStopTime = stop;
+		}
+	}
+
+	return transform_interpolator;
+}
+
 void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller_sequence, MObject object ) {
 	string interpolator_type = "NiTransformInterpolator";
 
@@ -190,476 +823,12 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 		rest_q_z = qq.z;
 	}
 
-	if(interpolator_type == "NiTransformInterpolator") {
-		NiTransformInterpolatorRef transform_interpolator = DynamicCast<NiTransformInterpolator>(NiTransformInterpolator::Create());
+	if (interpolator_type == "NiTransformInterpolator") {
+		// Factored out so embedded-NIF animation can reuse the exact same sampling.
+		NiTransformInterpolatorRef transform_interpolator = BuildTransformInterpolator(object);
 		interpolator = DynamicCast<NiInterpolator>(transform_interpolator);
-
-		transform_interpolator->SetRotation(Quaternion(rest_q_w, rest_q_x, rest_q_y, rest_q_z));
-		transform_interpolator->SetScale(pow((float)(rest_scale[0] * rest_scale[1] * rest_scale[2]), (float)(1.0 / 3.0)));
-		transform_interpolator->SetTranslation(Vector3(rest_translation.x, rest_translation.y, rest_translation.z));
-		
-		if(!translateX.object().isNull() || !translateY.object().isNull() || !translateZ.object().isNull()) {
-			vector<Key<Vector3>> translationKeys;
-
-			float default_x = node.transformation().translation(MSpace::kPostTransform).x;
-			float default_y = node.transformation().translation(MSpace::kPostTransform).y;
-			float default_z = node.transformation().translation(MSpace::kPostTransform).z;
-
-			int translate_index_x = 0;
-			int translate_index_y = 0;
-			int translate_index_z = 0;
-			MTime time_min(100000.0, MTime::kSeconds);
-			int choice = -1;
-
-			while(translate_index_x <  translateX.numKeys() || translate_index_y < translateY.numKeys() || translate_index_z < translateZ.numKeys()) {
-				time_min.setValue(100000.0);
-
-				float x = default_x;
-				float y = default_y;
-				float z = default_z;
-
-				if(!translateX.object().isNull() && time_min > translateX.time(translate_index_x)) {
-					time_min = translateX.time(translate_index_x);
-					choice = 0;
-				}
-				if(!translateY.object().isNull() && time_min > translateY.time(translate_index_y)) {
-					time_min = translateY.time(translate_index_y);
-					choice = 1;
-				}
-				if(!translateZ.object().isNull() && time_min > translateZ.time(translate_index_z)) {
-					time_min = translateZ.time(translate_index_z);
-					choice = 2;
-				}
-
-				if(choice == 0) {
-					x = translateX.value(translate_index_x);
-					translate_index_x++;
-
-					if(!translateY.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - translateY.time(translate_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
-							y = translateY.value(translate_index_y);
-							translate_index_y++;
-						} else {
-							y = translateY.evaluate(time_min);
-						}
-					}
-
-					if(!translateZ.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - translateZ.time(translate_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
-							z = translateZ.value(translate_index_z);
-							translate_index_z++;
-						} else {
-							z = translateZ.evaluate(time_min);
-						}
-					}
-				}
-
-				if(choice == 1) {
-					y = translateY.value(translate_index_y);
-					translate_index_y++;
-
-					if(!translateX.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - translateX.time(translate_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
-							x = translateX.value(translate_index_x);
-							translate_index_x++;
-						} else {
-							x = translateX.evaluate(time_min);
-						}
-					}
-
-					if(!translateZ.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - translateZ.time(translate_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
-							z = translateZ.value(translate_index_z);
-							translate_index_z++;
-						} else {
-							z = translateZ.evaluate(time_min);
-						}
-					}
-				}
-
-				if(choice == 2) {
-					z = translateZ.value(translate_index_z);
-					translate_index_z++;
-
-					if(!translateX.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - translateX.time(translate_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
-							x = translateX.value(translate_index_x);
-							translate_index_x++;
-						} else {
-							x = translateX.evaluate(time_min);
-						}
-					}
-
-					if(!translateY.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - translateY.time(translate_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
-							y = translateY.value(translate_index_y);
-							translate_index_y++;
-						} else {
-							y = translateY.evaluate(time_min);
-						}
-					}
-				}
-
-				Key<Vector3> translation_key;
-				translation_key.time = time_min.asUnits(MTime::kSeconds);
-				translation_key.data.x = x;
-				translation_key.data.y = y;
-				translation_key.data.z = z;
-
-				translationKeys.push_back(translation_key);
-			}
-
-			if(transform_interpolator->GetData() == NULL) {
-				NiTransformDataRef transform_data = DynamicCast<NiTransformData>(NiTransformData::Create());
-				transform_interpolator->SetData(transform_data);
-			}
-
-			transform_interpolator->GetData()->SetTranslateType(KeyType::LINEAR_KEY);
-			transform_interpolator->GetData()->SetTranslateKeys(translationKeys);
-		}
-
-		if(!scaleX.object().isNull() || !scaleY.object().isNull() || !scaleY.object().isNull()) {
-			vector<Key<float>> scaleKeys;
-
-			double ss[3];
-			node.transformation().getScale(ss, MSpace::kPostTransform);
-
-			float default_x = ss[0];
-			float default_y = ss[1];
-			float default_z = ss[2];
-
-			int scale_index_x = 0;
-			int scale_index_y = 0;
-			int scale_index_z = 0;
-			MTime time_min(100000.0, MTime::kSeconds);
-			int choice = -1;
-
-			while(scale_index_x <  scaleX.numKeys() || scale_index_y < scaleY.numKeys() || scale_index_z < scaleZ.numKeys()) {
-				time_min.setValue(100000.0);
-
-				float x = default_x;
-				float y = default_y;
-				float z = default_z;
-
-				if(!scaleX.object().isNull() && time_min > scaleX.time(scale_index_x)) {
-					time_min = scaleX.time(scale_index_x);
-					choice = 0;
-				}
-				if(!scaleY.object().isNull() && time_min > scaleY.time(scale_index_y)) {
-					time_min = scaleY.time(scale_index_y);
-					choice = 1;
-				}
-				if(!scaleZ.object().isNull() && time_min > scaleZ.time(scale_index_z)) {
-					time_min = scaleZ.time(scale_index_z);
-					choice = 2;
-				}
-
-				if(choice == 0) {
-					x = scaleX.value(scale_index_x);
-					scale_index_x++;
-
-					if(!scaleY.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - scaleY.time(scale_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
-							y = scaleY.value(scale_index_y);
-							scale_index_y++;
-						} else {
-							y = scaleY.evaluate(time_min);
-						}
-					}
-
-					if(!scaleZ.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - scaleZ.time(scale_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
-							z = scaleZ.value(scale_index_z);
-							scale_index_z++;
-						} else {
-							z = scaleZ.evaluate(time_min);
-						}
-					}
-				}
-
-				if(choice == 1) {
-					y = scaleY.value(scale_index_y);
-					scale_index_y++;
-
-					if(!scaleX.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - scaleX.time(scale_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
-							x = scaleX.value(scale_index_x);
-							scale_index_x++;
-						} else {
-							x = scaleX.evaluate(time_min);
-						}
-					}
-
-					if(!scaleZ.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - scaleZ.time(scale_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
-							z = scaleZ.value(scale_index_z);
-							scale_index_z++;
-						} else {
-							z = scaleZ.evaluate(time_min);
-						}
-					}
-				}
-
-				if(choice == 2) {
-					z = scaleZ.value(scale_index_z);
-					scale_index_z++;
-
-					if(!scaleX.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - scaleX.time(scale_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
-							x = scaleX.value(scale_index_x);
-							scale_index_x++;
-						} else {
-							x = scaleX.evaluate(time_min);
-						}
-					}
-
-					if(!scaleY.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - scaleY.time(scale_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
-							y = scaleY.value(scale_index_y);
-							scale_index_y++;
-						} else {
-							y = scaleY.evaluate(time_min);
-						}
-					}
-				}
-
-				Key<float> scale_key;
-				scale_key.time = time_min.asUnits(MTime::kSeconds);
-				scale_key.data = pow(x * y * z, 1.0f / 3.0f);
-
-				scaleKeys.push_back(scale_key);
-			}
-
-			if(transform_interpolator->GetData() == NULL) {
-				NiTransformDataRef transform_data = DynamicCast<NiTransformData>(NiTransformData::Create());
-				transform_interpolator->SetData(transform_data);
-			}
-
-			transform_interpolator->GetData()->SetScaleType(KeyType::LINEAR_KEY);
-			transform_interpolator->GetData()->SetScaleKeys(scaleKeys);
-		}
-
-		if(!rotateX.object().isNull() || !rotateY.object().isNull() || !rotateZ.object().isNull()) {
-			vector<Key<Vector3>> rotationKeys;
-
-			double rr[3];
-
-			MTransformationMatrix::RotationOrder ord;
-
-			node.transformation().getRotation(rr, ord, MSpace::kPostTransform);
-
-			float default_x;
-			float default_y;
-			float default_z;
-
-			switch(ord) {
-			case MTransformationMatrix::RotationOrder::kXYZ:
-				default_x = rr[0];
-				default_y = rr[1];
-				default_z = rr[2];
-				break;
-			case MTransformationMatrix::RotationOrder::kXZY:
-				default_x = rr[0];
-				default_y = rr[2];
-				default_z = rr[1];
-				break;
-			case MTransformationMatrix::RotationOrder::kYXZ:
-				default_x = rr[1];
-				default_y = rr[0];
-				default_z = rr[2];
-				break;
-			case MTransformationMatrix::RotationOrder::kYZX:
-				default_x = rr[2];
-				default_y = rr[0];
-				default_z = rr[1];
-				break;
-			case MTransformationMatrix::RotationOrder::kZXY:
-				default_x = rr[1];
-				default_y = rr[2];
-				default_z = rr[0];
-				break;
-			case MTransformationMatrix::RotationOrder::kZYX:
-				default_x = rr[2];
-				default_y = rr[1];
-				default_z = rr[0];
-				break;
-			}
-
-			int choice = -1;
-			int rotate_index_x = 0;
-			int rotate_index_y = 0;
-			int rotate_index_z = 0;
-
-			MTime time_min(100000.0, MTime::kSeconds);
-
-			while(rotate_index_x <  rotateX.numKeys() || rotate_index_y < rotateY.numKeys() || rotate_index_z < rotateZ.numKeys()) {
-				time_min.setValue(100000.0);
-
-				float x = default_x;
-				float y = default_y;
-				float z = default_z;
-
-				if(!rotateX.object().isNull() && time_min > rotateX.time(rotate_index_x)) {
-					time_min = rotateX.time(rotate_index_x);
-					choice = 0;
-				}
-				if(!rotateY.object().isNull() && time_min > rotateY.time(rotate_index_y)) {
-					time_min = rotateY.time(rotate_index_y);
-					choice = 1;
-				}
-				if(!rotateZ.object().isNull() && time_min > rotateZ.time(rotate_index_z)) {
-					time_min = rotateZ.time(rotate_index_z);
-					choice = 2;
-				}
-
-				if(choice == 0) {
-					x = rotateX.value(rotate_index_x);
-					rotate_index_x++;
-
-					if(!rotateY.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - rotateY.time(rotate_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
-							y = rotateY.value(rotate_index_y);
-							rotate_index_y++;
-						} else {
-							y = rotateY.evaluate(time_min);
-						}
-					}
-					if(!rotateZ.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - rotateZ.time(rotate_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
-							z = rotateZ.value(rotate_index_z);
-							rotate_index_z++;
-						} else {
-							z = rotateZ.evaluate(time_min);
-						}
-					}
-				}
-
-				if(choice == 1) {
-					y = rotateY.value(rotate_index_y);
-					rotate_index_y++;
-
-					if(!rotateX.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - rotateX.time(rotate_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
-							x = rotateX.value(rotate_index_x);
-							rotate_index_x++;
-						} else {
-							x = rotateX.evaluate(time_min);
-						}
-					}
-					if(!rotateZ.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - rotateZ.time(rotate_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
-							z = rotateZ.value(rotate_index_z);
-							rotate_index_z++;
-						} else {
-							z = rotateZ.evaluate(time_min);
-						}
-					}
-				}
-
-				if(choice == 2) {
-					z = rotateZ.value(rotate_index_z);
-					rotate_index_z++;
-
-					if(!rotateX.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - rotateX.time(rotate_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
-							x = rotateX.value(rotate_index_x);
-							rotate_index_x++;
-						} else {
-							x = rotateX.evaluate(time_min);
-						}
-					}
-					if(!rotateY.object().isNull()) {
-						if(abs(time_min.asUnits(MTime::kSeconds) - rotateY.time(rotate_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
-							y = rotateY.value(rotate_index_y);
-							rotate_index_y++;
-						} else {
-							y = rotateY.evaluate(time_min);
-						}
-					}
-				}
-
-				Key<Vector3> rotation_key;
-				rotation_key.time = time_min.asUnits(MTime::kSeconds);
-				rotation_key.data.x = x;
-				rotation_key.data.y = y;
-				rotation_key.data.z = z;
-
-				rotationKeys.push_back(rotation_key);
-			}
-
-			MString rotation_type = "XYZ";
-			MPlug rotation_plug = node.findPlug("rotationType");
-			string node_name = node.name().asChar(); 
-
-			if(!rotation_plug.isNull()) {
-				rotation_type = rotation_plug.asString();
-			}
-
-			if(transform_interpolator->GetData() == NULL) {
-				NiTransformDataRef transform_data = DynamicCast<NiTransformData>(NiTransformData::Create());
-				transform_interpolator->SetData(transform_data);
-			}
-
-			NiTransformDataRef transform_data = transform_interpolator->GetData();
-			
-			if(rotation_type == "XYZ") {
-				transform_data->SetRotateType(KeyType::XYZ_ROTATION_KEY);
-
-				transform_data->SetXRotateType(KeyType::LINEAR_KEY);
-				transform_data->SetYRotateType(KeyType::LINEAR_KEY);
-				transform_data->SetZRotateType(KeyType::LINEAR_KEY);
-				
-				vector<Key<float>> rotationXKeys;
-				vector<Key<float>> rotationYKeys;
-				vector<Key<float>> rotationZKeys;
-
-				for(int i = 0; i < rotationKeys.size(); i++) {
-					Key<float> rotateX_key;
-					Key<float> rotateY_key;
-					Key<float> rotateZ_key;
-
-					rotateX_key.time = rotationKeys[i].time;
-					rotateY_key.time = rotationKeys[i].time;
-					rotateZ_key.time = rotationKeys[i].time;
-
-					rotateX_key.data = rotationKeys[i].data.x;
-					rotateY_key.data = rotationKeys[i].data.y;
-					rotateZ_key.data = rotationKeys[i].data.z;
-
-					rotationXKeys.push_back(rotateX_key);
-					rotationYKeys.push_back(rotateY_key);
-					rotationZKeys.push_back(rotateZ_key);
-				} 
-
-				transform_data->SetXRotateKeys(rotationXKeys);
-				transform_data->SetYRotateKeys(rotationYKeys);
-				transform_data->SetZRotateKeys(rotationZKeys);
-			} else {
-				transform_data->SetRotateType(KeyType::LINEAR_KEY);
-
-				vector<Key<Quaternion>> rotateQuaternionKeys;
-
-				for(int i = 0; i < rotationKeys.size(); i++) {
-					Key<Quaternion> rotate_key;
-
-					MEulerRotation m_euler_rotation(rotationKeys[i].data.x, rotationKeys[i].data.y, rotationKeys[i].data.z);
-					MQuaternion m_quaternion = m_euler_rotation.asQuaternion();
-
-					rotate_key.data.x = m_quaternion.x;
-					rotate_key.data.y = m_quaternion.y;
-					rotate_key.data.z = m_quaternion.z;
-					rotate_key.data.w = m_quaternion.w;
-
-					rotate_key.time = rotationKeys[i].time;
-
-					rotateQuaternionKeys.push_back(rotate_key);
-				}
-
-				transform_data->SetQuatRotateKeys(rotateQuaternionKeys);
-			}
-		}
-
-	} else  if(interpolator_type == "NiBSplineCompTransformInterpolator") {
+	}
+	else  if (interpolator_type == "NiBSplineCompTransformInterpolator") {
 		NiBSplineCompTransformInterpolatorRef spline_interpolator = DynamicCast<NiBSplineCompTransformInterpolator>(NiBSplineCompTransformInterpolator::Create());
 		interpolator = DynamicCast<NiInterpolator>(spline_interpolator);
 
@@ -701,7 +870,12 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 			vector<Vector3> translate_keys;
 
 			float current_time = controller_sequence->GetStartTime();
-			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime()) / control_points;
+			// Sample across [start, stop] INCLUSIVE. Dividing by control_points leaves the
+			// last sample one increment short of stop, so the final pose is never captured
+			// (clamped B-spline ends on the last control point => anim stops early and snaps
+			// back on loop). Divide by (control_points - 1); guard the 1-point degenerate case.
+			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime())
+				/ (float)((control_points > 1) ? (control_points - 1) : 1);
 			float translation_min = FLT_MAX;
 			float translation_max = FLT_MIN;
 
@@ -780,7 +954,12 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 			vector<MQuaternion> rotate_keys;
 
 			float current_time = controller_sequence->GetStartTime();
-			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime()) / control_points;
+			// Sample across [start, stop] INCLUSIVE. Dividing by control_points leaves the
+			// last sample one increment short of stop, so the final pose is never captured
+			// (clamped B-spline ends on the last control point => anim stops early and snaps
+			// back on loop). Divide by (control_points - 1); guard the 1-point degenerate case.
+			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime())
+				/ (float)((control_points > 1) ? (control_points - 1) : 1);
 			double rotation_min = FLT_MAX;
 			double rotation_max = FLT_MIN;
 
@@ -879,7 +1058,12 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 			vector<float> scale_keys;
 
 			float current_time = controller_sequence->GetStartTime();
-			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime()) / control_points;
+			// Sample across [start, stop] INCLUSIVE. Dividing by control_points leaves the
+			// last sample one increment short of stop, so the final pose is never captured
+			// (clamped B-spline ends on the last control point => anim stops early and snaps
+			// back on loop). Divide by (control_points - 1); guard the 1-point degenerate case.
+			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime())
+				/ (float)((control_points > 1) ? (control_points - 1) : 1);
 			float scale_min = FLT_MAX;
 			float scale_max = FLT_MIN;
 
@@ -978,7 +1162,12 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 			vector<Vector3> translate_keys;
 
 			float current_time = controller_sequence->GetStartTime();
-			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime()) / control_points;
+			// Sample across [start, stop] INCLUSIVE. Dividing by control_points leaves the
+			// last sample one increment short of stop, so the final pose is never captured
+			// (clamped B-spline ends on the last control point => anim stops early and snaps
+			// back on loop). Divide by (control_points - 1); guard the 1-point degenerate case.
+			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime())
+				/ (float)((control_points > 1) ? (control_points - 1) : 1);
 
 			for(int i = 0; i < control_points; i++) {
 				Vector3 key(rest_translation.x, rest_translation.y, rest_translation.z);
@@ -1020,7 +1209,12 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 			vector<MQuaternion> rotate_keys;
 
 			float current_time = controller_sequence->GetStartTime();
-			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime()) / control_points;
+			// Sample across [start, stop] INCLUSIVE. Dividing by control_points leaves the
+			// last sample one increment short of stop, so the final pose is never captured
+			// (clamped B-spline ends on the last control point => anim stops early and snaps
+			// back on loop). Divide by (control_points - 1); guard the 1-point degenerate case.
+			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime())
+				/ (float)((control_points > 1) ? (control_points - 1) : 1);
 
 			MQuaternion rest_qq(rest_q_x, rest_q_y, rest_q_z, rest_q_w);
 			MEulerRotation rot = rest_qq.asEulerRotation();
@@ -1070,7 +1264,12 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 			vector<float> scale_keys;
 
 			float current_time = controller_sequence->GetStartTime();
-			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime()) / control_points;
+			// Sample across [start, stop] INCLUSIVE. Dividing by control_points leaves the
+			// last sample one increment short of stop, so the final pose is never captured
+			// (clamped B-spline ends on the last control point => anim stops early and snaps
+			// back on loop). Divide by (control_points - 1); guard the 1-point degenerate case.
+			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime())
+				/ (float)((control_points > 1) ? (control_points - 1) : 1);
 
 			for(int i = 0; i < control_points; i++) {
 				Vector3 key(rest_scale[0], rest_scale[1], rest_scale[2]);
@@ -1278,32 +1477,64 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 		}
 	}
 
-	if(interpolator != NULL) {
+	if (interpolator != NULL) {
 		Niflib::byte priority = 30;
 		MPlug plug_priority = node.findPlug("animationPriority");
 
-		if(!plug_priority.isNull()) {
+		if (!plug_priority.isNull()) {
 			priority = plug_priority.asInt();
 		}
 
 		string controller_type_name;
 
-		if(interpolator->GetType().IsSameType(NiFloatInterpolator::TYPE)) {
+		if (interpolator->GetType().IsSameType(NiFloatInterpolator::TYPE)) {
 			controller_type_name = NiGeomMorpherController::TYPE.GetTypeName();
-		} else if (interpolator->GetType().IsSameType(NiBoolInterpolator::TYPE)) {
+		}
+		else if (interpolator->GetType().IsSameType(NiBoolInterpolator::TYPE)) {
 			controller_type_name = NiVisController::TYPE.GetTypeName();
-		} else {
+		}
+		else {
 			controller_type_name = NiTransformController::TYPE.GetTypeName();
 		}
-		
+
 		NiObjectNETRef target = DynamicCast<NiObjectNET>(NiObjectNET::Create());
 
 		target->SetName(this->translatorUtils->MakeNifName(node.name()));
 
-		if(this->translatorOptions->exportVersion >= VER_20_2_0_7) {
+		if (this->translatorOptions->exportVersion >= VER_20_2_0_7) {
 			controller_sequence->AddGenericInterpolator(interpolator, target, controller_type_name, priority, false);
-		} else {
+		}
+		else {
 			controller_sequence->AddGenericInterpolator(interpolator, target, controller_type_name, priority, true);
+		}
+
+		// For NiFloatInterpolator (morph / blendshape weight animation), stamp the
+		// ControllerLink's "Interpolator ID" field with the user-specified targetID.
+		// NifSkope labels variable2 as "Interpolator ID"; AddGenericInterpolator
+		// creates the ControllerLink internally and returns nothing, so we fetch the
+		// block list, set it on the one we just added (matched by node name + same
+		// interpolator), and write the list back.
+		if (interpolator->GetType().IsSameType(NiFloatInterpolator::TYPE)) {
+			MString target_id;
+			MPlug target_id_plug = node.findPlug("targetID");
+			if (!target_id_plug.isNull()) {
+				target_id = target_id_plug.asString();
+			}
+
+			if (target_id.length() > 0) {
+				string node_nif_name = this->translatorUtils->MakeNifName(node.name());
+
+				vector<ControllerLink> blocks = controller_sequence->GetControlledBlocks();
+				// Walk from the end: the block we just added is the most recent match.
+				for (int b = (int)blocks.size() - 1; b >= 0; b--) {
+					if (blocks[b].interpolator == interpolator &&
+						string(blocks[b].nodeName) == node_nif_name) {
+						blocks[b].variable2 = target_id.asChar(); // "Interpolator ID"
+						break;
+					}
+				}
+				controller_sequence->SetControlledBlocks(blocks);
+			}
 		}
 	}
 }

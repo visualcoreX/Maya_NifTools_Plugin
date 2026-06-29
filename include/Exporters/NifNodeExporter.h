@@ -82,8 +82,16 @@
 #include <Ref.h>
 #include "include/Common/NifTranslatorFixtureItem.h"
 #include "include/Exporters/NifCollisionExporter.h"
+
 using namespace std;
 using namespace Niflib;
+// Forward declaration to avoid an include cycle — the .cpp includes the full
+// NifKFAnimationExporter.h. Set externally by the owning ExportingFixture
+// (same pattern as collisionExporter); used in ExportAV to bake a node's anim
+// curves into a real NiTransformInterpolator when exportType == "nifanimation".
+class NifKFAnimationExporter;
+typedef Ref<NifKFAnimationExporter> NifKFAnimationExporterRef;
+
 class NifNodeExporter;
 typedef Ref<NifNodeExporter> NifNodeExporterRef;
 class NifNodeExporter : public NifTranslatorFixtureItem {
@@ -95,6 +103,12 @@ public:
 	virtual string asString(bool verbose = false) const;
 	virtual const Type& GetType() const;
 	const static Type TYPE;
+
+	// Set externally by the owning ExportingFixture (same pattern as
+		// collisionExporter). Used in ExportAV to build a real NiTransformInterpolator
+		// from a node's anim curves for embedded-in-NIF animation (exportType ==
+		// "nifanimation"); NULL for plain geometry export.
+	NifKFAnimationExporterRef animationExporter;
 
 	// Set externally by whichever ExportingFixture owns this node exporter
 	// (same pattern as NifNodeImporter::collisionImporter on the import

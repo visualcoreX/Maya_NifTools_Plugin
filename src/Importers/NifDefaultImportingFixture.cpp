@@ -87,27 +87,6 @@ MStatus NifDefaultImportingFixture::ReadNodes(const MFileObject& file)
 				}
 			}
 
-			// TEMPORARY DIAGNOSTIC - logs the root's local transform matrix at
-			// high precision, to determine whether root_node->GetLocalTransform()
-			// == Matrix44::IDENTITY is failing due to floating-point precision
-			// (near-zero but not exactly zero values) or some other reason.
-			// Remove once the importRootNode/hasHashNode issue is resolved.
-			{
-				Matrix44 rootMat = root_node->GetLocalTransform();
-				bool isIdentityResult = IsApproximatelyIdentity(rootMat);
-				const char* logPath = "C:\\Users\\sauron\\Documents\\maya\\2025\\scripts\\nifTranslator_debug.log";
-				std::ofstream log(logPath, std::ios::out | std::ios::app);
-				if (log.is_open()) {
-					log << std::setprecision(15);
-					log << "[NifDefaultImportingFixture] root local transform diagnostic:" << std::endl;
-					log << "  row0: " << rootMat[0][0] << ", " << rootMat[0][1] << ", " << rootMat[0][2] << ", " << rootMat[0][3] << std::endl;
-					log << "  row1: " << rootMat[1][0] << ", " << rootMat[1][1] << ", " << rootMat[1][2] << ", " << rootMat[1][3] << std::endl;
-					log << "  row2: " << rootMat[2][0] << ", " << rootMat[2][1] << ", " << rootMat[2][2] << ", " << rootMat[2][3] << std::endl;
-					log << "  row3: " << rootMat[3][0] << ", " << rootMat[3][1] << ", " << rootMat[3][2] << ", " << rootMat[3][3] << std::endl;
-					log << "  hasHashNode=" << hasHashNode << ", isIdentityResult=" << isIdentityResult << ", importRootNode=" << this->translatorOptions->importRootNode << std::endl;
-				}
-			}
-
 			// importRootNode lets the user choose whether the root NiNode
 			// itself (e.g. BSFadeNode) becomes a real Maya joint/transform,
 			// or is skipped so its children become the scene's top-level
@@ -241,6 +220,18 @@ MStatus NifDefaultImportingFixture::ReadNodes(const MFileObject& file)
 			for (unsigned i = 0; i < this->translatorData->importedMeshes.size(); ++i)
 			{
 				MDagPath meshPath = this->meshImporter->ImportMesh(this->translatorData->importedMeshes[i].first, this->translatorData->importedMeshes[i].second);
+			}
+		}
+
+		//--Import Animation--//
+		// Gated by the "Import Animation" option. All nodes/joints/meshes exist
+		// now, so every target resolves. Must run BEFORE Reset() clears importedNodes.
+		if (this->translatorOptions->importAnimation) {
+			for (map<NiAVObjectRef, MDagPath>::iterator it = this->translatorData->importedNodes.begin();
+				it != this->translatorData->importedNodes.end(); ++it) {
+				if (it->first->IsAnimated()) {
+					this->animationImporter->ImportControllers(it->first, it->second);
+				}
 			}
 		}
 

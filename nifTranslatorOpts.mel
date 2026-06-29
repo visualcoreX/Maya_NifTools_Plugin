@@ -144,6 +144,10 @@ global proc int nifTranslatorOpts ( string $parent,
 					      -value 0
 						  -annotation "Imports the file's root NiNode (e.g. BSFadeNode) itself as a Maya joint/transform. When off (default), the root is skipped and its children become the scene's top-level objects instead - but anything attached directly to the root (such as collision data) gets a small dedicated placeholder transform so it isn't lost."
 						  impRootNodeCk;
+				checkBox -label "Import animation from NIF"
+					      -value 1
+						  -annotation "Imports animation embedded directly in the NIF (NiTransformController keyframe data) as Maya anim curves. Empty placeholder controllers are skipped. Disable to import geometry and skeleton only."
+						  impAnimationCk;
 				rowLayout -numberOfColumns 2
 					  -columnWidth2 120 200
 					  -columnAttach2 "both" "both";
@@ -287,9 +291,11 @@ global proc int nifTranslatorOpts ( string $parent,
 			columnLayout exportColumnLayout;
 			global string $gNifExportType;
 			text -label "Export from the scene:" -font boldLabelFont -align "left";
-			radioCollection;
-				radioButton -label "Geometry only" -select -onCommand "nifTranslatorSetToExportGeometry" exportGeometryRd;
-				radioButton -label "Animation only" -onCommand "nifTranslatorSetToExportAnimation" exportAnimationRd;
+			// Dropdown (like Cycle Type) replacing the old Geometry/Animation radios.
+			optionMenu -label "Export mode" -changeCommand "nifExportModeChange(\"#1\")" exportModeMenu;
+				menuItem -label "NIF w/ Animation";
+				menuItem -label "NIF w/o Animation";
+				menuItem -label "KF";
 			setParent exportFrameLayout;
 
 			rowLayout -numberOfColumns 2
@@ -470,13 +476,14 @@ global proc int nifTranslatorOpts ( string $parent,
 				}
 				if ($optionBreakDown[0] == "exportType") {
 					global string $gNifExportType;
-					if ($optionBreakDown[1] == "geometry") {
-						$gNifExportType = "geometry";
-						radioButton -edit -select exportGeometryRd;
-					} else  if ($optionBreakDown[1] == "animation") {
-						$gNifExportType = "animation";
-						radioButton -edit -select exportAnimationRd;
-					} 
+					$gNifExportType = $optionBreakDown[1];
+					if ($optionBreakDown[1] == "nifanimation") {
+						optionMenu -edit -value "NIF w/ Animation" exportModeMenu;
+					} else if ($optionBreakDown[1] == "animation") {
+						optionMenu -edit -value "KF" exportModeMenu;
+					} else {
+						optionMenu -edit -value "NIF w/o Animation" exportModeMenu;
+					}
 				}
 				if ($optionBreakDown[0] == "cycleType") {
 					global string $gNifCycleType;
@@ -540,6 +547,13 @@ global proc int nifTranslatorOpts ( string $parent,
 						checkBox -edit -value true impRootNodeCk;
 					} else {
 						checkBox -edit -value false impRootNodeCk;
+					}
+				}
+				if ($optionBreakDown[0] == "importAnimation") {
+					if ($optionBreakDown[1] == "1" ) {
+						checkBox -edit -value true impAnimationCk;
+					} else {
+						checkBox -edit -value false impAnimationCk;
 					}
 				}
 				if ($optionBreakDown[0] == "materialType") {
@@ -832,6 +846,9 @@ global proc int nifTranslatorOpts ( string $parent,
 
 		$ckVal = `checkBox -query -value impRootNodeCk`;
 		$currentOptions = $currentOptions + "importRootNode=" + $ckVal + ";";
+
+		$ckVal = `checkBox -query -value impAnimationCk`;
+		$currentOptions = $currentOptions + "importAnimation=" + $ckVal + ";";
 
 		int $scaleSelection = `optionMenu -query -select importScaleMenu`;
 		if ($scaleSelection < 1 || $scaleSelection > size($importScaleValues)) {
@@ -1205,6 +1222,22 @@ global proc nifTranslatorSetToExportAnimation() {
 	global string $gNifExportType;
 
 	$gNifExportType = "animation";
+}
+
+// Maps the dropdown label to the exportType token read by NifTranslatorOptions.
+// "geometry" / "animation" are the existing tokens; "nifanimation" is the new
+// combined mode (geometry + embedded keyframe data in one .nif).
+global proc nifExportModeChange(string $label) {
+	global string $gNifExportType;
+
+	if ($label == "NIF w/ Animation") {
+		$gNifExportType = "nifanimation";
+	} else if ($label == "KF") {
+		$gNifExportType = "animation";
+	} else {
+		// "NIF w/o Animation"
+		$gNifExportType = "geometry";
+	}
 }
 
 global proc nifCycleTypeChange(string $value) {

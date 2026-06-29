@@ -2,6 +2,7 @@
 #include "include/Exporters/NifCollisionExporter.h"
 #include <maya/MItDag.h>
 #include <maya/MFnDagNode.h>
+#include "include/Exporters/NifKFAnimationExporter.h"
 
 NifDefaultExportingFixture::NifDefaultExportingFixture() {
 
@@ -28,6 +29,9 @@ NifDefaultExportingFixture::NifDefaultExportingFixture(NifTranslatorDataRef tran
 	// relying on the recursive per-node import).
 	this->collisionExporter = new NifCollisionExporter(translatorOptions, translatorData, translatorUtils);
 	this->nodeExporter->collisionExporter = this->collisionExporter;
+
+	// nodeExporter needs the KF exporter specifically (it owns BuildTransformInterpolator).
+	this->nodeExporter->animationExporter = new NifKFAnimationExporter(translatorOptions, translatorData, translatorUtils);
 }
 
 MStatus NifDefaultExportingFixture::WriteNodes(const MFileObject& file) {

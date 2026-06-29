@@ -1,155 +1,77 @@
 #include "include/Importers/NifAnimationImporter.h"
 
-void NifAnimationImporter::ImportControllers( NiAVObjectRef niAVObj, MDagPath & path ) {
+// Returns true only if this interpolator actually animates something.
+bool NifAnimationImporter::HasRealAnimation(NiInterpolatorRef interp) {
+	if (interp == NULL) return false;
+
+	// NiTransformInterpolator: real data lives in an attached NiTransformData.
+	NiTransformInterpolatorRef ti = DynamicCast<NiTransformInterpolator>(interp);
+	if (ti != NULL) {
+		NiTransformDataRef d = ti->GetData();
+		if (d == NULL) return false;              // empty .kf placeholder -> skip
+		// NiTransformData has no KeyCount() getters here; probe the key vectors
+		// directly (same getters the KF importer uses).
+		if (d->GetTranslateKeys().empty() &&
+			d->GetScaleKeys().empty() &&
+			d->GetQuatRotateKeys().empty() &&
+			d->GetXRotateKeys().empty()) {     // sentinel-only -> skip
+			return false;
+		}
+		return true;
+	}
+
+	// Other interpolator kinds (B-spline, point3, float, bool) carry their own
+	// data and are handled directly by the KF importer; let them through.
+	return true;
+}
+
+void NifAnimationImporter::ImportControllers(NiAVObjectRef niAVObj, MDagPath& path) {
 	list<NiTimeControllerRef> controllers = niAVObj->GetControllers();
 
-	//Iterate over the controllers, reacting properly to each type
-	for ( list<NiTimeControllerRef>::iterator it = controllers.begin(); it != controllers.end(); ++it ) {
-		if ( (*it)->IsDerivedType( NiKeyframeController::TYPE ) ) {
-			//--NiKeyframeController--//
+	// Resolve the Maya target by the DAG path we were handed (from importedNodes).
+	// Pass its Maya name to the KF importer so GetObjectByName hits the right node
+	// even when MakeMayaName renamed it relative to the NIF block name.
+	MFnDagNode targetFn(path.node());
+	MString targetName = targetFn.name();
+
+	for (list<NiTimeControllerRef>::iterator it = controllers.begin(); it != controllers.end(); ++it) {
+
+		// --- FNV path: NiTransformController (a NiSingleInterpController) ---
+		NiSingleInterpControllerRef sic = DynamicCast<NiSingleInterpController>(*it);
+		if (sic != NULL) {
+			NiInterpolatorRef interp = sic->GetInterpolator();
+			if (HasRealAnimation(interp)) {
+				// Reuse the tested parser: builds translate/scale/quat/XYZ curves.
+				this->kfImporter.ImportAnimation(interp, targetName);
+			}
+			continue;
+		}
+
+		// --- Legacy path: NiKeyframeController (Fallout 3 / Oblivion) ---
+		if ((*it)->IsDerivedType(NiKeyframeController::TYPE)) {
 			NiKeyframeControllerRef niKeyCont = DynamicCast<NiKeyframeController>(*it);
-
 			NiKeyframeDataRef niKeyData = niKeyCont->GetData();
+			if (niKeyData == NULL) continue;
 
-			MFnTransform transFn( path.node() );
-
-			MFnAnimCurve traXFn;
-			MFnAnimCurve traYFn;
-			MFnAnimCurve traZFn;
-
-			MObject traXcurve = traXFn.create( transFn.findPlug("translateX") );
-			MObject traYcurve = traYFn.create( transFn.findPlug("translateY") );
-			MObject traZcurve = traZFn.create( transFn.findPlug("translateZ") );
-
-			MTimeArray traTimes;
-			MDoubleArray traXValues;
-			MDoubleArray traYValues;
-			MDoubleArray traZValues;
-
-			vector<Key<Vector3> > tra_keys = niKeyData->GetTranslateKeys();
-
-			for ( size_t i = 0; i < tra_keys.size(); ++i) {
-				traTimes.append( MTime( tra_keys[i].time, MTime::kSeconds ) );
-				traXValues.append( tra_keys[i].data.x );
-				traYValues.append( tra_keys[i].data.y );
-				traZValues.append( tra_keys[i].data.z );
-
-				//traXFn.addKeyframe( tra_keys[i].time * 24.0, tra_keys[i].data.x );
-				//traYFn.addKeyframe( tra_keys[i].time * 24.0, tra_keys[i].data.y );
-				//traZFn.addKeyframe( tra_keys[i].time * 24.0, tra_keys[i].data.z );
+			// Wrap legacy NiKeyframeData in a NiTransformInterpolator so the same
+			// KF parser handles it (NiTransformData derives from NiKeyframeData).
+			NiTransformDataRef tdata = new NiTransformData();
+			tdata->SetRotateType(niKeyData->GetRotateType());
+			if (niKeyData->GetRotateType() == XYZ_ROTATION_KEY) {
+				tdata->SetXRotateKeys(niKeyData->GetXRotateKeys());
+				tdata->SetYRotateKeys(niKeyData->GetYRotateKeys());
+				tdata->SetZRotateKeys(niKeyData->GetZRotateKeys());
 			}
-
-			traXFn.addKeys( &traTimes, &traXValues );
-			traYFn.addKeys( &traTimes, &traYValues );
-			traZFn.addKeys( &traTimes, &traZValues );
-
-			KeyType kt = niKeyData->GetRotateType();
-
-			if ( kt != XYZ_ROTATION_KEY ) {
-				vector<Key<Quaternion> > rot_keys = niKeyData->GetQuatRotateKeys();
-
-				MFnAnimCurve rotXFn;
-				MFnAnimCurve rotYFn;
-				MFnAnimCurve rotZFn;
-
-				MObject rotXcurve = rotXFn.create( transFn.findPlug("rotateX") );
-				//rotXFn.findPlug("rotationInterpolation").setValue(3);
-				MObject rotYcurve = rotYFn.create( transFn.findPlug("rotateY") );
-				//rotYFn.findPlug("rotationInterpolation").setValue(3);
-				MObject rotZcurve = rotZFn.create( transFn.findPlug("rotateZ") );
-				//rotZFn.findPlug("rotationInterpolation").setValue(3);
-
-				MTimeArray rotTimes;
-				MDoubleArray rotXValues;
-				MDoubleArray rotYValues;
-				MDoubleArray rotZValues;
-
-				MEulerRotation mPrevRot;
-				for( size_t i = 0; i < rot_keys.size(); ++i ) {
-					Quaternion niQuat = rot_keys[i].data;
-
-					MQuaternion mQuat( niQuat.x, niQuat.y, niQuat.z, niQuat.w );
-					MEulerRotation mRot = mQuat.asEulerRotation();
-					MEulerRotation mAlt;
-					mAlt[0] = PI + mRot[0];
-					mAlt[1] = PI - mRot[1];
-					mAlt[2] = PI + mRot[2];
-
-					for ( size_t j = 0; j < 3; ++j ) {
-						double prev_diff = abs(mRot[j] - mPrevRot[j]);
-						//Try adding and subtracting multiples of 2 pi radians to get
-						//closer to the previous angle
-						while (true) {
-							double new_angle = mRot[j] - (PI * 2);
-							double diff = abs( new_angle - mPrevRot[j] );
-							if ( diff < prev_diff ) {
-								mRot[j] = new_angle;
-								prev_diff = diff;
-							} else {
-								break;
-							}
-						}
-						while (true) {
-							double new_angle = mRot[j] + (PI * 2);
-							double diff = abs( new_angle - mPrevRot[j] );
-							if ( diff < prev_diff ) {
-								mRot[j] = new_angle;
-								prev_diff = diff;
-							} else {
-								break;
-							}
-						}
-					}
-
-					for ( size_t j = 0; j < 3; ++j ) {
-						double prev_diff = abs(mAlt[j] - mPrevRot[j]);
-						//Try adding and subtracting multiples of 2 pi radians to get
-						//closer to the previous angle
-						while (true) {
-							double new_angle = mAlt[j] - (PI * 2);
-							double diff = abs( new_angle - mPrevRot[j] );
-							if ( diff < prev_diff ) {
-								mAlt[j] = new_angle;
-								prev_diff = diff;
-							} else {
-								break;
-							}
-						}
-						while (true) {
-							double new_angle = mAlt[j] + (PI * 2);
-							double diff = abs( new_angle - mPrevRot[j] );
-							if ( diff < prev_diff ) {
-								mAlt[j] = new_angle;
-								prev_diff = diff;
-							} else {
-								break;
-							}
-						}
-					}
-
-
-					//Try taking advantage of the fact that:
-					//Rotate(x,y,z) = Rotate(pi + x, pi - y, pi +z)
-					double rot_diff = ( (abs(mRot[0] - mPrevRot[0]) + abs(mRot[1] - mPrevRot[1]) + abs(mRot[2] - mPrevRot[2]) ) / 3.0 );
-					double alt_diff = ( (abs(mAlt[0] - mPrevRot[0]) + abs(mAlt[1] - mPrevRot[1]) + abs(mAlt[2] - mPrevRot[2]) ) / 3.0 );
-
-					if ( alt_diff < rot_diff ) {
-						mRot = mAlt;
-					}
-
-					mPrevRot = mRot;
-
-					rotTimes.append( MTime(rot_keys[i].time, MTime::kSeconds) );
-					rotXValues.append( mRot[0] );
-					rotYValues.append( mRot[1] );
-					rotZValues.append( mRot[2] );
-				}
-
-
-				rotXFn.addKeys( &rotTimes, &rotXValues );
-				rotYFn.addKeys( &rotTimes, &rotYValues );
-				rotZFn.addKeys( &rotTimes, &rotZValues );
+			else {
+				tdata->SetQuatRotateKeys(niKeyData->GetQuatRotateKeys());
 			}
+			tdata->SetTranslateKeys(niKeyData->GetTranslateKeys());
+			tdata->SetScaleKeys(niKeyData->GetScaleKeys());
+
+			NiTransformInterpolatorRef wrap = new NiTransformInterpolator();
+			wrap->SetData(tdata);
+
+			this->kfImporter.ImportAnimation(StaticCast<NiInterpolator>(wrap), targetName);
 		}
 	}
 }

@@ -1,4 +1,6 @@
 #include "include/Exporters/NifNodeExporter.h"
+#include <cfloat> // FLT_MAX
+#include "include/Exporters/NifKFAnimationExporter.h" // BuildTransformInterpolator for embedded animation
 
 NifNodeExporter::NifNodeExporter() {
 
@@ -286,20 +288,40 @@ void NifNodeExporter::ExportAV(NiAVObjectRef avObj, MObject dagNode, bool worldT
 		nodeNameStr.indexW("SightingNode") != -1);
 
 	if (!isServiceNode) {
-		// For FNV: add an empty NiTransformController on each node.
-		// Animation data lives in external .kf files, not the .nif itself.
+		// For FNV: each node carries a NiTransformController. In plain geometry
+		// export its interpolator is an empty sentinel (animation lives in a .kf).
+		// In "nifanimation" mode, bake the node's anim curves straight into the
+		// interpolator so the animation ships inside the .nif itself.
 		NiTransformControllerRef controller = new NiTransformController();
-		NiTransformInterpolatorRef interpolator = new NiTransformInterpolator();
-
 		controller->SetFlags(76);
 		controller->SetFrequency(1.0f);
 		controller->SetPhase(0.0f);
 		controller->SetStartTime(0.0f);
 		controller->SetStopTime(0.0f);
 
-		interpolator->SetTranslation(Vector3(-1e+30f, -1e+30f, -1e+30f));
-		interpolator->SetRotation(Quaternion(-1e+30f, 0.0f, 0.0f, 0.0f));
-		interpolator->SetScale(1.0f);
+		NiTransformInterpolatorRef interpolator;
+
+		bool embedAnim = (this->translatorOptions->exportType == "nifanimation");
+		if (embedAnim && this->animationExporter != NULL && MAnimUtil::isAnimated(dagNode)) {
+			// Per-node key range -> controller Start/Stop Time, like vanilla FNV.
+			float animStart = 0.0f;
+			float animStop = 0.0f;
+			interpolator = this->animationExporter->BuildTransformInterpolator(dagNode, &animStart, &animStop);
+			if (interpolator != NULL) {
+				controller->SetStartTime(animStart);
+				controller->SetStopTime(animStop);
+			}
+		}
+
+		if (interpolator == NULL) {
+			// No animation (or geometry-only export): empty sentinel interpolator.
+			// Gamebryo treats -FLT_MAX per channel as "not set".
+			interpolator = new NiTransformInterpolator();
+			const float NIF_NO_VALUE = -FLT_MAX; // -3.402823466e+38
+			interpolator->SetTranslation(Vector3(NIF_NO_VALUE, NIF_NO_VALUE, NIF_NO_VALUE));
+			interpolator->SetRotation(Quaternion(NIF_NO_VALUE, NIF_NO_VALUE, NIF_NO_VALUE, NIF_NO_VALUE));
+			interpolator->SetScale(NIF_NO_VALUE);
+		}
 
 		controller->SetInterpolator(interpolator.operator->());
 		avObj->AddController(StaticCast<NiTimeController>(controller));

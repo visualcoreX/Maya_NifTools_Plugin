@@ -382,7 +382,7 @@ MStatus NifTranslator::writer(const MFileObject& file, const MString& optionsStr
 	MGlobal::displayInfo(rawName);
 	MGlobal::displayInfo(rawFullName);
 
-	if (export_type == "geometry") {
+	if (export_type == "geometry" || export_type == "nifanimation") {
 		if (translator_options->exportMaterialType == "standardmaterial") {
 			exporting_fixture = new NifDefaultExportingFixture(translator_data, translator_options, translator_utils);
 		}
@@ -409,7 +409,7 @@ MStatus NifTranslator::writer(const MFileObject& file, const MString& optionsStr
 			return status;
 		}
 
-		if (export_type == "geometry" && translator_options->exportMaterialType == "skyrimmaterial") {
+		if ((export_type == "geometry" || export_type == "nifanimation") && translator_options->exportMaterialType == "skyrimmaterial") {
 			std::string resaveError;
 			if (!ResaveWithNifly(file, resaveError)) {
 				MGlobal::displayWarning(MString(resaveError.c_str()));
