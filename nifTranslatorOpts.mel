@@ -364,6 +364,10 @@ global proc int nifTranslatorOpts ( string $parent,
 					      -value 0
 						  -annotation "Used for automatically splitting apart a single mesh into multiple meshes for each body part by material assignment."
 						  expMorRenameCk;
+			checkBox -label "Bake animation (sample evaluated transforms per frame)"
+					      -value 0
+						  -annotation "Samples each node's resolved local transform on every frame instead of reading anim curves directly. Captures IK, constraints and expressions, at the cost of one key per frame (larger files). Leave off for hand-keyed rigs."
+						  bakeAnimationCk;
 			setParent exportColumnLayout;
 			rowLayout -numberOfColumns 2
 					  -columnWidth2 220 50
@@ -621,6 +625,13 @@ global proc int nifTranslatorOpts ( string $parent,
 						checkBox -edit -value false expMorRenameCk;
 					}
 				}
+				if ($optionBreakDown[0] == "bakeAnimation") {
+					if ($optionBreakDown[1] == "1" ) {
+						checkBox -edit -value true bakeAnimationCk;
+					} else {
+						checkBox -edit -value false bakeAnimationCk;
+					}
+				}
 				if ($optionBreakDown[0] == "importSkelComb") {
 					if ($optionBreakDown[1] == "1" ) {
 						checkBox -edit -value true impSkelCombCk;
@@ -865,6 +876,9 @@ global proc int nifTranslatorOpts ( string $parent,
 		
 		$ckVal = `checkBox -query -value expMorRenameCk`;
 		$currentOptions = $currentOptions + "exportMorRename=" + $ckVal + ";";
+
+		$ckVal = `checkBox -query -value bakeAnimationCk`;
+		$currentOptions = $currentOptions + "bakeAnimation=" + $ckVal + ";";
 
 		$ckVal = `checkBox -query -value expFlatenedSkeletonCk`;
 		$currentOptions = $currentOptions + "exportFlatenedSkeleton=" + $ckVal + ";";

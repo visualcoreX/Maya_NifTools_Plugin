@@ -1,5 +1,15 @@
 #include "include/Exporters/NifKFAnimationExporter.h"
 
+// Decompose a node's LOCAL matrix (relative to parent) into the pieces
+// NiTransformData stores. Reading the "matrix" plug (not node.transformation())
+// keeps jointOrient/rotateAxis, i.e. the true local transform NIF expects.
+static void DecomposeLocal(const MMatrix& local, MVector& t, MQuaternion& q, double s[3]) {
+	MTransformationMatrix x(local);
+	t = x.getTranslation(MSpace::kTransform);
+	q = x.rotation();                 // quaternion, avoids euler-order issues
+	x.getScale(s, MSpace::kTransform);
+}
+
 NifKFAnimationExporter::NifKFAnimationExporter() {
 
 }
@@ -641,7 +651,121 @@ NiTransformInterpolatorRef NifKFAnimationExporter::BuildTransformInterpolator(MO
 	return transform_interpolator;
 }
 
-void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller_sequence, MObject object ) {
+// Bake a node's EVALUATED local animation into a NiTransformInterpolator by sampling
+// every frame in [startTime, stopTime]. Unlike BuildTransformInterpolator (which reads
+// MFnAnimCurve keys and only sees DIRECTLY keyed channels), this captures the resolved
+// transform, so IK / constraints / expressions export correctly.
+//
+// "Out of sight": viewport refresh is suspended and the current frame is restored, so
+// the user never sees the scrub and the scene is byte-for-byte unchanged afterwards.
+
+void NifKFAnimationExporter::BakeAllTransforms(
+	const std::vector<MObject>& nodes,
+	const std::vector<NiTransformInterpolatorRef>& interps,
+	float startTime, float stopTime) {
+
+	const size_t n = nodes.size();
+
+	// Pre-resolve each node's local "matrix" plug once (findPlug isn't free).
+	std::vector<MPlug> matrix_plugs(n);
+	std::vector<vector<Key<Vector3>>>    tKeys(n);
+	std::vector<vector<Key<Quaternion>>> rKeys(n);
+	std::vector<vector<Key<float>>>      sKeys(n);
+	for (size_t i = 0; i < n; ++i) {
+		MFnDependencyNode dn(nodes[i]);
+		matrix_plugs[i] = dn.findPlug("matrix", false);
+	}
+
+	const MTime::Unit unit = MTime::uiUnit();
+
+	// Convert incoming seconds -> integer frames.
+	int frame_start = (int)MTime(double(startTime), MTime::kSeconds).asUnits(unit);
+	int frame_stop = (int)MTime(double(stopTime), MTime::kSeconds).asUnits(unit);
+
+	// The caller's range can be garbage when nodes have no anim curves (IK/constraints):
+	// GetAnimation*Time() returns FLT_MAX/FLT_MIN, which casts to INT_MIN/huge values.
+	// Self-heal here by falling back to the scene playback range, so this method is
+	// correct regardless of what the caller passed.
+	bool validRange = (frame_start <= frame_stop)
+		&& (frame_start > -1000000 && frame_start < 1000000)
+		&& (frame_stop > -1000000 && frame_stop < 1000000);
+
+	if (!validRange) {
+		double pbStart = 0.0, pbEnd = 0.0;
+		MGlobal::executeCommand("playbackOptions -q -ast", pbStart); // animation start (frames)
+		MGlobal::executeCommand("playbackOptions -q -aet", pbEnd);   // animation end   (frames)
+		frame_start = (int)pbStart;
+		frame_stop = (int)pbEnd;
+		//MGlobal::displayInfo(MString("xray-bake: caller range invalid, using playback ")
+		//	+ frame_start + " .. " + frame_stop);
+	}
+
+	// MGlobal::displayInfo(MString("xray-bake: frames ") + frame_start + " .. " + frame_stop);
+
+	// Final safety net only (should be valid now). Don't silently abort with empty data.
+	if (frame_stop < frame_start) {
+		MGlobal::displayWarning("xray-bake: still-invalid frame range, baking single frame");
+		frame_stop = frame_start; // bake at least one key so NiTransformData is never empty
+	}
+
+	// --- enter "out of sight" mode ONCE (outside both loops) ---
+	const MTime saved_time = MAnimControl::currentTime();
+	MGlobal::executeCommand("refresh -suspend true");
+
+	// OUTER loop = frames: exactly one DG evaluation per frame (the expensive part).
+	// INNER loop = nodes: cheap plug reads, no extra scene re-evaluation.
+	for (int frame = frame_start; frame <= frame_stop; ++frame) {
+		const MTime t((double)frame, unit);
+		MAnimControl::setCurrentTime(t);
+		const float key_time = (float)t.asUnits(MTime::kSeconds);
+
+		for (size_t i = 0; i < n; ++i) {
+			MObject mo = matrix_plugs[i].asMObject();
+			MMatrix local = MFnMatrixData(mo).matrix();
+
+			MTransformationMatrix x(local);
+			MVector tr = x.getTranslation(MSpace::kTransform);
+			MQuaternion q = x.rotation();
+			double sc[3]; x.getScale(sc, MSpace::kTransform);
+
+			Key<Vector3> tk; tk.time = key_time;
+			tk.data.x = (float)tr.x; tk.data.y = (float)tr.y; tk.data.z = (float)tr.z;
+			tKeys[i].push_back(tk);
+
+			Key<Quaternion> rk; rk.time = key_time;
+			rk.data.w = (float)q.w; rk.data.x = (float)q.x; rk.data.y = (float)q.y; rk.data.z = (float)q.z;
+			rKeys[i].push_back(rk);
+
+			Key<float> sk; sk.time = key_time;
+			sk.data = (float)pow(sc[0] * sc[1] * sc[2], 1.0 / 3.0);
+			sKeys[i].push_back(sk);
+		}
+	}
+
+	// --- leave "out of sight" mode ONCE ---
+	MGlobal::executeCommand("refresh -suspend false");
+	MAnimControl::setCurrentTime(saved_time);
+
+	// Commit collected keys into each interpolator's NiTransformData.
+	const float NIF_NO_VALUE = -FLT_MAX;
+	for (size_t i = 0; i < n; ++i) {
+		interps[i]->SetTranslation(Vector3(NIF_NO_VALUE, NIF_NO_VALUE, NIF_NO_VALUE));
+		interps[i]->SetRotation(Quaternion(NIF_NO_VALUE, NIF_NO_VALUE, NIF_NO_VALUE, NIF_NO_VALUE));
+		interps[i]->SetScale(NIF_NO_VALUE);
+
+		NiTransformDataRef data = DynamicCast<NiTransformData>(NiTransformData::Create());
+		interps[i]->SetData(data);
+		data->SetTranslateType(KeyType::LINEAR_KEY);
+		data->SetTranslateKeys(tKeys[i]);
+		data->SetRotateType(KeyType::LINEAR_KEY);
+		data->SetQuatRotateKeys(rKeys[i]);
+		data->SetScaleType(KeyType::LINEAR_KEY);
+		data->SetScaleKeys(sKeys[i]);
+	}
+}
+
+void NifKFAnimationExporter::ExportAnimation(NiControllerSequenceRef controller_sequence, MObject object,
+	NiTransformInterpolatorRef* outBakedInterp, MObject* outBakedObject) {
 	string interpolator_type = "NiTransformInterpolator";
 
 	MFnTransform node(object);
@@ -824,8 +948,25 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 	}
 
 	if (interpolator_type == "NiTransformInterpolator") {
-		// Factored out so embedded-NIF animation can reuse the exact same sampling.
-		NiTransformInterpolatorRef transform_interpolator = BuildTransformInterpolator(object);
+		// Decide per node: bake (capture IK/constraints) vs read curves directly (sparse keys).
+		// Per-node attribute overrides the global option; default keeps current behaviour.
+		bool bake = this->translatorOptions->bakeAnimation;
+		MPlug bake_plug = node.findPlug("bakeAnimation");
+		if (!bake_plug.isNull()) bake = bake_plug.asBool();
+
+		NiTransformInterpolatorRef transform_interpolator;
+		if (bake && outBakedInterp != NULL) {
+			// Deferred bake: create an EMPTY interpolator now, hand it back, and let the
+			// caller fill keys for ALL nodes in one timeline pass. Avoids stepping the
+			// timeline once per node (the cause of slow multi-bone exports).
+			transform_interpolator =
+				DynamicCast<NiTransformInterpolator>(NiTransformInterpolator::Create());
+			*outBakedInterp = transform_interpolator;
+			*outBakedObject = object;
+		}
+		else {
+			transform_interpolator = BuildTransformInterpolator(object);
+		}
 		interpolator = DynamicCast<NiInterpolator>(transform_interpolator);
 	}
 	else  if (interpolator_type == "NiBSplineCompTransformInterpolator") {
@@ -1572,12 +1713,21 @@ float NifKFAnimationExporter::GetAnimationStartTime() {
 	}
 
 	MFnAnimCurve animation_curve;
-	for(int i = 0; i < animation_curves.length(); i++) {
+	for (int i = 0; i < animation_curves.length(); i++) {
 		animation_curve.setObject(animation_curves[i]);
-		
-		if(animation_curve.numKeys() > 0 && animation_curve.time(0).asUnits(MTime::kSeconds) < start_time) {
+
+		if (animation_curve.numKeys() > 0 && animation_curve.time(0).asUnits(MTime::kSeconds) < start_time) {
 			start_time = animation_curve.time(0).asUnits(MTime::kSeconds);
 		}
+	}
+
+	// No anim curves found (e.g. IK/constraint-driven rig): start_time is still the
+	// FLT_MAX sentinel. Fall back to the scene's animation start so callers never get
+	// garbage. This removes the need for range self-heal downstream.
+	if (start_time == FLT_MAX) {
+		double pbStart = 0.0;
+		MGlobal::executeCommand("playbackOptions -q -ast", pbStart); // animation start (frames)
+		start_time = (float)MTime(pbStart, MTime::uiUnit()).asUnits(MTime::kSeconds);
 	}
 
 	return start_time;
@@ -1585,7 +1735,7 @@ float NifKFAnimationExporter::GetAnimationStartTime() {
 
 
 float NifKFAnimationExporter::GetAnimationEndTime() {
-	float end_time = FLT_MIN;
+	float end_time = -FLT_MAX; // FLT_MIN is the smallest POSITIVE float - wrong sentinel for a maximum
 
 	MPlugArray animated_plugs;
 	MObjectArray animation_curves;
@@ -1615,29 +1765,23 @@ float NifKFAnimationExporter::GetAnimationEndTime() {
 					MAnimUtil::findAnimation(animated_plugs[i], animation_curves);
 			}
 		}
-
-		if(MAnimUtil::isAnimated(iterator.currentItem())) {
-			animated_plugs.clear();
-			MAnimUtil::findAnimatedPlugs(iterator.currentItem(), animated_plugs);
-		}
-
-		for(int i = 0; i < animated_plugs.length(); i++) {
-			MString partial_name = animated_plugs[i].partialName();
-			if(partial_name == "rx" || partial_name == "ry" || partial_name == "rz" ||
-				partial_name == "tx" || partial_name == "ty" || partial_name == "tz" ||
-				partial_name == "sx" || partial_name == "sy" || partial_name == "sz") {
-					MAnimUtil::findAnimation(animated_plugs[i], animation_curves);
-			}
-		}
 	}
 
 	MFnAnimCurve animation_curve;
-	for(int i = 0; i < animation_curves.length(); i++) {
+	for (int i = 0; i < animation_curves.length(); i++) {
 		animation_curve.setObject(animation_curves[i]);
 
-		if(animation_curve.numKeys() > 0 && animation_curve.time(animation_curve.numKeys() - 1).asUnits(MTime::kSeconds) > end_time) {
+		if (animation_curve.numKeys() > 0 && animation_curve.time(animation_curve.numKeys() - 1).asUnits(MTime::kSeconds) > end_time) {
 			end_time = animation_curve.time(animation_curve.numKeys() - 1).asUnits(MTime::kSeconds);
 		}
+	}
+
+	// No anim curves found: end_time is still the -FLT_MAX sentinel. Fall back to the
+	// scene's animation end so baked (IK/constraint) rigs get a real range.
+	if (end_time == -FLT_MAX) {
+		double pbEnd = 0.0;
+		MGlobal::executeCommand("playbackOptions -q -aet", pbEnd); // animation end (frames)
+		end_time = (float)MTime(pbEnd, MTime::uiUnit()).asUnits(MTime::kSeconds);
 	}
 
 	return end_time;

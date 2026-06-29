@@ -28,7 +28,6 @@
 #include <maya/MVector.h>
 #include <maya/MFnAnimCurve.h>
 #include <maya/MAnimUtil.h>
-#include <maya/MItMeshPolygon.h>
 #include <maya/MItMeshVertex.h>
 
 #include <string> 
@@ -131,6 +130,8 @@ public:
 	string exportType; //this tells the exporter what to export from the scene: geometry or animation
 
 	int numberOfKeysToSample; //the default control points for some interpolators such as splines
+
+	bool bakeAnimation = false; // when true, sample the EVALUATED local transform per frame (captures IK/constraints) instead of reading anim curves directly
 
 	string animationTarget; // the name of the target of the kf file or controller sequence
 	string animationName; //the name of the animation stored in the kf file or the controlelr sequence

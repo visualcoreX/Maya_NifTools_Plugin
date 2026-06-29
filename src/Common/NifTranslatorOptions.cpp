@@ -20,6 +20,7 @@ NifTranslatorOptions::NifTranslatorOptions()
 	this->exportBonesPerSkinPartition = 0;
 	this->exportMorrowindRename = false;
 	this->texturePathMode = PATH_MODE_AUTO;
+	this->bakeAnimation = false; // default: read anim curves directly (sparse, exact keys)
 }
 
 
@@ -43,6 +44,7 @@ void NifTranslatorOptions::Reset()
 	this->exportTangentSpace = "";
 	this->exportMorrowindRename = false;
 	this->texturePathMode = PATH_MODE_AUTO;
+	this->bakeAnimation = false; // keep in sync with the constructor
 }
 
 NifTranslatorOptions::~NifTranslatorOptions()
@@ -429,18 +431,6 @@ void NifTranslatorOptions::ParseOptionsString(const MString& optionsString)
 			//out << "Import Collision: " << this->importCollision << endl;
 		}
 
-		if (tokens[0] == "importRootNode")
-		{
-			if (tokens[1] == "1")
-			{
-				this->importRootNode = true;
-			}
-			else
-			{
-				this->importRootNode = false;
-			}
-		}
-
 		if (tokens[0] == "importAnimation")
 		{
 			if (tokens[1] == "1")
@@ -451,6 +441,12 @@ void NifTranslatorOptions::ParseOptionsString(const MString& optionsString)
 			{
 				this->importAnimation = false;
 			}
+		}
+
+		// Bake evaluated transforms per frame (IK/constraints) vs. direct curve read.
+		if (tokens[0] == "bakeAnimation")
+		{
+			this->bakeAnimation = (tokens[1] == "1");
 		}
 	}
 }
@@ -477,6 +473,7 @@ std::string NifTranslatorOptions::asString(bool verbose /*= false */) const
 	out << "Texture path mode:   " << this->texturePathMode << endl;
 	out << "Texture path:   " << this->texturePath << endl;
 	out << "Texture prefix:   " << this->texturePathPrefix << endl;
+	out << "Bake animation:   " << this->bakeAnimation << endl;
 
 	if (verbose == true)
 	{

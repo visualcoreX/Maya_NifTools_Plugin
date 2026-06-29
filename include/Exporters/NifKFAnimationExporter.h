@@ -46,6 +46,8 @@
 #include <maya/MFnAnimCurve.h>
 #include <maya/MAnimUtil.h>
 #include <maya/MItMeshVertex.h>
+#include <maya/MAnimControl.h>   // MAnimControl::currentTime / setCurrentTime for frame stepping
+#include <maya/MTransformationMatrix.h>  // decompose into translate/rotate/scale
 
 #include <string> 
 #include <vector>
@@ -131,7 +133,24 @@ public:
 	virtual NiTransformInterpolatorRef BuildTransformInterpolator(MObject object,
 		float* outStartTime = NULL, float* outStopTime = NULL);
 
-	virtual void ExportAnimation(NiControllerSequenceRef controller_sequence, MObject object);
+	// Frame-baked variant: samples the evaluated local transform (captures IK/constraints).
+	NiTransformInterpolatorRef BuildBakedTransformInterpolator(MObject object,
+		float startTime, float stopTime);
+
+	// Batch bake: ONE timeline pass for many nodes at once. Steps each frame a single
+	// time and samples every node, so the DG is evaluated (frames) times instead of
+	// (frames * nodes). Use this instead of calling BuildBakedTransformInterpolator
+	// per node when baking a whole skeleton.
+	void BakeAllTransforms(const std::vector<MObject>& nodes,
+		const std::vector<NiTransformInterpolatorRef>& interps,
+		float startTime, float stopTime);
+
+	// outBakedInterp/outBakedObject (optional): in bake mode the created interpolator is
+	// left EMPTY (no keys) and handed back here so the caller can fill every node's keys
+	// in a single timeline pass via BakeAllTransforms. NULL => behave exactly as before.
+	virtual void ExportAnimation(NiControllerSequenceRef controller_sequence, MObject object,
+		NiTransformInterpolatorRef* outBakedInterp = NULL, MObject* outBakedObject = NULL);
+
 	virtual float GetAnimationStartTime();
 
 	virtual float GetAnimationEndTime();

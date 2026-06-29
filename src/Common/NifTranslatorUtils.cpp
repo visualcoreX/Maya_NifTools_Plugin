@@ -105,15 +105,25 @@ MString NifTranslatorUtils::MakeMayaName( const string& nif_name, int duplicate_
 	return MString( newName.str().c_str() );
 }
 
-string NifTranslatorUtils::MakeNifName( const MString & mayaName )
+string NifTranslatorUtils::MakeNifName(const MString& mayaName)
 {
 	stringstream newName;
 	stringstream temp;
-	temp.setf ( ios_base::hex, ios_base::basefield );  // set hex as the basefield
+	temp.setf(ios_base::hex, ios_base::basefield);  // set hex as the basefield
 
 	string str = mayaName.asChar();
 
-	if ( this->translatorOptions->useNameMangling ) {
+	// Strip Maya namespace(s) before any further processing: "char:ns:Bip01" -> "Bip01".
+	// NIF/engine bone names must not contain ':' and all target references go through
+	// MakeNifName too, so doing it here keeps every exported name and reference in sync.
+	{
+		size_t ns_pos = str.rfind(':');
+		if (ns_pos != string::npos) {
+			str = str.substr(ns_pos + 1);
+		}
+	}
+
+	if (this->translatorOptions->useNameMangling) {
 		for ( unsigned int i = 0; i < str.size(); ++i ) {
 			if ( i + 4 < str.size() ) {
 				string sub = str.substr( i, 3);

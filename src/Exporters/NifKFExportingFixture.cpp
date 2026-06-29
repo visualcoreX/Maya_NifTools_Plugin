@@ -89,10 +89,41 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 
 		this->translatorData->animatedObjects.push_back(iterator.currentItem());
 	}
+
+	// TEMP diagnostic: list everything that passed the export filter, with full path
+	// (full path shows the namespace) and the bare NIF name it will get.
+	//MGlobal::displayInfo(MString("xray-bake: collected ") + (int)this->translatorData->animatedObjects.size() + " nodes");
+	//for (size_t d = 0; d < this->translatorData->animatedObjects.size(); ++d) {
+	//	MFnDagNode dbg(this->translatorData->animatedObjects[d]);
+	//	MGlobal::displayInfo(MString("  node: ") + dbg.fullPathName()
+	//		+ "  -> nif: " + this->translatorUtils->MakeNifName(dbg.name()).c_str());
+	//}
 	
 	NiControllerSequenceRef controller_sequence = DynamicCast<NiControllerSequence>(NiControllerSequence::Create());
-	controller_sequence->SetStartTime(this->animationExporter->GetAnimationStartTime());
-	controller_sequence->SetStopTime(this->animationExporter->GetAnimationEndTime());
+	// Curve-based range fails for baked nodes (IK/constraints have no anim curves, so
+	// GetAnimation*Time() return FLT_MAX / FLT_MIN -> garbage). Fall back to the scene
+	// playback range whenever the curve range looks invalid.
+	float animStart = this->animationExporter->GetAnimationStartTime();
+	float animStop = this->animationExporter->GetAnimationEndTime();
+	//MGlobal::displayInfo(MString("xray-bake: curve range ") + animStart + " .. " + animStop);
+
+	// A valid range needs start <= stop AND a real span (a zero/degenerate span means the
+	// scanners found no usable keys), with both ends inside a sane bound.
+	bool validCurveRange = (animStart < animStop)
+		&& (animStart > -1e6f && animStart < 1e6f)
+		&& (animStop > -1e6f && animStop < 1e6f);
+
+	if (!validCurveRange) {
+		double pbStart = 0.0, pbEnd = 0.0;
+		MGlobal::executeCommand("playbackOptions -q -ast", pbStart); // animation start (frames)
+		MGlobal::executeCommand("playbackOptions -q -aet", pbEnd);   // animation end   (frames)
+		animStart = (float)MTime(pbStart, MTime::uiUnit()).asUnits(MTime::kSeconds);
+		animStop = (float)MTime(pbEnd, MTime::uiUnit()).asUnits(MTime::kSeconds);
+		//MGlobal::displayInfo(MString("xray-bake: using playback range ") + animStart + " .. " + animStop);
+	}
+
+	controller_sequence->SetStartTime(animStart);
+	controller_sequence->SetStopTime(animStop);
 	controller_sequence->SetName(this->translatorOptions->animationName);
 	controller_sequence->SetTargetName(this->translatorOptions->animationTarget);
 	controller_sequence->SetFrequency(1.0);
@@ -183,10 +214,37 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 		
 	}
 
-	for(int i = 0; i < this->translatorData->animatedObjects.size(); i++) {
-		MFnDependencyNode node(this->translatorData->animatedObjects.at(i));
-		string name = node.name().asChar();
-		this->animationExporter->ExportAnimation(controller_sequence, this->translatorData->animatedObjects.at(i));
+	// Collect nodes whose keys must be baked, plus the empty interpolators created for
+	// them, so we can sample the whole skeleton in ONE timeline pass below.
+	vector<MObject> bakeObjects;
+	vector<NiTransformInterpolatorRef> bakeInterps;
+
+	for (int i = 0; i < this->translatorData->animatedObjects.size(); i++) {
+		MObject obj = this->translatorData->animatedObjects.at(i);
+
+		NiTransformInterpolatorRef bakedInterp = NULL;
+		MObject bakedObject;
+		// Pass the batch channel: ExportAnimation builds/binds the interpolator as usual,
+		// but for baked nodes it returns an EMPTY one instead of stepping the timeline.
+		this->animationExporter->ExportAnimation(controller_sequence, obj, &bakedInterp, &bakedObject);
+
+		if (bakedInterp != NULL) {
+			bakeObjects.push_back(bakedObject);
+			bakeInterps.push_back(bakedInterp);
+		}
+	}
+
+	// TEMP diagnostic: how many nodes entered the deferred-bake list, and the bake flag.
+	//MGlobal::displayInfo(MString("xray-bake: bakeObjects=") + (int)bakeObjects.size()
+	//	+ " globalBakeOption=" + (int)this->translatorOptions->bakeAnimation);
+
+	// Single timeline pass for every baked node: DG is evaluated (frames) times total,
+	// not (frames * nodes). This is what makes baked export fast for full skeletons.
+	if (!bakeObjects.empty()) {
+		this->animationExporter->BakeAllTransforms(
+			bakeObjects, bakeInterps,
+			controller_sequence->GetStartTime(),
+			controller_sequence->GetStopTime());
 	}
 
 	//out << "Writing Finished NIF file..." << endl;
