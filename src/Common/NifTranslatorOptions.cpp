@@ -431,6 +431,18 @@ void NifTranslatorOptions::ParseOptionsString(const MString& optionsString)
 			//out << "Import Collision: " << this->importCollision << endl;
 		}
 
+		if (tokens[0] == "importRootNode")
+		{
+			if (tokens[1] == "1")
+			{
+				this->importRootNode = true;
+			}
+			else
+			{
+				this->importRootNode = false;
+			}
+		}
+
 		if (tokens[0] == "importAnimation")
 		{
 			if (tokens[1] == "1")
