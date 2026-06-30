@@ -31,6 +31,7 @@ global int $gNifExportedObjectsValues[];
 global string $gNifExportedObjectsTypes[];
 global string $gNifExportType;
 global string $gNifCycleType;
+global string $gNifGamePreset;
 
 global proc int nifTranslatorOpts ( string $parent,
 				    string $action,
@@ -74,7 +75,10 @@ global proc int nifTranslatorOpts ( string $parent,
 	
 	if ($action == "post") {
 		setParent $parent;
-		frameLayout -label "Common" -marginWidth 20 -marginHeight 5 -collapsable true;
+		frameLayout -label "Common" -marginWidth 20 -marginHeight 5 -collapsable true
+			-collapseCommand "optionVar -intValue nifCommonCollapsed 1"
+			-expandCommand   "optionVar -intValue nifCommonCollapsed 0"
+			commonFrameLayout;
 			columnLayout commonColumnLayout;
 				checkBox -label "Use Name Mangling to Preserve Original Names" 
 						  -value 1
@@ -114,7 +118,10 @@ global proc int nifTranslatorOpts ( string $parent,
 						   -command "DeletePath()";
 				setParent commonColumnLayout;
 				setParent $parent;
-		frameLayout -label "Import" -marginWidth 20 -marginHeight 5 -collapsable true;
+		frameLayout -label "Import" -marginWidth 20 -marginHeight 5 -collapsable true
+			-collapseCommand "optionVar -intValue nifImportCollapsed 1"
+			-expandCommand   "optionVar -intValue nifImportCollapsed 0"
+			importFrameLayout;
 			columnLayout importColumnLayout;
 				checkBox -label "Attempt to Find Original Bind Pose" 
 					      -value 1
@@ -148,6 +155,24 @@ global proc int nifTranslatorOpts ( string $parent,
 					      -value 1
 						  -annotation "Imports animation embedded directly in the NIF (NiTransformController keyframe data) as Maya anim curves. Empty placeholder controllers are skipped. Disable to import geometry and skeleton only."
 						  impAnimationCk;
+				checkBox -label "Combine New Skins with Existing Skeleton" 
+					      -value 1
+						  -annotation "Tries to bind newly imported skin files to an already imported skeleton.  Only works for identical skeletons."
+						  impSkelCombCk;
+				checkBox -label "Import all nodes as joints" 
+					      -value 0
+						  -annotation "This imports all the nodes in a file as joints. Used to import files with skeleton only."
+						  impAllNodesAsJointsCk;
+				rowLayout -numberOfColumns 3
+					  -columnWidth3 110 60 150
+					  -columnAttach3 "left" "left" "left";
+					  text -label "Import nodes with" -align "left";
+					  textField -editable true -width 60
+					  			-text $defaultJointMatch
+								-annotation "NIF files do not mark their joints, so this provides a method to force known bones to import."
+								impJointMatchTx;
+					  text -label "  in their name as joints." -align "left";
+				setParent importColumnLayout;
 				rowLayout -numberOfColumns 2
 					  -columnWidth2 120 200
 					  -columnAttach2 "both" "both";
@@ -158,28 +183,13 @@ global proc int nifTranslatorOpts ( string $parent,
 						menuItem -label $importScaleLabels[$i];
 					  }
 				setParent importColumnLayout;
-				checkBox -label "Combine New Skins with Existing Skeleton" 
-					      -value 1
-						  -annotation "Tries to bind newly imported skin files to an already imported skeleton.  Only works for identical skeletons."
-						  impSkelCombCk;
-				checkBox -label "Import all nodes as joints" 
-					      -value 0
-						  -annotation "This imports all the nodes in a file as joints. Used to import files with skeleton only."
-						  impAllNodesAsJointsCk;
-				rowLayout -numberOfColumns 3
-					  -columnWidth3 90 50 120
-					  -columnAttach3 "both" "both" "both";
-					  text -label "Import nodes with";
-					  textField -editable true
-					  			-text $defaultJointMatch
-								-annotation "NIF files do not mark their joints, so this provides a method to force known bones to import."
-								impJointMatchTx;
-					  text -label "  in their name as joints.";
-				setParent importColumnLayout;
 		setParent $parent;
 		
-		frameLayout -label "Export" -marginWidth 20 -marginHeight 5 -collapsable true exportFrameLayout;
-			frameLayout -label "Outliner" -marginWidth 20 -marginHeight 5 -collapsable true overviewFrameLayout;
+		frameLayout -label "Export" -marginWidth 20 -marginHeight 5 -collapsable true
+			-collapseCommand "optionVar -intValue nifExportCollapsed 1"
+			-expandCommand   "optionVar -intValue nifExportCollapsed 0"
+			exportFrameLayout;
+			frameLayout -label "Outliner" -marginWidth 20 -marginHeight 5 -collapsable true -collapse true overviewFrameLayout;
 				global string $gNifExportedObjects[];
 				global int $gNifExportedObjectsValues[];
 				global string $gNifExportedObjectsTypes[];
@@ -288,170 +298,170 @@ global proc int nifTranslatorOpts ( string $parent,
 						  button -label "Select everything" -command "nifTranslatorSelectEverything" selectEverythingBt;
 			setParent exportFrameLayout;
 
+			// Export controls grouped into collapsible sections (visual only -
+			// every control keeps its original name, so query/post stay unchanged).
 			columnLayout exportColumnLayout;
 			global string $gNifExportType;
-			text -label "Export from the scene:" -font boldLabelFont -align "left";
-			// Dropdown (like Cycle Type) replacing the old Geometry/Animation radios.
-			optionMenu -label "Export mode" -changeCommand "nifExportModeChange(\"#1\")" exportModeMenu;
-				menuItem -label "NIF w/ Animation";
-				menuItem -label "NIF w/o Animation";
-				menuItem -label "KF";
-			setParent exportFrameLayout;
-
-			rowLayout -numberOfColumns 2
-					  -columnWidth2 120 70
-					  -columnAttach2 "both" "both";
-					  text -label "NIF Version:" -align "left";
-					  textField -editable true
-								-text $defaultVersion
-								-annotation "The NIF file version to export.  Examples - Morrowind: 4.0.0.2  CivIV: 20.0.0.4  Oblivion: 20.0.0.5"
-								nifVersion;
-			setParent exportColumnLayout;
-					  
-			rowLayout -numberOfColumns 4
-					  -columnWidth4 120 40 145 40
-					  -columnAttach4 "both" "both" "both" "both";
-					  text -label "Game Specific Version:";
-					  textField -editable true
-								-text $defaultUserVersion
-								-annotation "Optional game-specific version number extention.  Oblivion: 10 or 11  All Others: 0"
-								expUserVersionTx;
-					  text -label "Game Specific Version2:" -align "right";
-					  textField -editable true
-								-text $defaultUserVersion2
-								-annotation "Another optional game-specific version number extention.  Oblivion: 10 or 11  All Others: 0"
-								expUserVersion2Tx;
-			setParent exportColumnLayout;
-
 			global string $gNifCycleType;
-			optionMenu -label "Cycle Type" -changeCommand "nifCycleTypeChange(\"#1\")" cycleTypeMenu;
-				menuItem -label "CYCLE_CLAMP";
-				menuItem -label "CYCLE_LOOP";
-				menuItem -label "CYCLE_REVERSE";
-			setParent exportColumnLayout;
 
-			text -label "Nif material type:" -align "left";
-			radioCollection;
-				radioButton -label "Standard NiMaterial with standard NiTexture properties" -select nifTranslatorStandardMaterialRd;
-				radioButton -label "Standard NiMaterial with BSShaderTextureSet for fallout" nifTranslatorFalloutMaterialRd;
-				radioButton -label "BSShaderLightningSet material for Skyrim with BSShaderTextureSet" nifTranslatorSkyrimMaterialRd;
-			setParent exportColumnLayout;
+			// ---------- General ----------
+			frameLayout -label "General" -marginWidth 12 -marginHeight 5 -collapsable true exportGeneralFrame;
+				columnLayout exportGeneralCol;
+					rowLayout -numberOfColumns 2 -columnWidth2 120 200 -columnAttach2 "both" "both";
+						text -label "Game Preset:" -align "left" -font boldLabelFont;
+						optionMenu -label "" -changeCommand "nifApplyGamePreset(\"#1\")" gamePresetMenu;
+							menuItem -label "-- Select Game --";
+							menuItem -label "Morrowind";
+							menuItem -label "Oblivion";
+							menuItem -label "Fallout 3";
+							menuItem -label "Fallout New Vegas";
+							menuItem -label "Skyrim";
+							menuItem -label "Skyrim SE";
+							menuItem -label "Fallout 4";
+							menuItem -label "Civilization IV";
+					setParent exportGeneralCol;
 
-			text -label "Generate Tangent Space Data";
-			radioCollection;
-				radioButton -label "Don't generate tangent space data" -select nifTranslatorNoTangentSpaceDataRd;
-				radioButton -label "Generate oblivion specific tangent space data" nifTranslatorOblivionTangentSpaceDataRd;
-				radioButton -label "Generate fallout/skyrim specific tangent space data" nifTranslatorFalloutSkyrimTangentSpaceDataRd;
-			setParent exportColumnLayout;
-			
-			checkBox -label "Export Flatened Skeleton" 
-						-value 0
+					text -label "Export from the scene:" -font boldLabelFont -align "left";
+					optionMenu -label "Export mode" -changeCommand "nifExportModeChange(\"#1\")" exportModeMenu;
+						menuItem -label "NIF w/ Animation";
+						menuItem -label "NIF w/o Animation";
+						menuItem -label "KF";
+					setParent exportGeneralCol;
+
+					rowLayout -numberOfColumns 2 -columnWidth2 120 70 -columnAttach2 "both" "both";
+						text -label "NIF Version:" -align "left";
+						textField -editable true -text $defaultVersion
+							-changeCommand "nifOnExportOptionChanged"
+							-annotation "The NIF file version to export.  Examples - Morrowind: 4.0.0.2  CivIV: 20.0.0.4  Oblivion: 20.0.0.5"
+							nifVersion;
+					setParent exportGeneralCol;
+
+					rowLayout -numberOfColumns 4 -columnWidth4 120 40 145 40 -columnAttach4 "both" "both" "both" "both";
+						text -label "Game Specific Version:";
+						textField -editable true -text $defaultUserVersion
+							-changeCommand "nifOnExportOptionChanged"
+							-annotation "Optional game-specific version number extention.  Oblivion: 10 or 11  All Others: 0"
+							expUserVersionTx;
+						text -label "Game Specific Version2:" -align "right";
+						textField -editable true -text $defaultUserVersion2
+							-changeCommand "nifOnExportOptionChanged"
+							-annotation "Another optional game-specific version number extention.  Oblivion: 10 or 11  All Others: 0"
+							expUserVersion2Tx;
+					setParent exportGeneralCol;
+				setParent exportColumnLayout;
+
+			// ---------- Geometry ----------
+			frameLayout -label "Geometry" -marginWidth 12 -marginHeight 5 -collapsable true exportGeometryFrame;
+				columnLayout exportGeometryCol;
+					text -label "Nif material type:" -align "left";
+					radioCollection;
+						radioButton -label "Standard NiMaterial with standard NiTexture properties" -onCommand "nifOnExportOptionChanged" -select nifTranslatorStandardMaterialRd;
+						radioButton -label "Standard NiMaterial with BSShaderTextureSet for fallout" -onCommand "nifOnExportOptionChanged" nifTranslatorFalloutMaterialRd;
+						radioButton -label "BSShaderLightningSet material for Skyrim with BSShaderTextureSet" -onCommand "nifOnExportOptionChanged" nifTranslatorSkyrimMaterialRd;
+					setParent exportGeometryCol;
+
+					text -label "Generate Tangent Space Data";
+					radioCollection;
+						radioButton -label "Don't generate tangent space data" -onCommand "nifOnExportOptionChanged" -select nifTranslatorNoTangentSpaceDataRd;
+						radioButton -label "Generate oblivion specific tangent space data" -onCommand "nifOnExportOptionChanged" nifTranslatorOblivionTangentSpaceDataRd;
+						radioButton -label "Generate fallout/skyrim specific tangent space data" -onCommand "nifOnExportOptionChanged" nifTranslatorFalloutSkyrimTangentSpaceDataRd;
+					setParent exportGeometryCol;
+
+					checkBox -label "Export Flatened Skeleton" -value 0
+						-changeCommand "nifOnExportOptionChanged"
 						-annotation "This options flatens the entire hierarchy of the skeleton."
 						expFlatenedSkeletonCk;
-			checkBox -label "Export Scene Root as BSFadeNode" 
-						-value 0
+					checkBox -label "Export Scene Root as BSFadeNode" -value 0
+						-changeCommand "nifOnExportOptionChanged"
 						-annotation "This options changes the root of the nif file to be a bs fade node."
 						expBsFadeNodeRootCk;
-			checkBox -label "Export White Ambient if Texture is Present" 
-					      -value 1
-						  -annotation "Allows you to keep your ambient colors looking nice in Maya and convert them to white on export."
-						  expWhiteAmbientCk;
-			checkBox -label "Arrange Triangles in Strips" 
-					      -value 0
-						  -annotation "Exports NiTriStrips instead of NiTriShapes.  May cause problems in Morrowind CS."
-						  expTriStripsCk;
-			checkBox -label "Rename mesh chunks marked with materials with Morrowind body part names." 
-					      -value 0
-						  -annotation "Used for automatically splitting apart a single mesh into multiple meshes for each body part by material assignment."
-						  expMorRenameCk;
-			checkBox -label "Bake animation (sample evaluated transforms per frame)"
-					      -value 0
-						  -annotation "Samples each node's resolved local transform on every frame instead of reading anim curves directly. Captures IK, constraints and expressions, at the cost of one key per frame (larger files). Leave off for hand-keyed rigs."
-						  bakeAnimationCk;
-			setParent exportColumnLayout;
-			rowLayout -numberOfColumns 2
-					  -columnWidth2 220 50
-					  -columnAttach2 "both" "both";
-					  text -label "Maximum Number of Bones per Skin Partition:";
-					  textField -editable true
-						  -text $defaultBonesPerPart
-						  -annotation "CivIV No Shader: 4  CivIV FX Shader: 16  Oblivion: 20  Morrowind: 0"
-						  expPartBonesTx;
-			setParent exportColumnLayout;
-			rowLayout -numberOfColumns 2
-					  -columnWidth2 220 50
-					  -columnAttach2 "both" "both";
-					  text -label "Remove from vertices bone weights bellow:" -align "left";
-					  textField -editable true
-						  -text $defaultExportMinimumVertexWeight
-						  -annotation "The minium amount of weight that a joint can have on a vertex in order to export the weight"
-						  minimumVertexWeightTx;
-			setParent exportColumnLayout;
-			rowLayout -numberOfColumns 4
-					  -columnWidth4 80 110 110 100
-					  -columnAttach4 "both" "both" "both" "both";
-					  text -label "Animation name:" -align "left";
-					  textField -editable true
-								-text "Forward"
-								-annotation "The name of the animation"
-								animationNameTx;
-					  text -label "Animation target:" -align "right";
-					  textField -editable true
-								-text "Bip01"
-								-annotation "The target of the animation"
-								animationTargetTx;
-			setParent exportColumnLayout;
-			rowLayout -numberOfColumns 2
-					  -columnWidth2 220 50
-					  -columnAttach2 "both" "both";
-					  text -label "Number of keys to sample from animations:" -align "left";
-					  textField -editable true
-					            -text $defaultNumberOfKeysToSample
-								-annotation "How many keys to extract from each individual object in the scene"
-								numberOfKeysToSampleTx;
-			setParent exportColumnLayout;
-			text -label "Texture Path Adjustment:"
-			     -width 150
-				 -annotation "Determines the way the texture file paths will be saved in the NIF file."
-				 -font boldLabelFont;
-			columnLayout pathLayout;
-				radioCollection;
-					radioButton -label "Automatic based on texture search path selections."
+					checkBox -label "Export White Ambient if Texture is Present" -value 1
+						-changeCommand "nifOnExportOptionChanged"
+						-annotation "Allows you to keep your ambient colors looking nice in Maya and convert them to white on export."
+						expWhiteAmbientCk;
+					checkBox -label "Arrange Triangles in Strips" -value 0
+						-changeCommand "nifOnExportOptionChanged"
+						-annotation "Exports NiTriStrips instead of NiTriShapes.  May cause problems in Morrowind CS."
+						expTriStripsCk;
+					checkBox -label "Rename mesh chunks marked with materials with Morrowind body part names." -value 0
+						-changeCommand "nifOnExportOptionChanged"
+						-annotation "Used for automatically splitting apart a single mesh into multiple meshes for each body part by material assignment."
+						expMorRenameCk;
+
+					rowLayout -numberOfColumns 2 -columnWidth2 240 60 -columnAttach2 "left" "left";
+						text -label "Maximum Number of Bones per Skin Partition:" -align "left";
+						textField -editable true -text $defaultBonesPerPart -width 60
+							-changeCommand "nifOnExportOptionChanged"
+							-annotation "CivIV No Shader: 4  CivIV FX Shader: 16  Oblivion: 20  Morrowind: 0"
+							expPartBonesTx;
+					setParent exportGeometryCol;
+
+					rowLayout -numberOfColumns 2 -columnWidth2 240 60 -columnAttach2 "left" "left";
+						text -label "Remove from vertices bone weights bellow:" -align "left";
+						textField -editable true -text $defaultExportMinimumVertexWeight -width 60
+							-annotation "The minium amount of weight that a joint can have on a vertex in order to export the weight"
+							minimumVertexWeightTx;
+					setParent exportGeometryCol;
+				setParent exportColumnLayout;
+
+			// ---------- Animation ----------
+			frameLayout -label "Animation" -marginWidth 12 -marginHeight 5 -collapsable true exportAnimationFrame;
+				columnLayout exportAnimationCol;
+					optionMenu -label "Cycle Type" -changeCommand "nifCycleTypeChange(\"#1\")" cycleTypeMenu;
+						menuItem -label "CYCLE_CLAMP";
+						menuItem -label "CYCLE_LOOP";
+						menuItem -label "CYCLE_REVERSE";
+					setParent exportAnimationCol;
+
+					checkBox -label "Bake animation (sample evaluated transforms per frame)" -value 0
+						-annotation "Samples each node's resolved local transform on every frame instead of reading anim curves directly. Captures IK, constraints and expressions, at the cost of one key per frame (larger files). Leave off for hand-keyed rigs."
+						bakeAnimationCk;
+
+					rowLayout -numberOfColumns 4 -columnWidth4 95 120 95 120 -columnAttach4 "left" "left" "left" "left";
+						text -label "Animation name:" -align "left";
+						textField -editable true -text "Forward" -width 120
+							-annotation "The name of the animation"
+							animationNameTx;
+						text -label "Animation target:" -align "left";
+						textField -editable true -text "Bip01" -width 120
+							-annotation "The target of the animation"
+							animationTargetTx;
+					setParent exportAnimationCol;
+
+					rowLayout -numberOfColumns 2 -columnWidth2 230 60 -columnAttach2 "left" "left";
+						text -label "Number of keys to sample from animations:" -align "left";
+						textField -editable true -text $defaultNumberOfKeysToSample -width 60
+							-annotation "How many keys to extract from each individual object in the scene"
+							numberOfKeysToSampleTx;
+					setParent exportAnimationCol;
+				setParent exportColumnLayout;
+
+			// ---------- Textures ----------
+			frameLayout -label "Textures" -marginWidth 12 -marginHeight 5 -collapsable true exportTexturesFrame;
+				columnLayout exportTexturesCol;
+					text -label "Texture Path Adjustment:" -width 150
+						-annotation "Determines the way the texture file paths will be saved in the NIF file."
+						-font boldLabelFont;
+					columnLayout pathLayout;
+						radioCollection;
+							radioButton -label "Automatic based on texture search path selections."
 								-annotation "If part of the path matches one of the texture search paths, a partial path will be exported.  Otherwise only the name will be exported."
-								-select
-								expPathAutoRd;
-					radioButton -label "Export file name only."
+								-select expPathAutoRd;
+							radioButton -label "Export file name only."
 								-annotation "Only the file name, no folders, will be exported."
 								expPathNameRd;
-					radioButton -label "Export full path."
+							radioButton -label "Export full path."
 								-annotation "The full path, including the drive letter and all folders, will be exported."
 								expPathFullRd;
-					radioButton -label "Prefix file name with the following:"
+							radioButton -label "Prefix file name with the following:"
 								-annotation "The following text will be added to the begining of all texture paths in the exported NIF file"
 								expPathPrefixRd;
-				setParent pathLayout;
-				textField -editable true
-					      -text $defaultPathPrefix
-						  -width 200
-						  -annotation "Text optionally added to the begining of all texture paths in the exported NIF file"
-				          expPathPrefixTx;
-			setParent exportColumnLayout;
-			
-			rowLayout -numberOfColumns 2
-					  -columnWidth2 120 200
-					  -columnAttach2 "both" "both";
-					  text -label "Game Preset:" -align "left" -font boldLabelFont;
-					  optionMenu -label "" -changeCommand "nifApplyGamePreset(\"#1\")" gamePresetMenu;
-						  menuItem -label "-- Select Game --";
-						  menuItem -label "Morrowind";
-						  menuItem -label "Oblivion";
-						  menuItem -label "Fallout 3";
-						  menuItem -label "Fallout New Vegas";
-						  menuItem -label "Skyrim";
-						  menuItem -label "Skyrim SE";
-						  menuItem -label "Fallout 4";
-						  menuItem -label "Civilization IV";
-			setParent exportColumnLayout;
+						setParent exportTexturesCol;
+						textField -editable true -text $defaultPathPrefix -width 200
+							-annotation "Text optionally added to the begining of all texture paths in the exported NIF file"
+							expPathPrefixTx;
+					setParent exportTexturesCol;
+				setParent exportColumnLayout;
 			
 		setParent $parent;
 		
@@ -688,8 +698,31 @@ global proc int nifTranslatorOpts ( string $parent,
 						checkBox -edit -value false impAllNodesAsJointsCk;
 					}
 				}
+				if ($optionBreakDown[0] == "gamePreset") {
+					global string $gNifGamePreset;
+					if ($optionBreakDown[1] == "") {
+						$gNifGamePreset = "-- Select Game --";
+					} else {
+						$gNifGamePreset = $optionBreakDown[1];
+					}
+					if (`optionMenu -exists gamePresetMenu`) {
+						optionMenu -edit -value $gNifGamePreset gamePresetMenu;
+					}
+				}
 			}
 		}
+
+		// Restore the collapsed/expanded state of Common, Import and Export from last session.
+		if (`optionVar -exists nifCommonCollapsed` && `frameLayout -exists commonFrameLayout`) {
+			frameLayout -edit -collapse (`optionVar -query nifCommonCollapsed`) commonFrameLayout;
+		}
+		if (`optionVar -exists nifImportCollapsed` && `frameLayout -exists importFrameLayout`) {
+			frameLayout -edit -collapse (`optionVar -query nifImportCollapsed`) importFrameLayout;
+		}
+		if (`optionVar -exists nifExportCollapsed` && `frameLayout -exists exportFrameLayout`) {
+			frameLayout -edit -collapse (`optionVar -query nifExportCollapsed`) exportFrameLayout;
+		}
+
 		$bResult = 1;
 	
 	} else if ($action == "query") {
@@ -699,7 +732,9 @@ global proc int nifTranslatorOpts ( string $parent,
 			$currentOptions = $currentOptions + "texturePath=";
 		}
 		for( $i = 0; $i < size($paths); $i++ ) {
-			$currentOptions = $currentOptions + $paths[$i];
+			// Final guard: no backslashes in the saved option string, ever.
+			string $p = substituteAllString($paths[$i], "\\", "/");
+			$currentOptions = $currentOptions + $p;
 			if ( $i != size($paths) - 1 ) {
 				$currentOptions = $currentOptions + "|";
 			}
@@ -784,6 +819,12 @@ global proc int nifTranslatorOpts ( string $parent,
 
 		global string $gNifExportType;
 		$currentOptions = $currentOptions + "exportType=" + $gNifExportType + ";";
+		
+		global string $gNifGamePreset;
+		if ($gNifGamePreset == "") {
+			$gNifGamePreset = "-- Select Game --";
+		}
+		$currentOptions = $currentOptions + "gamePreset=" + $gNifGamePreset + ";";
 
 		global string $gNifCycleType;
 		if ($gNifCycleType == "")
@@ -927,6 +968,9 @@ global proc int nifTranslatorOpts ( string $parent,
 
 global proc AddPath() {
 	string $texturePath = `textField -query -text nifTxPath`;
+	// Backslashes (e.g. E:\resources) break MEL string escaping when userPrefs.mel
+	// is re-read (\r, \t ...). Force forward slashes before the path enters the list.
+	$texturePath = substituteAllString($texturePath, "\\", "/");
 	if ($texturePath != "") {
 		string $existingItems[] = `textScrollList -query -allItems nifPathList`;
 		for( $i = 0; $i < size($existingItems); $i++ ) {
@@ -1269,11 +1313,32 @@ global proc int hasValidNifName(string $name) {
 // This procedure is called when the 'Open' button of the dialog is clicked.
 // The procedure recieves the name of the file and it's extension
 global proc int onOk(string $dirpath, string $type) {
+	// Normalize separators so a browsed Windows path can't inject backslash escapes.
+	$dirpath = substituteAllString($dirpath, "\\", "/");
 	textField -edit -text $dirpath nifTxPath;
 	return true;
-}	
+}
+
+// Reset the Game Preset dropdown back to "-- Select Game --". Called whenever the
+// user manually changes any export option, since the preset no longer matches.
+global proc nifResetGamePreset() {
+	global string $gNifGamePreset;
+	$gNifGamePreset = "-- Select Game --";
+	if (`optionMenu -exists gamePresetMenu`) {
+		optionMenu -edit -value "-- Select Game --" gamePresetMenu;
+	}
+}
+
+// Hook attached to every manual control's change/command callback.
+global proc nifOnExportOptionChanged() {
+	nifResetGamePreset();
+}
 
 global proc nifApplyGamePreset(string $game) {
+    // Remember the chosen preset so it can be restored when the window reopens.
+    global string $gNifGamePreset;
+    $gNifGamePreset = $game;
+
     if ($game == "Morrowind") {
         textField -edit -text "4.0.0.2" nifVersion;
         textField -edit -text "0" expUserVersionTx;
