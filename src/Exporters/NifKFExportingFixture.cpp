@@ -11,6 +11,45 @@ NifKFExportingFixture::NifKFExportingFixture( NifTranslatorOptionsRef translator
 	this->animationExporter = new NifKFAnimationExporter(translatorOptions, translatorData, translatorUtils);
 }
 
+// Create "start"/"end" bookmarks at the playback range bounds, only if missing.
+// Uses Maya's own bookmark Python API so the timeSliderBookmarkManager is created
+// correctly and the bookmarks actually render on the timeline.
+static void EnsureRangeBookmarks() {
+	// Make sure the bookmark node type is registered first.
+	int loaded = 0;
+	MGlobal::executeCommand("pluginInfo -q -loaded \"timeSliderBookmark\"", loaded);
+	if (!loaded) {
+		MGlobal::executeCommand("loadPlugin -quiet \"timeSliderBookmark\"");
+	}
+
+	double pbMin = 0.0, pbMax = 0.0;
+	MGlobal::executeCommand("playbackOptions -q -min", pbMin);
+	MGlobal::executeCommand("playbackOptions -q -max", pbMax);
+
+	// Build a Python snippet: import Maya's bookmark module (name varies by version,
+	// so try the known ones), then create "start"/"end" only if absent. createBookmark
+	// in this module builds the manager + connection + timeline display for us.
+	MString py;
+	py += "import maya.cmds as cmds\n";
+	py += "import maya.plugin.timeSliderBookmark.timeSliderBookmark as tsb\n";
+	py += "def _has(nm):\n";
+	py += "    for b in (cmds.ls(type='timeSliderBookmark') or []):\n";
+	py += "        try:\n";
+	py += "            if cmds.getAttr(b + '.name') == nm:\n";
+	py += "                return True\n";
+	py += "        except Exception:\n";
+	py += "            pass\n";
+	py += "    return False\n";
+	py += "def _mk(nm, f):\n";
+	py += "    if not _has(nm):\n";
+	py += "        # Maya's own API: builds the manager + timeline display for us.\n";
+	py += "        tsb.createBookmark(name=nm, start=f, stop=f)\n";
+	py += MString("_mk('start', ") + pbMin + ")\n";
+	py += MString("_mk('end', ") + pbMax + ")\n";
+
+	MGlobal::executePythonCommand(py);
+}
+
 void CreateTextKeyExtraData(NiControllerSequenceRef controllerSequence)
 {
 	NiTextKeyExtraData* textKeyExtraData = new NiTextKeyExtraData();
@@ -113,13 +152,16 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 		&& (animStart > -1e6f && animStart < 1e6f)
 		&& (animStop > -1e6f && animStop < 1e6f);
 
-	if (!validCurveRange) {
+	// For baking, prefer the visible PLAYBACK range (-min/-max, set by the timeline
+	// sliders) rather than the full animation range (-ast/-aet).
+	bool bakeOn = this->translatorOptions->bakeAnimation;
+	if (bakeOn || !validCurveRange) {
 		double pbStart = 0.0, pbEnd = 0.0;
-		MGlobal::executeCommand("playbackOptions -q -ast", pbStart); // animation start (frames)
-		MGlobal::executeCommand("playbackOptions -q -aet", pbEnd);   // animation end   (frames)
+		MGlobal::executeCommand("playbackOptions -q -min", pbStart); // playback start (frames)
+		MGlobal::executeCommand("playbackOptions -q -max", pbEnd);   // playback end   (frames)
 		animStart = (float)MTime(pbStart, MTime::uiUnit()).asUnits(MTime::kSeconds);
 		animStop = (float)MTime(pbEnd, MTime::uiUnit()).asUnits(MTime::kSeconds);
-		//MGlobal::displayInfo(MString("xray-bake: using playback range ") + animStart + " .. " + animStop);
+	//	MGlobal::displayInfo(MString("xray-bake: using playback range ") + animStart + " .. " + animStop);
 	}
 
 	controller_sequence->SetStartTime(animStart);
@@ -128,6 +170,8 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 	controller_sequence->SetTargetName(this->translatorOptions->animationTarget);
 	controller_sequence->SetFrequency(1.0);
 	controller_sequence->SetCycleType(translatorOptions->cycleType);
+
+	EnsureRangeBookmarks();
 
 	CreateTextKeyExtraData(controller_sequence);
 	

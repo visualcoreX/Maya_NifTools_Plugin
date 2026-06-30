@@ -692,12 +692,12 @@ void NifKFAnimationExporter::BakeAllTransforms(
 
 	if (!validRange) {
 		double pbStart = 0.0, pbEnd = 0.0;
-		MGlobal::executeCommand("playbackOptions -q -ast", pbStart); // animation start (frames)
-		MGlobal::executeCommand("playbackOptions -q -aet", pbEnd);   // animation end   (frames)
+		MGlobal::executeCommand("playbackOptions -q -min", pbStart); // playback start (frames)
+		MGlobal::executeCommand("playbackOptions -q -max", pbEnd);   // playback end   (frames)
 		frame_start = (int)pbStart;
 		frame_stop = (int)pbEnd;
-		//MGlobal::displayInfo(MString("xray-bake: caller range invalid, using playback ")
-		//	+ frame_start + " .. " + frame_stop);
+	//	MGlobal::displayInfo(MString("xray-bake: caller range invalid, using playback ")
+	//		+ frame_start + " .. " + frame_stop);
 	}
 
 	// MGlobal::displayInfo(MString("xray-bake: frames ") + frame_start + " .. " + frame_stop);
