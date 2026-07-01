@@ -117,7 +117,7 @@ global proc int nifTranslatorOpts ( string $parent,
 						   -width 50
 						   -command "DeletePath()";
 				setParent commonColumnLayout;
-				setParent $parent;
+			setParent $parent;
 		frameLayout -label "Import" -marginWidth 20 -marginHeight 5 -collapsable true
 			-collapseCommand "optionVar -intValue nifImportCollapsed 1"
 			-expandCommand   "optionVar -intValue nifImportCollapsed 0"
@@ -417,7 +417,12 @@ global proc int nifTranslatorOpts ( string $parent,
 						-annotation "Samples each node's resolved local transform on every frame instead of reading anim curves directly. Captures IK, constraints and expressions, at the cost of one key per frame (larger files). Leave off for hand-keyed rigs."
 						bakeAnimationCk;
 
-					rowLayout -numberOfColumns 4 -columnWidth4 95 120 95 120 -columnAttach4 "left" "left" "left" "left";
+					rowLayout -numberOfColumns 5 -columnWidth5 20 95 120 95 120 -columnAttach5 "left" "left" "left" "left" "left";
+						checkBox -label ""
+							-value 1
+							-changeCommand "nifToggleAnimNameField"
+							-annotation "Checked: the KF animation name comes from the field to the right. Unchecked: it is taken from the export file name with the weapon/movement prefix (1hp, 2hr, mt, ...) stripped. If no known prefix matches, the full file name is used and a warning is shown."
+							useManualAnimNameCk;
 						text -label "Animation name:" -align "left";
 						textField -editable true -text "Forward" -width 120
 							-annotation "The name of the animation"
@@ -642,6 +647,13 @@ global proc int nifTranslatorOpts ( string $parent,
 						checkBox -edit -value false bakeAnimationCk;
 					}
 				}
+				if ($optionBreakDown[0] == "useManualAnimName") {
+					if ($optionBreakDown[1] == "1" ) {
+						checkBox -edit -value true useManualAnimNameCk;
+					} else {
+						checkBox -edit -value false useManualAnimNameCk;
+					}
+				}
 				if ($optionBreakDown[0] == "importSkelComb") {
 					if ($optionBreakDown[1] == "1" ) {
 						checkBox -edit -value true impSkelCombCk;
@@ -721,6 +733,10 @@ global proc int nifTranslatorOpts ( string $parent,
 		}
 		if (`optionVar -exists nifExportCollapsed` && `frameLayout -exists exportFrameLayout`) {
 			frameLayout -edit -collapse (`optionVar -query nifExportCollapsed`) exportFrameLayout;
+		}
+		// Apply the manual-name checkbox state to the name field on open.
+		if (`checkBox -exists useManualAnimNameCk` && `textField -exists animationNameTx`) {
+			nifToggleAnimNameField();
 		}
 
 		$bResult = 1;
@@ -920,6 +936,9 @@ global proc int nifTranslatorOpts ( string $parent,
 
 		$ckVal = `checkBox -query -value bakeAnimationCk`;
 		$currentOptions = $currentOptions + "bakeAnimation=" + $ckVal + ";";
+
+		$ckVal = `checkBox -query -value useManualAnimNameCk`;
+		$currentOptions = $currentOptions + "useManualAnimName=" + $ckVal + ";";
 
 		$ckVal = `checkBox -query -value expFlatenedSkeletonCk`;
 		$currentOptions = $currentOptions + "exportFlatenedSkeleton=" + $ckVal + ";";
@@ -1301,6 +1320,13 @@ global proc nifExportModeChange(string $label) {
 global proc nifCycleTypeChange(string $value) {
 	global string $gNifCycleType;
 	$gNifCycleType = $value;
+}
+
+// Enable/disable the Animation name field based on the "use manual name" checkbox.
+// When unchecked, the name is auto-derived on export, so the field is locked.
+global proc nifToggleAnimNameField() {
+	int $manual = `checkBox -query -value useManualAnimNameCk`;
+	textField -edit -editable $manual animationNameTx;
 }
 
 global proc int hasValidNifName(string $name) {

@@ -133,6 +133,8 @@ public:
 
 	bool bakeAnimation = false; // when true, sample the EVALUATED local transform per frame (captures IK/constraints) instead of reading anim curves directly
 
+	bool useManualAnimName = true; // true = use the name field; false = auto-strip from filename
+
 	string animationTarget; // the name of the target of the kf file or controller sequence
 	string animationName; //the name of the animation stored in the kf file or the controlelr sequence
 

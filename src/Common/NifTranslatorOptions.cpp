@@ -21,6 +21,7 @@ NifTranslatorOptions::NifTranslatorOptions()
 	this->exportMorrowindRename = false;
 	this->texturePathMode = PATH_MODE_AUTO;
 	this->bakeAnimation = false; // default: read anim curves directly (sparse, exact keys)
+	this->useManualAnimName = true; // default: use the name field
 }
 
 
@@ -45,6 +46,7 @@ void NifTranslatorOptions::Reset()
 	this->exportMorrowindRename = false;
 	this->texturePathMode = PATH_MODE_AUTO;
 	this->bakeAnimation = false; // keep in sync with the constructor
+	this->useManualAnimName = true; // default: use the name field
 }
 
 NifTranslatorOptions::~NifTranslatorOptions()
@@ -460,6 +462,11 @@ void NifTranslatorOptions::ParseOptionsString(const MString& optionsString)
 		{
 			this->bakeAnimation = (tokens[1] == "1");
 		}
+
+		else if (tokens[0] == "useManualAnimName") 
+		{
+			this->useManualAnimName = (tokens[1] == "1");
+		}
 	}
 }
 
@@ -486,6 +493,7 @@ std::string NifTranslatorOptions::asString(bool verbose /*= false */) const
 	out << "Texture path:   " << this->texturePath << endl;
 	out << "Texture prefix:   " << this->texturePathPrefix << endl;
 	out << "Bake animation:   " << this->bakeAnimation << endl;
+
 
 	if (verbose == true)
 	{

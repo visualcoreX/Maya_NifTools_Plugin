@@ -94,6 +94,34 @@ void CreateTextKeyExtraData(NiControllerSequenceRef controllerSequence)
 	controllerSequence->SetTextKey(textKeyExtraData);
 }
 
+// Strip a leading FNV weapon/movement prefix, case-insensitively, and report whether
+// a prefix actually matched. "1hpAim" -> "Aim" (matched=true). Names with no known
+// prefix return unchanged with matched=false. Derived from a scan of ~2000 real .kf
+// names. NOTE: "1st" is excluded on purpose (it means 1st-person, not a weapon).
+static string StripWeaponPrefix(const string& name, bool& matched) {
+	static const char* prefixes[] = {
+		"1hp", "1hm", "2hr", "2ha", "2hh", "2hm", "2hl",
+		"h2h", "1gt", "1lm", "1md", "1hu", "mt"
+	};
+
+	auto lower = [](const string& s) {
+		string r = s;
+		for (char& c : r) c = (char)tolower((unsigned char)c);
+		return r;
+		};
+
+	string lname = lower(name);
+	for (const char* p : prefixes) {
+		string pref = p; // lowercase already
+		if (lname.size() > pref.size() && lname.compare(0, pref.size(), pref) == 0) {
+			matched = true;
+			return name.substr(pref.size()); // remainder, original casing
+		}
+	}
+	matched = false;
+	return name; // no known prefix
+}
+
 MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 	MItDag iterator(MItDag::kDepthFirst);
 
@@ -166,10 +194,36 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 
 	controller_sequence->SetStartTime(animStart);
 	controller_sequence->SetStopTime(animStop);
-	controller_sequence->SetName(this->translatorOptions->animationName);
 	controller_sequence->SetTargetName(this->translatorOptions->animationTarget);
 	controller_sequence->SetFrequency(1.0);
 	controller_sequence->SetCycleType(translatorOptions->cycleType);
+	// Animation name: manual (from the field) or auto-derived from the file name.
+	string animName;
+	if (this->translatorOptions->useManualAnimName) {
+		animName = this->translatorOptions->animationName;
+	}
+	else {
+		// basename without extension from the output path
+		MString fn = file.resolvedFullName();
+		int slash = fn.rindexW(L'/');
+		int bslash = fn.rindexW(L'\\');
+		int cut = slash > bslash ? slash : bslash;
+		MString base = (cut >= 0) ? fn.substringW(cut + 1, fn.numChars() - 1) : fn;
+		int dot = base.rindexW(L'.');
+		if (dot > 0) base = base.substringW(0, dot - 1);
+
+		bool matched = false;
+		animName = StripWeaponPrefix(base.asChar(), matched);
+
+		if (!matched) {
+			// No known prefix -> export with the full file name and warn.
+			MGlobal::displayWarning(
+				MString("KF export: no known weapon/movement prefix in \"") + base
+				+ "\"; using the full name as the animation name.");
+			animName = base.asChar();
+		}
+	}
+	controller_sequence->SetName(animName);
 
 	EnsureRangeBookmarks();
 
