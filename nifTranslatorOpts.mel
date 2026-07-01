@@ -434,9 +434,9 @@ global proc int nifTranslatorOpts ( string $parent,
 					setParent exportAnimationCol;
 
 					rowLayout -numberOfColumns 2 -columnWidth2 230 60 -columnAttach2 "left" "left";
-						text -label "Number of keys to sample from animations:" -align "left";
+						text -label "Number of keys to sample (spline only):" -align "left";
 						textField -editable true -text $defaultNumberOfKeysToSample -width 60
-							-annotation "How many keys to extract from each individual object in the scene"
+							-annotation "B-spline control point count. Only affects nodes whose interpolatorType is NiBSplineCompTransformInterpolator or NiBSplineTransformInterpolator. Ignored for the default NiTransformInterpolator (baked/curve) export."
 							numberOfKeysToSampleTx;
 					setParent exportAnimationCol;
 				setParent exportColumnLayout;
@@ -737,6 +737,10 @@ global proc int nifTranslatorOpts ( string $parent,
 		// Apply the manual-name checkbox state to the name field on open.
 		if (`checkBox -exists useManualAnimNameCk` && `textField -exists animationNameTx`) {
 			nifToggleAnimNameField();
+		}
+		// Grey out the spline-only "keys to sample" field unless the selection has a spline node.
+		if (`textField -exists numberOfKeysToSampleTx`) {
+			nifUpdateKeysToSampleField();
 		}
 
 		$bResult = 1;
@@ -1327,6 +1331,27 @@ global proc nifCycleTypeChange(string $value) {
 global proc nifToggleAnimNameField() {
 	int $manual = `checkBox -query -value useManualAnimNameCk`;
 	textField -edit -editable $manual animationNameTx;
+}
+
+// Enable the "keys to sample" field only if the current selection contains at least
+// one node set to a B-spline interpolator (that's the only case where it matters).
+// Checked once when the options window is built (per current Maya selection).
+global proc nifUpdateKeysToSampleField() {
+	int $hasSpline = 0;
+	string $sel[] = `ls -selection -long`;
+	for ($node in $sel) {
+		// interpolatorType is a per-node string attribute; absent => default
+		// NiTransformInterpolator, which ignores the sample count.
+		if (`attributeExists "interpolatorType" $node`) {
+			string $t = `getAttr ($node + ".interpolatorType")`;
+			if ($t == "NiBSplineCompTransformInterpolator" ||
+			    $t == "NiBSplineTransformInterpolator") {
+				$hasSpline = 1;
+				break;
+			}
+		}
+	}
+	textField -edit -editable $hasSpline numberOfKeysToSampleTx;
 }
 
 global proc int hasValidNifName(string $name) {
